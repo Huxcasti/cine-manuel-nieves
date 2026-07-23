@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Panel administrativo del cine</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #070b14;
+      color: white;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 30px;
+    }
+
+    .subtitle {
+      color: #b7c0d3;
+      line-height: 1.5;
+    }
+
+    .card {
+      margin-bottom: 18px;
+      padding: 20px;
+      border: 1px solid #273149;
+      border-radius: 18px;
+      background: #121827;
+    }
+
+    .login-card {
+      max-width: 520px;
+      margin: 60px auto;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid #394765;
+      border-radius: 10px;
+      outline: none;
+      background: #0c111d;
+      color: white;
+      font-size: 16px;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 13px 18px;
+      background: #22c55e;
+      color: #07100a;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #2563eb;
+      color: white;
+    }
+
+    button.danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    button:disabled {
+      background: #536076;
+      color: #aab2c0;
+      cursor: not-allowed;
+    }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 10px;
+      line-height: 1.4;
+    }
+
+    .message.error {
+      display: block;
+      border: 1px solid #ef4444;
+      background: #3b1118;
+    }
+
+    .message.success {
+      display: block;
+      border: 1px solid #22c55e;
+      background: #12351f;
+    }
+
+    #dashboard {
+      display: none;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .top-actions div {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      padding: 18px;
+      border: 1px solid #273149;
+      border-radius: 16px;
+      background: #121827;
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #aeb8cc;
+      font-size: 14px;
+    }
+
+    .stat-value {
+      font-size: 27px;
+      font-weight: bold;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 900px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 13px;
+      border-bottom: 1px solid #273149;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #aeb8cc;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    td {
+      font-size: 14px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .badge.paid {
+      background: #12351f;
+      color: #86efac;
+    }
+
+    .badge.pending {
+      background: #3b2a0b;
+      color: #fcd34d;
+    }
+
+    .badge.used {
+      background: #172554;
+      color: #93c5fd;
+    }
+
+    .badge.available {
+      background: #12351f;
+      color: #86efac;
+    }
+
+    .empty {
+      padding: 35px;
+      color: #aeb8cc;
+      text-align: center;
+    }
+
+    .loading {
+      display: none;
+      margin-bottom: 16px;
+      color: #aeb8cc;
+    }
+
+    @media (max-width: 800px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .top-actions {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 14px;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <section class="card login-card" id="loginSection">
+      <h1>🎬 Panel administrativo</h1>
+
+      <p class="subtitle">
+        Cine Teatro Manuel Nieves Quintero
+      </p>
+
+      <br />
+
+      <label for="adminKey">Clave del administrador</label>
+
+      <input
+        id="adminKey"
+        type="password"
+        placeholder="Escribe la clave"
+        autocomplete="current-password"
+      />
+
+      <button id="loginButton" type="button" onclick="login()">
+        Entrar al panel
+      </button>
+
+      <div class="message" id="loginMessage"></div>
+    </section>
+
+    <section id="dashboard">
+      <header>
+        <h1>📊 Administración del cine</h1>
+
+        <p class="subtitle">
+          Reservaciones, ventas y entradas escaneadas.
+        </p>
+      </header>
+
+      <div class="top-actions">
+        <h2>Resumen general</h2>
+
+        <div>
+          <button
+            class="secondary"
+            type="button"
+            onclick="loadReservations()"
+          >
+            Actualizar
+          </button>
+
+          <button
+            class="danger"
+            type="button"
+            onclick="logout()"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      <section class="stats">
+        <article class="stat">
+          <span class="stat-label">Reservaciones</span>
+          <strong class="stat-value" id="reservationCount">0</strong>
+        </article>
+
+        <article class="stat">
+          <span class="stat-label">Taquillas vendidas</span>
+          <strong class="stat-value" id="ticketCount">0</strong>
+        </article>
+
+        <article class="stat">
+          <span class="stat-label">Ventas totales</span>
+          <strong class="stat-value" id="salesTotal">$0.00</strong>
+        </article>
+
+        <article class="stat">
+          <span class="stat-label">Entradas utilizadas</span>
+          <strong class="stat-value" id="usedCount">0</strong>
+        </article>
+      </section>
+
+      <p class="loading" id="loadingMessage">
+        Cargando reservaciones…
+      </p>
+
+      <section class="card">
+        <h2>Reservaciones</h2>
+
+        <br />
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Película</th>
+                <th>Tanda</th>
+                <th>Asientos</th>
+                <th>Total</th>
+                <th>Pago</th>
+                <th>Entrada</th>
+              </tr>
+            </thead>
+
+            <tbody id="reservationRows"></tbody>
+          </table>
+
+          <div class="empty" id="emptyMessage">
+            Todavía no hay reservaciones.
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://cine-manuel-nieves.onrender.com";
+
+    let currentAdminKey = "";
+
+    async function login() {
+      const keyInput = document.getElementById("adminKey");
+      const loginButton = document.getElementById("loginButton");
+      const key = keyInput.value.trim();
+
+      if (!key) {
+        showLoginMessage(
+          "error",
+          "Escribe la clave del administrador."
+        );
+
+        return;
+      }
+
+      loginButton.disabled = true;
+      loginButton.textContent = "Verificando…";
+
+      currentAdminKey = key;
+
+      try {
+        const success = await loadReservations(true);
+
+        if (!success) {
+          currentAdminKey = "";
+          return;
+        }
+
+        sessionStorage.setItem("cineAdminKey", key);
+
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = "Entrar al panel";
+      }
+    }
+
+    async function loadReservations(fromLogin = false) {
+      const loadingMessage =
+        document.getElementById("loadingMessage");
+
+      loadingMessage.style.display = "block";
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/admin/reservations`,
+          {
+            headers: {
+              "x-admin-key": currentAdminKey
+            }
+          }
+        );
+
+        if (response.status === 401 || response.status === 403) {
+          if (fromLogin) {
+            showLoginMessage(
+              "error",
+              "La clave no es correcta."
+            );
+          } else {
+            alert("La sesión no es válida.");
+            logout();
+          }
+
+          return false;
+        }
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar los datos.");
+        }
+
+        const reservations = await response.json();
+
+        renderReservations(reservations);
+        updateStatistics(reservations);
+
+        return true;
+      } catch (error) {
+        console.error(error);
+
+        if (fromLogin) {
+          showLoginMessage(
+            "error",
+            "No se pudo conectar con el servidor."
+          );
+        } else {
+          alert("No se pudieron cargar las reservaciones.");
+        }
+
+        return false;
+      } finally {
+        loadingMessage.style.display = "none";
+      }
+    }
+
+    function renderReservations(reservations) {
+      const rows = document.getElementById("reservationRows");
+      const emptyMessage = document.getElementById("emptyMessage");
+
+      rows.innerHTML = "";
+
+      if (!Array.isArray(reservations) || reservations.length === 0) {
+        emptyMessage.style.display = "block";
+        return;
+      }
+
+      emptyMessage.style.display = "none";
+
+      reservations.forEach((ticket) => {
+        const row = document.createElement("tr");
+
+        const createdDate = ticket.created
+          ? new Date(ticket.created).toLocaleString("es-PR")
+          : "—";
+
+        const seats = Array.isArray(ticket.seats)
+          ? ticket.seats.join(", ")
+          : "—";
+
+        const paymentClass =
+          ticket.paymentStatus === "paid" ? "paid" : "pending";
+
+        const paymentText =
+          ticket.paymentStatus === "paid" ? "Pagado" : "Pendiente";
+
+        const usedClass = ticket.used ? "used" : "available";
+        const usedText = ticket.used ? "Utilizada" : "Disponible";
+
+        row.innerHTML = `
+          <td>${escapeHtml(createdDate)}</td>
+
+          <td>
+            <strong>
+              ${escapeHtml(ticket.customer?.name || "—")}
+            </strong>
+            <br />
+            ${escapeHtml(ticket.customer?.email || "—")}
+          </td>
+
+          <td>${escapeHtml(ticket.movie || "—")}</td>
+
+          <td>${escapeHtml(ticket.time || "—")}</td>
+
+          <td>${escapeHtml(seats)}</td>
+
+          <td>$${Number(ticket.total || 0).toFixed(2)}</td>
+
+          <td>
+            <span class="badge ${paymentClass}">
+              ${paymentText}
+            </span>
+          </td>
+
+          <td>
+            <span class="badge ${usedClass}">
+              ${usedText}
+            </span>
+          </td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+    function updateStatistics(reservations) {
+      const safeReservations = Array.isArray(reservations)
+        ? reservations
+        : [];
+
+      const ticketCount = safeReservations.reduce(
+        (total, ticket) => {
+          return total + (
+            Array.isArray(ticket.seats)
+              ? ticket.seats.length
+              : 0
+          );
+        },
+        0
+      );
+
+      const salesTotal = safeReservations.reduce(
+        (total, ticket) => {
+          if (ticket.paymentStatus !== "paid") {
+            return total;
+          }
+
+          return total + Number(ticket.total || 0);
+        },
+        0
+      );
+
+      const usedCount = safeReservations.reduce(
+        (total, ticket) => {
+          if (!ticket.used) {
+            return total;
+          }
+
+          return total + (
+            Array.isArray(ticket.seats)
+              ? ticket.seats.length
+              : 0
+          );
+        },
+        0
+      );
+
+      document.getElementById("reservationCount").textContent =
+        safeReservations.length;
+
+      document.getElementById("ticketCount").textContent =
+        ticketCount;
+
+      document.getElementById("salesTotal").textContent =
+        `$${salesTotal.toFixed(2)}`;
+
+      document.getElementById("usedCount").textContent =
+        usedCount;
+    }
+
+    function showLoginMessage(type, message) {
+      const box = document.getElementById("loginMessage");
+
+      box.className = `message ${type}`;
+      box.textContent = message;
+    }
+
+    function logout() {
+      currentAdminKey = "";
+      sessionStorage.removeItem("cineAdminKey");
+
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("loginSection").style.display = "block";
+      document.getElementById("adminKey").value = "";
+      document.getElementById("loginMessage").className = "message";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function restoreSession() {
+      const savedKey = sessionStorage.getItem("cineAdminKey");
+
+      if (!savedKey) {
+        return;
+      }
+
+      currentAdminKey = savedKey;
+
+      const success = await loadReservations();
+
+      if (success) {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+      }
+    }
+
+    restoreSession();
+  </script>
+</body>
+</html>
