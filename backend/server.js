@@ -6,13 +6,38 @@ const { Pool } = require("pg");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+/*
+==================================================
+CLAVE DEL PANEL ADMINISTRATIVO
+==================================================
+
+La clave configurada como ADMIN_KEY en Render tiene prioridad.
+
+"gracias" es solamente una clave temporal para que veas
+exactamente dónde iría. No dejes esa clave en producción.
+*/
+
+const ADMIN_KEY = process.env.ADMIN_KEY || "gracias";
+
 app.use(cors());
 app.use(express.json());
+
+/*
+==================================================
+Verificar variables necesarias
+==================================================
+*/
 
 if (!process.env.DATABASE_URL) {
   console.error("Falta la variable DATABASE_URL.");
   process.exit(1);
 }
+
+/*
+==================================================
+Conexión con PostgreSQL
+==================================================
+*/
 
 const useSSL = process.env.DATABASE_URL.includes("render.com");
 
@@ -88,7 +113,7 @@ app.get("/", async (req, res) => {
       status: "online",
       database: "connected",
       app: "Cine Teatro Manuel Nieves Quintero",
-      version: "2.0"
+      version: "2.1"
     });
   } catch (error) {
     console.error("Error verificando la base de datos:", error);
@@ -125,6 +150,14 @@ app.post("/api/reservation", async (req, res) => {
       });
     }
 
+    const numericTotal = Number(total);
+
+    if (!Number.isFinite(numericTotal) || numericTotal <= 0) {
+      return res.status(400).json({
+        error: "El total de la reservación no es válido."
+      });
+    }
+
     const id = crypto.randomUUID();
     const qr = crypto.randomBytes(24).toString("hex");
 
@@ -148,7 +181,7 @@ app.post("/api/reservation", async (req, res) => {
         movie,
         time,
         seats,
-        total,
+        numericTotal,
         customer,
         "pending",
         qr
@@ -238,7 +271,7 @@ app.get("/api/qr/:code", async (req, res) => {
     }
 
     if (ticket.used) {
-      return res.json({
+      return res.status(409).json({
         valid: false,
         message: "Esta taquilla ya fue utilizada.",
         ticket
@@ -334,12 +367,27 @@ app.post("/api/checkin/:code", async (req, res) => {
 
 /*
 ==================================================
-Obtener todas las reservaciones
-Este endpoint luego estará protegido con contraseña
+Reservaciones del panel administrativo
 ==================================================
+
+Esta es la ruta que utiliza admin.html:
+
+GET /api/admin/reservations
+
+La clave llega en el encabezado:
+
+x-admin-key
 */
 
-app.get("/api/reservations", async (req, res) => {
+app.get("/api/admin/reservations", async (req, res) => {
+  const providedKey = req.headers["x-admin-key"];
+
+  if (!providedKey || providedKey !== ADMIN_KEY) {
+    return res.status(401).json({
+      error: "Acceso denegado."
+    });
+  }
+
   try {
     const result = await pool.query(`
       SELECT *
@@ -349,12 +397,42 @@ app.get("/api/reservations", async (req, res) => {
 
     res.json(result.rows.map(formatTicket));
   } catch (error) {
-    console.error("Error obteniendo reservaciones:", error);
+    console.error(
+      "Error obteniendo las reservaciones administrativas:",
+      error
+    );
 
     res.status(500).json({
       error: "No se pudieron obtener las reservaciones."
     });
   }
+});
+
+/*
+==================================================
+Ruta pública eliminada por seguridad
+==================================================
+
+La antigua ruta /api/reservations mostraba públicamente
+nombres, correos y teléfonos. Ahora queda bloqueada.
+*/
+
+app.get("/api/reservations", (req, res) => {
+  res.status(403).json({
+    error: "Esta información requiere acceso administrativo."
+  });
+});
+
+/*
+==================================================
+Ruta no encontrada
+==================================================
+*/
+
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Ruta no encontrada."
+  });
 });
 
 /*
