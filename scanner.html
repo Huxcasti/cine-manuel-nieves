@@ -206,6 +206,7 @@
 
       <p class="instructions">
         Permite el acceso a la cámara y coloca el QR dentro del cuadro.
+        El sistema intentará utilizar primero la cámara trasera.
       </p>
 
       <p class="loading" id="loadingMessage">
@@ -268,6 +269,7 @@
       try {
         const url = new URL(cleanText);
         const parts = url.pathname.split("/").filter(Boolean);
+
         return parts[parts.length - 1];
       } catch (error) {
         return cleanText;
@@ -288,6 +290,7 @@
           "Código inválido",
           "No se pudo leer un código válido."
         );
+
         return;
       }
 
@@ -385,15 +388,19 @@
           <div class="detail-row">
             <span>Asientos</span>
             <strong>
-              ${Array.isArray(ticket.seats)
-                ? ticket.seats.map(escapeHtml).join(", ")
-                : "—"}
+              ${
+                Array.isArray(ticket.seats)
+                  ? ticket.seats.map(escapeHtml).join(", ")
+                  : "—"
+              }
             </strong>
           </div>
 
           <div class="detail-row">
             <span>Estado del pago</span>
-            <strong>${escapeHtml(ticket.paymentStatus || "—")}</strong>
+            <strong>
+              ${escapeHtml(ticket.paymentStatus || "—")}
+            </strong>
           </div>
 
           <div class="detail-row">
@@ -422,6 +429,7 @@
           "Falta el código",
           "Pega el enlace o código contenido en el QR."
         );
+
         return;
       }
 
@@ -464,11 +472,20 @@
         "reader",
         {
           fps: 10,
+
           qrbox: {
             width: 250,
             height: 250
           },
-          rememberLastUsedCamera: true,
+
+          rememberLastUsedCamera: false,
+
+          videoConstraints: {
+            facingMode: {
+              ideal: "environment"
+            }
+          },
+
           supportedScanTypes: [
             Html5QrcodeScanType.SCAN_TYPE_CAMERA
           ]
@@ -481,7 +498,8 @@
           processQr(decodedText);
         },
         () => {
-          // Los errores normales de lectura se ignoran mientras busca un QR.
+          // Los errores normales de lectura se ignoran
+          // mientras el escáner está buscando un QR.
         }
       );
     }
