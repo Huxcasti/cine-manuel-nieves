@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Cine Teatro Manuel Nieves Quintero</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #070b14;
+      color: white;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 22px 18px;
+      background: linear-gradient(180deg, #151d31, #070b14);
+    }
+
+    header h1 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: #aeb8cc;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: auto;
+      padding: 18px;
+    }
+
+    .section-title {
+      margin: 18px 0 14px;
+      font-size: 21px;
+    }
+
+    .movie-card {
+      background: #121827;
+      border: 1px solid #273149;
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 22px;
+      box-shadow: 0 16px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .poster {
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(rgba(8, 12, 22, 0.3), rgba(8, 12, 22, 0.95)),
+        linear-gradient(135deg, #153c73, #7c2449);
+      font-size: 70px;
+    }
+
+    .movie-content {
+      padding: 18px;
+    }
+
+    .movie-content h2 {
+      margin-bottom: 8px;
+    }
+
+    .description {
+      color: #b7c0d3;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .schedule {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .time-button {
+      border: 1px solid #394765;
+      background: #1b2437;
+      color: white;
+      border-radius: 10px;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+
+    .time-button.active {
+      background: #2563eb;
+      border-color: #2563eb;
+    }
+
+    .seat-section {
+      display: none;
+      border-top: 1px solid #2c354b;
+      padding-top: 20px;
+    }
+
+    .screen {
+      background: #e8edf7;
+      color: #101827;
+      text-align: center;
+      padding: 8px;
+      border-radius: 50% 50% 8px 8px;
+      margin: 10px auto 25px;
+      max-width: 330px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .seat-map {
+      display: grid;
+      grid-template-columns: repeat(6, 42px);
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .seat {
+      height: 38px;
+      border: none;
+      border-radius: 10px 10px 5px 5px;
+      background: #33405b;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .seat.selected {
+      background: #22c55e;
+    }
+
+    .seat.occupied {
+      background: #6b2431;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      color: #b7c0d3;
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+
+    .summary {
+      background: #0c111d;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 15px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .buy-button {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      background: #22c55e;
+      color: #07100a;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .buy-button:disabled {
+      background: #536076;
+      color: #aab2c0;
+      cursor: not-allowed;
+    }
+
+    .notice {
+      display: none;
+      background: #12351f;
+      border: 1px solid #22c55e;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    footer {
+      color: #7f8aa0;
+      text-align: center;
+      padding: 25px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Cine Teatro Manuel Nieves Quintero</h1>
+    <p>Corozal, Puerto Rico · Compra tus taquillas desde el celular</p>
+  </header>
+
+  <main>
+    <h2 class="section-title">Cartelera</h2>
+
+    <article class="movie-card">
+      <div class="poster">🎬</div>
+
+      <div class="movie-content">
+        <h2>Película de ejemplo</h2>
+
+        <p class="description">
+          Esta es una demostración inicial del sistema de taquillas.
+          Luego podremos cambiar la película, imagen, descripción,
+          horarios, precios y cantidad real de asientos.
+        </p>
+
+        <h3>Selecciona una tanda</h3>
+
+        <div class="schedule">
+          <button class="time-button" onclick="chooseTime(this, '5:30 PM')">
+            5:30 PM
+          </button>
+
+          <button class="time-button" onclick="chooseTime(this, '8:00 PM')">
+            8:00 PM
+          </button>
+        </div>
+
+        <section class="seat-section" id="seatSection">
+          <h3>Selecciona tus asientos</h3>
+
+          <div class="screen">PANTALLA</div>
+
+          <div class="seat-map" id="seatMap"></div>
+
+          <div class="legend">
+            <span>⬛ Disponible</span>
+            <span>🟩 Seleccionado</span>
+            <span>🟥 Ocupado</span>
+          </div>
+
+          <div class="summary">
+            <div class="summary-row">
+              <span>Tanda</span>
+              <strong id="selectedTime">—</strong>
+            </div>
+
+            <div class="summary-row">
+              <span>Asientos</span>
+              <strong id="selectedSeats">Ninguno</strong>
+            </div>
+
+            <div class="summary-row">
+              <span>Total</span>
+              <strong id="total">$0.00</strong>
+            </div>
+          </div>
+
+          <button
+            class="buy-button"
+            id="buyButton"
+            onclick="completeDemo()"
+            disabled
+          >
+            Continuar con la compra
+          </button>
+
+          <div class="notice" id="notice">
+            ✅ ¡Perfecto! Esta parte funciona. El próximo paso será crear
+            el formulario del cliente, el pago y el código QR.
+          </div>
+        </section>
+      </div>
+    </article>
+  </main>
+
+  <footer>
+    Demostración inicial · Cine Teatro Manuel Nieves Quintero
+  </footer>
+
+  <script>
+    const ticketPrice = 8;
+    const selectedSeats = [];
+    let chosenTime = "";
+
+    const occupiedSeats = ["A3", "B5", "C2"];
+
+    function createSeats() {
+      const seatMap = document.getElementById("seatMap");
+      const rows = ["A", "B", "C", "D"];
+
+      rows.forEach((row) => {
+        for (let number = 1; number <= 6; number++) {
+          const seatName = `${row}${number}`;
+          const button = document.createElement("button");
+
+          button.textContent = seatName;
+          button.className = "seat";
+
+          if (occupiedSeats.includes(seatName)) {
+            button.classList.add("occupied");
+            button.disabled = true;
+          } else {
+            button.onclick = () => toggleSeat(button, seatName);
+          }
+
+          seatMap.appendChild(button);
+        }
+      });
+    }
+
+    function chooseTime(button, time) {
+      document
+        .querySelectorAll(".time-button")
+        .forEach((item) => item.classList.remove("active"));
+
+      button.classList.add("active");
+      chosenTime = time;
+
+      document.getElementById("selectedTime").textContent = time;
+      document.getElementById("seatSection").style.display = "block";
+
+      updateSummary();
+    }
+
+    function toggleSeat(button, seatName) {
+      const seatIndex = selectedSeats.indexOf(seatName);
+
+      if (seatIndex === -1) {
+        selectedSeats.push(seatName);
+        button.classList.add("selected");
+      } else {
+        selectedSeats.splice(seatIndex, 1);
+        button.classList.remove("selected");
+      }
+
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const seatsText =
+        selectedSeats.length > 0
+          ? selectedSeats.join(", ")
+          : "Ninguno";
+
+      document.getElementById("selectedSeats").textContent = seatsText;
+
+      const total = selectedSeats.length * ticketPrice;
+      document.getElementById("total").textContent =
+        `$${total.toFixed(2)}`;
+
+      document.getElementById("buyButton").disabled =
+        selectedSeats.length === 0 || chosenTime === "";
+    }
+
+    function completeDemo() {
+      document.getElementById("notice").style.display = "block";
+    }
+
+    createSeats();
+  </script>
+</body>
+</html>
