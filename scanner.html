@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Escáner de taquillas</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #070b14;
+      color: white;
+    }
+
+    main {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      margin-bottom: 22px;
+      color: #b7c0d3;
+      line-height: 1.5;
+    }
+
+    .card {
+      margin-bottom: 18px;
+      padding: 18px;
+      border: 1px solid #273149;
+      border-radius: 18px;
+      background: #121827;
+    }
+
+    #reader {
+      overflow: hidden;
+      width: 100%;
+      border-radius: 14px;
+      background: white;
+    }
+
+    .instructions {
+      margin-top: 14px;
+      color: #b7c0d3;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .manual-title {
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .manual-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid #394765;
+      border-radius: 10px;
+      outline: none;
+      background: #0c111d;
+      color: white;
+      font-size: 16px;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+    }
+
+    button {
+      padding: 13px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #22c55e;
+      color: #07100a;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #536076;
+      color: #aab2c0;
+      cursor: not-allowed;
+    }
+
+    .result {
+      display: none;
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .result.success {
+      display: block;
+      border: 1px solid #22c55e;
+      background: #12351f;
+    }
+
+    .result.error {
+      display: block;
+      border: 1px solid #ef4444;
+      background: #3b1118;
+    }
+
+    .result.warning {
+      display: block;
+      border: 1px solid #f59e0b;
+      background: #3b2a0b;
+    }
+
+    .result-icon {
+      margin-bottom: 10px;
+      font-size: 50px;
+    }
+
+    .result h2 {
+      margin-bottom: 10px;
+    }
+
+    .details {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.22);
+      text-align: left;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 9px;
+    }
+
+    .detail-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .detail-row strong {
+      text-align: right;
+    }
+
+    .scan-again {
+      display: none;
+      width: 100%;
+      margin-top: 14px;
+      background: #2563eb;
+      color: white;
+    }
+
+    .loading {
+      display: none;
+      margin-top: 14px;
+      color: #b7c0d3;
+      text-align: center;
+    }
+
+    .security-note {
+      color: #fcd34d;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 500px) {
+      .manual-row {
+        flex-direction: column;
+      }
+
+      .manual-row button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>🎟️ Portal del empleado</h1>
+
+    <p class="subtitle">
+      Escanea el código QR del cliente para validar y utilizar la taquilla.
+    </p>
+
+    <section class="card">
+      <div id="reader"></div>
+
+      <p class="instructions">
+        Permite el acceso a la cámara y coloca el QR dentro del cuadro.
+      </p>
+
+      <p class="loading" id="loadingMessage">
+        Verificando taquilla…
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 class="manual-title">Validación manual</h2>
+
+      <div class="manual-row">
+        <input
+          id="manualCode"
+          type="text"
+          placeholder="Pega el enlace o código del QR"
+        />
+
+        <button type="button" onclick="validateManualCode()">
+          Validar
+        </button>
+      </div>
+    </section>
+
+    <section id="resultBox" class="result">
+      <div class="result-icon" id="resultIcon"></div>
+
+      <h2 id="resultTitle"></h2>
+
+      <p id="resultMessage"></p>
+
+      <div class="details" id="ticketDetails"></div>
+    </section>
+
+    <button
+      class="scan-again"
+      id="scanAgainButton"
+      type="button"
+      onclick="resetScanner()"
+    >
+      Escanear otra taquilla
+    </button>
+
+    <section class="card">
+      <p class="security-note">
+        ⚠️ Esta página todavía no tiene inicio de sesión. Antes de usarla
+        públicamente, añadiremos acceso exclusivo para empleados.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://cine-manuel-nieves.onrender.com";
+
+    let scanner = null;
+    let isProcessing = false;
+
+    function extractQrCode(scannedText) {
+      const cleanText = scannedText.trim();
+
+      try {
+        const url = new URL(cleanText);
+        const parts = url.pathname.split("/").filter(Boolean);
+        return parts[parts.length - 1];
+      } catch (error) {
+        return cleanText;
+      }
+    }
+
+    async function processQr(scannedText) {
+      if (isProcessing) {
+        return;
+      }
+
+      const qrCode = extractQrCode(scannedText);
+
+      if (!qrCode) {
+        showResult(
+          "error",
+          "❌",
+          "Código inválido",
+          "No se pudo leer un código válido."
+        );
+        return;
+      }
+
+      isProcessing = true;
+
+      document.getElementById("loadingMessage").style.display = "block";
+      document.getElementById("scanAgainButton").style.display = "none";
+
+      try {
+        if (scanner) {
+          await scanner.pause(true);
+        }
+
+        const response = await fetch(
+          `${API_URL}/api/checkin/${encodeURIComponent(qrCode)}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          }
+        );
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          showResult(
+            "success",
+            "✅",
+            "Entrada autorizada",
+            data.message,
+            data.ticket
+          );
+        } else if (response.status === 409) {
+          showResult(
+            "warning",
+            "⚠️",
+            "Taquilla ya utilizada",
+            data.message,
+            data.ticket
+          );
+        } else {
+          showResult(
+            "error",
+            "❌",
+            "Entrada rechazada",
+            data.message || "La taquilla no es válida.",
+            data.ticket
+          );
+        }
+      } catch (error) {
+        console.error(error);
+
+        showResult(
+          "error",
+          "❌",
+          "Error de conexión",
+          "No se pudo conectar con el servidor."
+        );
+      } finally {
+        document.getElementById("loadingMessage").style.display = "none";
+        document.getElementById("scanAgainButton").style.display = "block";
+      }
+    }
+
+    function showResult(type, icon, title, message, ticket = null) {
+      const resultBox = document.getElementById("resultBox");
+      const details = document.getElementById("ticketDetails");
+
+      resultBox.className = `result ${type}`;
+
+      document.getElementById("resultIcon").textContent = icon;
+      document.getElementById("resultTitle").textContent = title;
+      document.getElementById("resultMessage").textContent = message;
+
+      if (ticket) {
+        details.style.display = "block";
+
+        details.innerHTML = `
+          <div class="detail-row">
+            <span>Cliente</span>
+            <strong>${escapeHtml(ticket.customer?.name || "—")}</strong>
+          </div>
+
+          <div class="detail-row">
+            <span>Película</span>
+            <strong>${escapeHtml(ticket.movie || "—")}</strong>
+          </div>
+
+          <div class="detail-row">
+            <span>Tanda</span>
+            <strong>${escapeHtml(ticket.time || "—")}</strong>
+          </div>
+
+          <div class="detail-row">
+            <span>Asientos</span>
+            <strong>
+              ${Array.isArray(ticket.seats)
+                ? ticket.seats.map(escapeHtml).join(", ")
+                : "—"}
+            </strong>
+          </div>
+
+          <div class="detail-row">
+            <span>Estado del pago</span>
+            <strong>${escapeHtml(ticket.paymentStatus || "—")}</strong>
+          </div>
+
+          <div class="detail-row">
+            <span>Utilizada</span>
+            <strong>${ticket.used ? "Sí" : "No"}</strong>
+          </div>
+        `;
+      } else {
+        details.style.display = "none";
+        details.innerHTML = "";
+      }
+
+      resultBox.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    }
+
+    function validateManualCode() {
+      const value = document.getElementById("manualCode").value.trim();
+
+      if (!value) {
+        showResult(
+          "error",
+          "❌",
+          "Falta el código",
+          "Pega el enlace o código contenido en el QR."
+        );
+        return;
+      }
+
+      processQr(value);
+    }
+
+    async function resetScanner() {
+      isProcessing = false;
+
+      document.getElementById("resultBox").className = "result";
+      document.getElementById("scanAgainButton").style.display = "none";
+      document.getElementById("manualCode").value = "";
+
+      if (scanner) {
+        try {
+          await scanner.resume();
+        } catch (error) {
+          console.error(error);
+          location.reload();
+        }
+      }
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function startScanner() {
+      scanner = new Html5QrcodeScanner(
+        "reader",
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          },
+          rememberLastUsedCamera: true,
+          supportedScanTypes: [
+            Html5QrcodeScanType.SCAN_TYPE_CAMERA
+          ]
+        },
+        false
+      );
+
+      scanner.render(
+        (decodedText) => {
+          processQr(decodedText);
+        },
+        () => {
+          // Los errores normales de lectura se ignoran mientras busca un QR.
+        }
+      );
+    }
+
+    startScanner();
+  </script>
+</body>
+</html>
