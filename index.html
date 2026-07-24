@@ -2,354 +2,2190 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <meta
+    name="theme-color"
+    content="#070b14"
+  />
+
   <title>Cine Teatro Manuel Nieves Quintero</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <style>
-    :root { --bg:#070b14; --surface:#121827; --surface2:#0c111d; --border:#273149; --muted:#b7c0d3; --primary:#2563eb; --success:#22c55e; --danger:#ef4444; --warning:#f59e0b; }
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { min-height:100vh; font-family:Arial,sans-serif; background:var(--bg); color:#fff; }
-    button,input { font:inherit; }
-    header { padding:22px 18px; background:linear-gradient(180deg,#151d31,var(--bg)); }
-    header h1 { font-size:24px; margin-bottom:6px; }
-    header p { color:#aeb8cc; font-size:14px; }
-    main { max-width:900px; margin:auto; padding:18px; }
-    .page { display:none; }
-    .page.active { display:block; }
-    .section-title { margin:18px 0 14px; font-size:21px; }
-    .card { overflow:hidden; margin-bottom:22px; border:1px solid var(--border); border-radius:18px; background:var(--surface); box-shadow:0 16px 35px rgba(0,0,0,.3); }
-    .card-content { padding:18px; }
-    .poster { height:220px; display:flex; align-items:center; justify-content:center; background:linear-gradient(rgba(8,12,22,.3),rgba(8,12,22,.95)),linear-gradient(135deg,#153c73,#7c2449); font-size:70px; }
-    .description { margin:9px 0 17px; color:var(--muted); line-height:1.5; }
-    .schedule { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 18px; }
-    .time-button { padding:11px 16px; border:1px solid #394765; border-radius:10px; background:#1b2437; color:#fff; cursor:pointer; }
-    .time-button.active { border-color:var(--primary); background:var(--primary); }
-    .seat-section { display:none; padding-top:20px; border-top:1px solid #2c354b; }
-    .screen { max-width:350px; margin:12px auto 25px; padding:8px; border-radius:50% 50% 8px 8px; background:#e8edf7; color:#101827; text-align:center; font-size:13px; font-weight:bold; }
-    .seat-map { display:grid; grid-template-columns:repeat(6,42px); justify-content:center; gap:10px; margin-bottom:20px; }
-    .seat { height:38px; border:none; border-radius:10px 10px 5px 5px; background:#33405b; color:#fff; cursor:pointer; font-size:12px; }
-    .seat.selected { background:var(--success); color:#061009; }
-    .seat.occupied { background:#6b2431; opacity:.8; cursor:not-allowed; }
-    .legend { display:flex; flex-wrap:wrap; justify-content:center; gap:15px; margin-bottom:20px; color:var(--muted); font-size:12px; }
-    .summary { margin-bottom:15px; padding:16px; border-radius:14px; background:var(--surface2); }
-    .summary-row { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:9px; }
-    .summary-row:last-child { margin-bottom:0; }
-    .summary-row strong { text-align:right; }
-    .primary-button,.secondary-button,.payment-option { width:100%; padding:15px; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer; }
-    .primary-button { border:none; background:var(--success); color:#07100a; }
-    .primary-button:disabled { background:#536076; color:#aab2c0; cursor:not-allowed; }
-    .secondary-button { margin-top:10px; border:1px solid #394765; background:#1b2437; color:#fff; }
-    .form-group { margin-bottom:15px; }
-    .form-group label { display:block; margin-bottom:7px; font-weight:bold; }
-    .form-group input { width:100%; padding:13px; border:1px solid #394765; border-radius:10px; outline:none; background:var(--surface2); color:#fff; font-size:16px; }
-    .form-group input:focus { border-color:var(--primary); }
-    .message { display:none; margin-bottom:15px; padding:13px; border-radius:10px; line-height:1.4; }
-    .message.error { border:1px solid var(--danger); background:#3b1118; color:#fecaca; }
-    .payment-grid { display:grid; gap:12px; margin:16px 0; }
-    .payment-option { display:flex; align-items:center; justify-content:space-between; border:1px solid #394765; background:#1b2437; color:#fff; text-align:left; }
-    .payment-option.selected { border-color:var(--success); background:#12351f; }
-    .warning { margin:15px 0; padding:13px; border:1px solid var(--warning); border-radius:12px; background:#3b2a0b; color:#fde68a; line-height:1.45; }
-    .ticket { padding:20px; border-radius:18px; background:#fff; color:#111827; text-align:center; }
-    .ticket h2 { margin-bottom:6px; }
-    .ticket-subtitle { margin-bottom:18px; color:#4b5563; }
-    .ticket-details { margin-bottom:18px; padding:15px; border-radius:12px; background:#f3f4f6; text-align:left; }
-    .ticket-row { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; }
-    .ticket-row:last-child { margin-bottom:0; }
-    #qrCode { width:210px; min-height:210px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; padding:10px; border-radius:10px; background:#fff; }
-    .ticket-code { margin-bottom:10px; font-family:monospace; font-size:16px; font-weight:bold; letter-spacing:1px; }
-    .ticket-note { color:#4b5563; font-size:13px; line-height:1.4; }
-    .loading { display:none; margin-top:12px; color:var(--muted); text-align:center; }
-    footer { padding:25px; color:#7f8aa0; text-align:center; font-size:13px; }
-    @media (max-width:420px) { .seat-map { grid-template-columns:repeat(6,38px); gap:8px; } .seat { height:36px; font-size:11px; } }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --background: #070b14;
+      --background-soft: #0c1220;
+      --panel: #121a2a;
+      --panel-light: #192338;
+      --border: #2b3955;
+      --text: #ffffff;
+      --muted: #aab6cd;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --selected: #2563eb;
+      --occupied: #475569;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(
+          circle at top,
+          #172554 0,
+          #0b1220 34%,
+          var(--background) 70%
+        );
+      color: var(--text);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(7, 11, 20, 0.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      min-height: 76px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      border: 1px solid #38517d;
+      border-radius: 14px;
+      background: #14203a;
+      font-size: 24px;
+    }
+
+    .brand h1 {
+      font-size: clamp(18px, 3vw, 25px);
+    }
+
+    .brand p {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .header-button {
+      border: 1px solid #3a4d70;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: #182238;
+      color: white;
+      font-weight: bold;
+    }
+
+    .hero {
+      padding: 64px 0 42px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      margin-bottom: 18px;
+      padding: 7px 13px;
+      border: 1px solid #36528c;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.17);
+      color: #bfdbfe;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .hero h2 {
+      max-width: 800px;
+      margin: 0 auto 16px;
+      font-size: clamp(34px, 7vw, 62px);
+      line-height: 1.05;
+    }
+
+    .hero p {
+      max-width: 680px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+
+    .section {
+      padding: 28px 0 60px;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .section-heading h2 {
+      margin-bottom: 7px;
+      font-size: 29px;
+    }
+
+    .section-heading p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .refresh-button {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 15px;
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+    }
+
+    .loading-card,
+    .empty-card,
+    .error-card {
+      padding: 34px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--panel);
+      text-align: center;
+    }
+
+    .error-card {
+      border-color: #7f1d1d;
+      background: #2e1118;
+    }
+
+    .loading-card,
+    .empty-card {
+      color: var(--muted);
+    }
+
+    .movie-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(240px, 1fr));
+      gap: 22px;
+    }
+
+    .movie-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+      transition:
+        transform 0.2s ease,
+        border-color 0.2s ease;
+    }
+
+    .movie-card:hover {
+      transform: translateY(-4px);
+      border-color: #45649a;
+    }
+
+    .movie-poster-wrapper {
+      position: relative;
+      aspect-ratio: 2 / 3;
+      overflow: hidden;
+      background:
+        linear-gradient(
+          135deg,
+          #172554,
+          #111827
+        );
+    }
+
+    .movie-poster {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .poster-placeholder {
+      display: grid;
+      width: 100%;
+      height: 100%;
+      place-items: center;
+      color: #bfdbfe;
+      text-align: center;
+    }
+
+    .poster-placeholder span {
+      font-size: 58px;
+    }
+
+    .poster-placeholder p {
+      margin-top: 12px;
+      padding: 0 20px;
+      font-weight: bold;
+    }
+
+    .movie-status {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(7, 11, 20, 0.88);
+      color: #86efac;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .movie-content {
+      padding: 19px;
+    }
+
+    .movie-title {
+      margin-bottom: 10px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .movie-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .meta-badge {
+      padding: 5px 9px;
+      border: 1px solid #334565;
+      border-radius: 999px;
+      background: #172033;
+      color: #c7d2e7;
+      font-size: 12px;
+    }
+
+    .movie-description {
+      display: -webkit-box;
+      min-height: 68px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      color: var(--muted);
+      line-height: 1.5;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+
+    .showtime-label {
+      margin-bottom: 9px;
+      color: #dbeafe;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .showtime-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .showtime-button {
+      border: 1px solid #36558e;
+      border-radius: 10px;
+      padding: 9px 11px;
+      background: #17294d;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .showtime-button:hover {
+      background: var(--primary);
+    }
+
+    .no-showtimes {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .purchase-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
+      gap: 22px;
+      align-items: start;
+      padding: 35px 0 70px;
+    }
+
+    .card {
+      margin-bottom: 20px;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      background: var(--panel);
+    }
+
+    .back-button {
+      margin-bottom: 18px;
+      border: 1px solid #3a4d70;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: #182238;
+      color: white;
+      font-weight: bold;
+    }
+
+    .selected-movie {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .selected-movie img,
+    .selected-poster-placeholder {
+      width: 110px;
+      height: 165px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #172554;
+    }
+
+    .selected-poster-placeholder {
+      display: grid;
+      place-items: center;
+      font-size: 42px;
+    }
+
+    .selected-movie h2 {
+      margin-bottom: 9px;
+    }
+
+    .selected-movie p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .selected-showtime {
+      margin-top: 13px;
+      color: #bfdbfe;
+      font-weight: bold;
+    }
+
+    .screen {
+      width: min(600px, 88%);
+      margin: 0 auto 34px;
+      padding: 9px;
+      border-radius: 50% 50% 12px 12px;
+      background: linear-gradient(
+        to bottom,
+        #e2e8f0,
+        #64748b
+      );
+      color: #07101e;
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      box-shadow: 0 15px 35px rgba(147, 197, 253, 0.2);
+    }
+
+    .seat-legend {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-seat {
+      width: 21px;
+      height: 21px;
+      border-radius: 6px 6px 3px 3px;
+      background: #263653;
+    }
+
+    .legend-seat.selected {
+      background: var(--selected);
+    }
+
+    .legend-seat.occupied {
+      background: var(--occupied);
+    }
+
+    .seat-map-wrapper {
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+
+    .seat-map {
+      width: max-content;
+      min-width: 100%;
+      margin: 0 auto;
+    }
+
+    .seat-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .row-label {
+      width: 24px;
+      color: #93c5fd;
+      font-size: 13px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .seat {
+      width: 38px;
+      height: 34px;
+      border: 1px solid #405173;
+      border-radius: 9px 9px 5px 5px;
+      background: #263653;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .seat:hover:not(:disabled) {
+      background: #36517c;
+    }
+
+    .seat.selected {
+      border-color: #60a5fa;
+      background: var(--selected);
+    }
+
+    .seat.occupied {
+      border-color: #475569;
+      background: var(--occupied);
+      color: #94a3b8;
+    }
+
+    .aisle {
+      width: 18px;
+    }
+
+    .summary-card {
+      position: sticky;
+      top: 96px;
+    }
+
+    .summary-card h2 {
+      margin-bottom: 18px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .summary-row span {
+      color: var(--muted);
+    }
+
+    .summary-total {
+      margin: 18px 0;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .primary-button {
+      width: 100%;
+      border: none;
+      border-radius: 11px;
+      padding: 14px 18px;
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+    }
+
+    .primary-button:hover {
+      background: var(--primary-hover);
+    }
+
+    .customer-form {
+      max-width: 620px;
+      margin: 38px auto 70px;
+    }
+
+    .customer-form h2 {
+      margin-bottom: 8px;
+    }
+
+    .customer-form .subtitle {
+      margin-bottom: 24px;
+      color: var(--muted);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #dbeafe;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid #3a4a69;
+      border-radius: 10px;
+      outline: none;
+      background: #0c1322;
+      color: white;
+      font-size: 16px;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+    }
+
+    .form-message {
+      display: none;
+      margin: 15px 0;
+      padding: 13px;
+      border-radius: 10px;
+      line-height: 1.5;
+    }
+
+    .form-message.error {
+      display: block;
+      border: 1px solid var(--danger);
+      background: #351018;
+    }
+
+    .form-message.success {
+      display: block;
+      border: 1px solid var(--success);
+      background: #12351f;
+    }
+
+    .processing-card {
+      max-width: 600px;
+      margin: 70px auto;
+      padding: 40px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel);
+      text-align: center;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 22px;
+      border: 5px solid #263653;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .ticket-page {
+      padding: 45px 0 80px;
+    }
+
+    .ticket {
+      max-width: 720px;
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid #36558e;
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.35);
+    }
+
+    .ticket-header {
+      padding: 26px;
+      background:
+        linear-gradient(
+          135deg,
+          #1d4ed8,
+          #172554
+        );
+      text-align: center;
+    }
+
+    .ticket-header h2 {
+      margin-bottom: 7px;
+      font-size: 27px;
+    }
+
+    .ticket-header p {
+      color: #dbeafe;
+    }
+
+    .ticket-content {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 25px;
+      padding: 26px;
+    }
+
+    .ticket-details {
+      display: grid;
+      gap: 15px;
+    }
+
+    .ticket-detail {
+      padding-bottom: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ticket-detail span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .ticket-detail strong {
+      font-size: 17px;
+    }
+
+    .qr-area {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 220px;
+      padding: 16px;
+      border-radius: 15px;
+      background: white;
+      color: #111827;
+      text-align: center;
+    }
+
+    #qrCode {
+      margin-bottom: 10px;
+    }
+
+    .qr-token {
+      max-width: 180px;
+      overflow-wrap: anywhere;
+      color: #475569;
+      font-size: 10px;
+    }
+
+    .ticket-footer {
+      padding: 18px 26px 26px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .ticket-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .ticket-actions button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 17px;
+      font-weight: bold;
+    }
+
+    .new-purchase-button {
+      background: var(--primary);
+      color: white;
+    }
+
+    .print-button {
+      background: var(--success);
+      color: #052e16;
+    }
+
+    .site-footer {
+      padding: 28px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 850px) {
+      .purchase-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        position: static;
+      }
+
+      .ticket-content {
+        grid-template-columns: 1fr;
+      }
+
+      .qr-area {
+        width: 240px;
+        margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .header-content {
+        min-height: 68px;
+      }
+
+      .brand p,
+      .header-button {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 43px;
+      }
+
+      .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .selected-movie {
+        grid-template-columns: 78px 1fr;
+      }
+
+      .selected-movie img,
+      .selected-poster-placeholder {
+        width: 78px;
+        height: 118px;
+      }
+
+      .card {
+        padding: 17px;
+      }
+
+      .seat {
+        width: 31px;
+        height: 30px;
+        font-size: 9px;
+      }
+
+      .seat-row {
+        gap: 5px;
+      }
+
+      .aisle {
+        width: 11px;
+      }
+
+      .ticket-content {
+        padding: 18px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .site-header,
+      .site-footer,
+      .ticket-actions {
+        display: none;
+      }
+
+      .ticket-page {
+        padding: 0;
+      }
+
+      .ticket {
+        border: 1px solid #333;
+        box-shadow: none;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>Cine Teatro Manuel Nieves Quintero</h1>
-    <p>Corozal, Puerto Rico · Compra tus taquillas desde el celular</p>
+  <header class="site-header">
+    <div class="container header-content">
+      <div class="brand">
+        <div class="brand-icon">🎬</div>
+
+        <div>
+          <h1>Cine Teatro Manuel Nieves Quintero</h1>
+          <p>Corozal, Puerto Rico</p>
+        </div>
+      </div>
+
+      <button
+        class="header-button"
+        type="button"
+        onclick="showPage('catalogPage')"
+      >
+        Ver cartelera
+      </button>
+    </div>
   </header>
 
   <main>
-    <section class="page active" id="moviePage">
-      <h2 class="section-title">Cartelera</h2>
-      <article class="card">
-        <div class="poster">🎬</div>
-        <div class="card-content">
-          <h2>Película de ejemplo</h2>
-          <p class="description">Esta demostración ya se comunica con el servidor de Render para crear la reservación y marcar el pago simulado.</p>
-          <h3>Selecciona una tanda</h3>
-          <div class="schedule">
-            <button class="time-button" type="button" onclick="chooseTime(this,'5:30 PM')">5:30 PM</button>
-            <button class="time-button" type="button" onclick="chooseTime(this,'8:00 PM')">8:00 PM</button>
+    <!-- CARTELERA -->
+
+    <section
+      class="page active"
+      id="catalogPage"
+    >
+      <section class="hero">
+        <div class="container">
+          <span class="hero-badge">
+            🎟 Boletos disponibles en línea
+          </span>
+
+          <h2>
+            Vive el cine en el corazón de Corozal
+          </h2>
+
+          <p>
+            Consulta la cartelera, selecciona tu tanda,
+            escoge tus asientos y recibe tu boleto digital.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <h2>Cartelera</h2>
+
+              <p>
+                Películas y tandas disponibles próximamente.
+              </p>
+            </div>
+
+            <button
+              class="refresh-button"
+              type="button"
+              onclick="loadMovies()"
+            >
+              Actualizar cartelera
+            </button>
           </div>
-          <section class="seat-section" id="seatSection">
-            <h3>Selecciona tus asientos</h3>
-            <div class="screen">PANTALLA</div>
-            <div class="seat-map" id="seatMap"></div>
-            <div class="legend">
-              <span>⬛ Disponible</span>
-              <span>🟩 Seleccionado</span>
-              <span>🟥 Ocupado de ejemplo</span>
+
+          <div
+            class="loading-card"
+            id="catalogLoading"
+          >
+            Cargando cartelera…
+          </div>
+
+          <div
+            class="error-card"
+            id="catalogError"
+            style="display: none"
+          ></div>
+
+          <div
+            class="empty-card"
+            id="catalogEmpty"
+            style="display: none"
+          >
+            No hay películas disponibles en este momento.
+          </div>
+
+          <div
+            class="movie-grid"
+            id="movieGrid"
+          ></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ASIENTOS -->
+
+    <section
+      class="page"
+      id="seatsPage"
+    >
+      <div class="container purchase-layout">
+        <div>
+          <button
+            class="back-button"
+            type="button"
+            onclick="showPage('catalogPage')"
+          >
+            ← Volver a la cartelera
+          </button>
+
+          <section class="card">
+            <div
+              class="selected-movie"
+              id="selectedMovieDetails"
+            ></div>
+          </section>
+
+          <section class="card">
+            <h2>Selecciona tus asientos</h2>
+
+            <p
+              style="
+                margin-bottom: 25px;
+                color: var(--muted);
+                line-height: 1.5;
+              "
+            >
+              Los asientos grises ya están ocupados.
+            </p>
+
+            <div class="screen">
+              PANTALLA
             </div>
-            <div class="summary">
-              <div class="summary-row"><span>Tanda</span><strong id="selectedTime">—</strong></div>
-              <div class="summary-row"><span>Asientos</span><strong id="selectedSeats">Ninguno</strong></div>
-              <div class="summary-row"><span>Total</span><strong id="total">$0.00</strong></div>
+
+            <div class="seat-legend">
+              <div class="legend-item">
+                <span class="legend-seat"></span>
+                Disponible
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-seat selected"></span>
+                Seleccionado
+              </div>
+
+              <div class="legend-item">
+                <span class="legend-seat occupied"></span>
+                Ocupado
+              </div>
             </div>
-            <button class="primary-button" id="buyButton" type="button" onclick="showCustomerPage()" disabled>Continuar con la compra</button>
+
+            <div class="seat-map-wrapper">
+              <div
+                class="seat-map"
+                id="seatMap"
+              ></div>
+            </div>
+
+            <div
+              class="form-message"
+              id="seatMessage"
+            ></div>
           </section>
         </div>
-      </article>
+
+        <aside class="card summary-card">
+          <h2>Resumen</h2>
+
+          <div class="summary-row">
+            <span>Película</span>
+            <strong id="summaryMovie">—</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Tanda</span>
+            <strong id="summaryShowtime">—</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Asientos</span>
+            <strong id="summarySeats">Ninguno</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Precio</span>
+            <strong id="summaryPrice">$0.00</strong>
+          </div>
+
+          <div class="summary-total">
+            Total:
+            <span id="summaryTotal">$0.00</span>
+          </div>
+
+          <button
+            class="primary-button"
+            id="continueButton"
+            type="button"
+            onclick="openCustomerPage()"
+            disabled
+          >
+            Continuar
+          </button>
+        </aside>
+      </div>
     </section>
 
-    <section class="page" id="customerPage">
-      <h2 class="section-title">Datos del cliente</h2>
-      <article class="card">
-        <div class="card-content">
-          <p class="description">Escribe la información de la persona que recibirá las taquillas.</p>
-          <div class="summary" id="customerSummary"></div>
-          <div class="message error" id="customerError">Completa correctamente todos los campos.</div>
-          <form onsubmit="saveCustomer(event)">
-            <div class="form-group"><label for="customerName">Nombre completo</label><input id="customerName" type="text" autocomplete="name" required /></div>
-            <div class="form-group"><label for="customerEmail">Correo electrónico</label><input id="customerEmail" type="email" autocomplete="email" required /></div>
-            <div class="form-group"><label for="customerPhone">Número de teléfono</label><input id="customerPhone" type="tel" autocomplete="tel" required /></div>
-            <button class="primary-button" type="submit">Continuar al pago</button>
-            <button class="secondary-button" type="button" onclick="showPage('moviePage')">Volver a los asientos</button>
+    <!-- CLIENTE -->
+
+    <section
+      class="page"
+      id="customerPage"
+    >
+      <div class="container">
+        <section class="card customer-form">
+          <button
+            class="back-button"
+            type="button"
+            onclick="showPage('seatsPage')"
+          >
+            ← Volver a los asientos
+          </button>
+
+          <h2>Información del cliente</h2>
+
+          <p class="subtitle">
+            Estos datos aparecerán asociados a tu reservación.
+          </p>
+
+          <div
+            id="customerSummary"
+            class="card"
+            style="
+              margin-bottom: 22px;
+              background: var(--panel-light);
+            "
+          ></div>
+
+          <form onsubmit="createReservation(event)">
+            <label for="customerName">
+              Nombre completo
+            </label>
+
+            <input
+              id="customerName"
+              type="text"
+              autocomplete="name"
+              required
+            />
+
+            <label for="customerEmail">
+              Correo electrónico
+            </label>
+
+            <input
+              id="customerEmail"
+              type="email"
+              autocomplete="email"
+              required
+            />
+
+            <label for="customerPhone">
+              Número de teléfono
+            </label>
+
+            <input
+              id="customerPhone"
+              type="tel"
+              autocomplete="tel"
+              required
+            />
+
+            <div
+              class="form-message"
+              id="customerMessage"
+            ></div>
+
+            <button
+              class="primary-button"
+              id="purchaseButton"
+              type="submit"
+            >
+              Reservar y pagar
+            </button>
           </form>
-        </div>
-      </article>
+        </section>
+      </div>
     </section>
 
-    <section class="page" id="paymentPage">
-      <h2 class="section-title">Método de pago</h2>
-      <article class="card">
-        <div class="card-content">
-          <p class="description">Selecciona cómo deseas pagar tus taquillas.</p>
-          <div class="summary" id="paymentSummary"></div>
-          <div class="payment-grid">
-            <button class="payment-option" id="athOption" type="button" onclick="selectPayment('ATH Móvil')"><span>📱 ATH Móvil</span><span>○</span></button>
-            <button class="payment-option" id="paypalOption" type="button" onclick="selectPayment('PayPal')"><span>🅿️ PayPal</span><span>○</span></button>
-          </div>
-          <div class="warning">Esta etapa todavía simula el cobro. La reservación sí se envía al servidor, pero para mover dinero real hay que integrar las cuentas comerciales y verificar el pago desde el backend.</div>
-          <div class="message error" id="paymentError">Selecciona un método de pago.</div>
-          <div class="message error" id="serverError">No se pudo completar la reservación. Inténtalo nuevamente.</div>
-          <button class="primary-button" id="payButton" type="button" onclick="createReservationAndPay()">Selecciona un método de pago</button>
-          <p class="loading" id="loadingMessage">Conectando con el servidor…</p>
-          <button class="secondary-button" type="button" onclick="showPage('customerPage')">Volver a los datos</button>
+    <!-- PROCESANDO -->
+
+    <section
+      class="page"
+      id="processingPage"
+    >
+      <div class="container">
+        <div class="processing-card">
+          <div class="spinner"></div>
+
+          <h2>Procesando tu reservación</h2>
+
+          <p
+            style="
+              margin-top: 12px;
+              color: var(--muted);
+              line-height: 1.5;
+            "
+          >
+            No cierres esta página.
+          </p>
         </div>
-      </article>
+      </div>
     </section>
 
-    <section class="page" id="ticketPage">
-      <h2 class="section-title">Reservación creada</h2>
-      <article class="card">
-        <div class="card-content">
-          <div class="ticket">
-            <h2>🎟️ Taquilla digital</h2>
-            <p class="ticket-subtitle">Cine Teatro Manuel Nieves Quintero</p>
-            <div class="ticket-details">
-              <div class="ticket-row"><span>Película</span><strong>Película de ejemplo</strong></div>
-              <div class="ticket-row"><span>Tanda</span><strong id="ticketTime">—</strong></div>
-              <div class="ticket-row"><span>Asientos</span><strong id="ticketSeats">—</strong></div>
-              <div class="ticket-row"><span>Cliente</span><strong id="ticketCustomer">—</strong></div>
-              <div class="ticket-row"><span>Pago</span><strong id="ticketPayment">—</strong></div>
-              <div class="ticket-row"><span>Total</span><strong id="ticketTotal">$0.00</strong></div>
+    <!-- BOLETO -->
+
+    <section
+      class="page"
+      id="ticketPage"
+    >
+      <div class="container ticket-page">
+        <article class="ticket">
+          <header class="ticket-header">
+            <h2>🎟 Boleto digital</h2>
+
+            <p>
+              Cine Teatro Manuel Nieves Quintero
+            </p>
+          </header>
+
+          <div class="ticket-content">
+            <div
+              class="ticket-details"
+              id="ticketDetails"
+            ></div>
+
+            <div class="qr-area">
+              <div id="qrCode"></div>
+
+              <strong>
+                Presenta este código en la entrada
+              </strong>
+
+              <div
+                class="qr-token"
+                id="qrToken"
+              ></div>
             </div>
-            <div id="qrCode"></div>
-            <p class="ticket-code" id="reservationCode">—</p>
-            <p class="ticket-note">Este QR contiene el código creado por el servidor. En la versión final, el empleado lo validará contra la base de datos.</p>
           </div>
-          <button class="secondary-button" type="button" onclick="location.reload()">Crear otra compra de prueba</button>
+
+          <footer class="ticket-footer">
+            Conserva este boleto. El código solamente puede
+            utilizarse una vez.
+          </footer>
+        </article>
+
+        <div class="ticket-actions">
+          <button
+            class="print-button"
+            type="button"
+            onclick="window.print()"
+          >
+            Imprimir boleto
+          </button>
+
+          <button
+            class="new-purchase-button"
+            type="button"
+            onclick="startNewPurchase()"
+          >
+            Comprar otros boletos
+          </button>
         </div>
-      </article>
+      </div>
     </section>
   </main>
 
-  <footer>Demostración conectada al servidor · Cine Teatro Manuel Nieves Quintero</footer>
+  <footer class="site-footer">
+    <div class="container">
+      <strong>
+        Cine Teatro Manuel Nieves Quintero
+      </strong>
+
+      <br />
+
+      Corozal, Puerto Rico
+    </div>
+  </footer>
+
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+  ></script>
 
   <script>
-    const API_URL = "https://cine-manuel-nieves.onrender.com";
-    const ticketPrice = 8;
-    const occupiedSeats = ["A3","B5","C2"];
-    const selectedSeats = [];
-    let chosenTime = "";
-    let selectedPayment = "";
-    let customer = { name:"", email:"", phone:"" };
+    const API_URL =
+      "https://cine-manuel-nieves.onrender.com";
 
-    function createSeats() {
-      const seatMap = document.getElementById("seatMap");
-      ["A","B","C","D"].forEach((row) => {
-        for (let number=1; number<=6; number++) {
-          const seatName = `${row}${number}`;
-          const button = document.createElement("button");
-          button.textContent = seatName;
-          button.className = "seat";
-          button.type = "button";
-          if (occupiedSeats.includes(seatName)) {
-            button.classList.add("occupied");
-            button.disabled = true;
-          } else {
-            button.onclick = () => toggleSeat(button,seatName);
-          }
-          seatMap.appendChild(button);
-        }
-      });
-    }
+    const seatRows = [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    ];
 
-    function chooseTime(button,time) {
-      document.querySelectorAll(".time-button").forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
-      chosenTime = time;
-      document.getElementById("selectedTime").textContent = time;
-      document.getElementById("seatSection").style.display = "block";
-      updateSeatSummary();
-    }
+    const seatsPerRow = 10;
 
-    function toggleSeat(button,seatName) {
-      const index = selectedSeats.indexOf(seatName);
-      if (index === -1) {
-        selectedSeats.push(seatName);
-        button.classList.add("selected");
-      } else {
-        selectedSeats.splice(index,1);
-        button.classList.remove("selected");
-      }
-      selectedSeats.sort();
-      updateSeatSummary();
-    }
-
-    function getTotal() { return selectedSeats.length * ticketPrice; }
-
-    function updateSeatSummary() {
-      document.getElementById("selectedSeats").textContent = selectedSeats.length ? selectedSeats.join(", ") : "Ninguno";
-      document.getElementById("total").textContent = `$${getTotal().toFixed(2)}`;
-      document.getElementById("buyButton").disabled = !chosenTime || selectedSeats.length === 0;
-    }
-
-    function buildSummary() {
-      return `
-        <div class="summary-row"><span>Película</span><strong>Película de ejemplo</strong></div>
-        <div class="summary-row"><span>Tanda</span><strong>${chosenTime}</strong></div>
-        <div class="summary-row"><span>Asientos</span><strong>${selectedSeats.join(", ")}</strong></div>
-        <div class="summary-row"><span>Total</span><strong>$${getTotal().toFixed(2)}</strong></div>
-      `;
-    }
+    let movies = [];
+    let selectedMovie = null;
+    let selectedShowtime = null;
+    let selectedSeats = [];
+    let occupiedSeats = [];
+    let currentTicket = null;
 
     function showPage(pageId) {
-      document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
-      document.getElementById(pageId).classList.add("active");
-      window.scrollTo({ top:0, behavior:"smooth" });
-    }
+      document
+        .querySelectorAll(".page")
+        .forEach((page) => {
+          page.classList.remove("active");
+        });
 
-    function showCustomerPage() {
-      document.getElementById("customerSummary").innerHTML = buildSummary();
-      showPage("customerPage");
-    }
+      document
+        .getElementById(pageId)
+        .classList.add("active");
 
-    function saveCustomer(event) {
-      event.preventDefault();
-      const name = document.getElementById("customerName").value.trim();
-      const email = document.getElementById("customerEmail").value.trim();
-      const phone = document.getElementById("customerPhone").value.trim();
-      if (!name || !email || !phone) {
-        document.getElementById("customerError").style.display = "block";
-        return;
-      }
-      customer = { name,email,phone };
-      document.getElementById("customerError").style.display = "none";
-      document.getElementById("paymentSummary").innerHTML = buildSummary();
-      showPage("paymentPage");
-    }
-
-    function selectPayment(method) {
-      selectedPayment = method;
-      document.querySelectorAll(".payment-option").forEach((option) => {
-        option.classList.remove("selected");
-        option.lastElementChild.textContent = "○";
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
       });
-      const option = method === "ATH Móvil" ? document.getElementById("athOption") : document.getElementById("paypalOption");
-      option.classList.add("selected");
-      option.lastElementChild.textContent = "●";
-      document.getElementById("payButton").textContent = `Crear reservación con ${method}`;
-      document.getElementById("paymentError").style.display = "none";
     }
 
-    async function createReservationAndPay() {
-      if (!selectedPayment) {
-        document.getElementById("paymentError").style.display = "block";
-        return;
-      }
-
-      const payButton = document.getElementById("payButton");
-      const loading = document.getElementById("loadingMessage");
-      const serverError = document.getElementById("serverError");
-
-      payButton.disabled = true;
-      loading.style.display = "block";
-      serverError.style.display = "none";
+    async function readResponse(response) {
+      let data = {};
 
       try {
-        const reservationResponse = await fetch(`${API_URL}/api/reservation`, {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body:JSON.stringify({
-            movie:"Película de ejemplo",
-            time:chosenTime,
-            seats:selectedSeats,
-            total:getTotal(),
-            customer:{ ...customer, paymentMethod:selectedPayment }
-          })
-        });
-
-        if (!reservationResponse.ok) throw new Error("No se pudo crear la reservación.");
-        const reservation = await reservationResponse.json();
-
-        const paymentResponse = await fetch(`${API_URL}/api/pay/${reservation.id}`, {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" }
-        });
-
-        if (!paymentResponse.ok) throw new Error("No se pudo marcar el pago.");
-        const paymentResult = await paymentResponse.json();
-        showTicket(paymentResult.ticket);
+        data = await response.json();
       } catch (error) {
-        console.error(error);
-        serverError.style.display = "block";
+        data = {};
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          data.message ||
+          "Ocurrió un error."
+        );
+      }
+
+      return data;
+    }
+
+    async function loadMovies() {
+      const loading =
+        document.getElementById("catalogLoading");
+
+      const errorBox =
+        document.getElementById("catalogError");
+
+      const empty =
+        document.getElementById("catalogEmpty");
+
+      const grid =
+        document.getElementById("movieGrid");
+
+      loading.style.display = "block";
+      errorBox.style.display = "none";
+      empty.style.display = "none";
+      grid.innerHTML = "";
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/movies`
+        );
+
+        const data = await readResponse(response);
+
+        movies = Array.isArray(data) ? data : [];
+
+        renderMovies();
+      } catch (error) {
+        errorBox.textContent =
+          `No se pudo cargar la cartelera: ${error.message}`;
+
+        errorBox.style.display = "block";
       } finally {
-        payButton.disabled = false;
         loading.style.display = "none";
       }
     }
 
-    function showTicket(ticket) {
-      document.getElementById("ticketTime").textContent = ticket.time;
-      document.getElementById("ticketSeats").textContent = ticket.seats.join(", ");
-      document.getElementById("ticketCustomer").textContent = ticket.customer.name;
-      document.getElementById("ticketPayment").textContent = ticket.customer.paymentMethod || selectedPayment;
-      document.getElementById("ticketTotal").textContent = `$${Number(ticket.total).toFixed(2)}`;
-      document.getElementById("reservationCode").textContent = ticket.id;
+    function renderMovies() {
+      const grid =
+        document.getElementById("movieGrid");
 
-      const qrContainer = document.getElementById("qrCode");
-      qrContainer.innerHTML = "";
-      const qrPayload = `${API_URL}/api/qr/${ticket.qr}`;
+      const empty =
+        document.getElementById("catalogEmpty");
 
-      if (typeof QRCode !== "undefined") {
-        new QRCode(qrContainer, {
-          text:qrPayload,
-          width:190,
-          height:190,
-          colorDark:"#111827",
-          colorLight:"#ffffff",
-          correctLevel:QRCode.CorrectLevel.H
-        });
-      } else {
-        qrContainer.textContent = qrPayload;
+      grid.innerHTML = "";
+
+      const availableMovies = movies.filter(
+        (movie) =>
+          Array.isArray(movie.showtimes) &&
+          movie.showtimes.length > 0
+      );
+
+      if (availableMovies.length === 0) {
+        empty.style.display = "block";
+        return;
       }
 
-      showPage("ticketPage");
+      empty.style.display = "none";
+
+      availableMovies.forEach((movie) => {
+        const card =
+          document.createElement("article");
+
+        card.className = "movie-card";
+
+        const posterHtml = movie.posterUrl
+          ? `
+            <img
+              class="movie-poster"
+              src="${escapeHtml(movie.posterUrl)}"
+              alt="Afiche de ${escapeHtml(movie.title)}"
+              onerror="showPosterPlaceholder(this)"
+            />
+          `
+          : createPosterPlaceholder(movie.title);
+
+        const duration = movie.durationMinutes
+          ? `${movie.durationMinutes} min`
+          : "Duración no indicada";
+
+        const rating =
+          movie.rating ||
+          "Sin clasificación";
+
+        const buttons = movie.showtimes
+          .map((showtime) => {
+            const label =
+              `${formatDate(showtime.showDate)} · ` +
+              `${formatTime(showtime.showTime)} · ` +
+              `$${Number(showtime.price).toFixed(2)}`;
+
+            return `
+              <button
+                class="showtime-button"
+                type="button"
+                onclick="selectShowtime(
+                  '${movie.id}',
+                  '${showtime.id}'
+                )"
+              >
+                ${escapeHtml(label)}
+              </button>
+            `;
+          })
+          .join("");
+
+        card.innerHTML = `
+          <div class="movie-poster-wrapper">
+            ${posterHtml}
+
+            <span class="movie-status">
+              Disponible
+            </span>
+          </div>
+
+          <div class="movie-content">
+            <h3 class="movie-title">
+              ${escapeHtml(movie.title)}
+            </h3>
+
+            <div class="movie-meta">
+              <span class="meta-badge">
+                ${escapeHtml(duration)}
+              </span>
+
+              <span class="meta-badge">
+                ${escapeHtml(rating)}
+              </span>
+            </div>
+
+            <p class="movie-description">
+              ${escapeHtml(
+                movie.description ||
+                "Información próximamente."
+              )}
+            </p>
+
+            <p class="showtime-label">
+              Selecciona una tanda:
+            </p>
+
+            <div class="showtime-list">
+              ${buttons}
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
     }
 
-    createSeats();
+    function createPosterPlaceholder(title) {
+      return `
+        <div class="poster-placeholder">
+          <div>
+            <span>🎬</span>
+
+            <p>${escapeHtml(title)}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function showPosterPlaceholder(image) {
+      const wrapper = image.parentElement;
+
+      image.remove();
+
+      wrapper.insertAdjacentHTML(
+        "afterbegin",
+        createPosterPlaceholder("Afiche no disponible")
+      );
+    }
+
+    async function selectShowtime(
+      movieId,
+      showtimeId
+    ) {
+      selectedMovie = movies.find(
+        (movie) => movie.id === movieId
+      );
+
+      selectedShowtime =
+        selectedMovie?.showtimes?.find(
+          (showtime) =>
+            showtime.id === showtimeId
+        );
+
+      if (
+        !selectedMovie ||
+        !selectedShowtime
+      ) {
+        alert(
+          "No se pudo seleccionar esta tanda."
+        );
+
+        return;
+      }
+
+      selectedSeats = [];
+      occupiedSeats = [];
+
+      renderSelectedMovie();
+      updateSummary();
+      showPage("seatsPage");
+
+      await loadOccupiedSeats();
+    }
+
+    function renderSelectedMovie() {
+      const container =
+        document.getElementById(
+          "selectedMovieDetails"
+        );
+
+      const poster = selectedMovie.posterUrl
+        ? `
+          <img
+            src="${escapeHtml(selectedMovie.posterUrl)}"
+            alt="Afiche"
+            onerror="
+              this.outerHTML =
+              '<div class=&quot;selected-poster-placeholder&quot;>🎬</div>'
+            "
+          />
+        `
+        : `
+          <div class="selected-poster-placeholder">
+            🎬
+          </div>
+        `;
+
+      container.innerHTML = `
+        ${poster}
+
+        <div>
+          <h2>
+            ${escapeHtml(selectedMovie.title)}
+          </h2>
+
+          <p>
+            ${escapeHtml(
+              selectedMovie.description ||
+              "Información de la película."
+            )}
+          </p>
+
+          <div class="selected-showtime">
+            ${escapeHtml(
+              formatDate(selectedShowtime.showDate)
+            )}
+            ·
+            ${escapeHtml(
+              formatTime(selectedShowtime.showTime)
+            )}
+            ·
+            $${Number(
+              selectedShowtime.price
+            ).toFixed(2)}
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadOccupiedSeats() {
+      showSeatMessage("", "");
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/seats?showtimeId=` +
+          encodeURIComponent(selectedShowtime.id)
+        );
+
+        const data = await readResponse(response);
+
+        occupiedSeats = Array.isArray(
+          data.occupiedSeats
+        )
+          ? data.occupiedSeats
+          : [];
+
+        renderSeatMap();
+      } catch (error) {
+        renderSeatMap();
+
+        showSeatMessage(
+          "error",
+          `No se pudieron consultar los asientos: ${error.message}`
+        );
+      }
+    }
+
+    function renderSeatMap() {
+      const seatMap =
+        document.getElementById("seatMap");
+
+      seatMap.innerHTML = "";
+
+      seatRows.forEach((rowName) => {
+        const row =
+          document.createElement("div");
+
+        row.className = "seat-row";
+
+        const firstLabel =
+          document.createElement("span");
+
+        firstLabel.className = "row-label";
+        firstLabel.textContent = rowName;
+        row.appendChild(firstLabel);
+
+        for (
+          let seatNumber = 1;
+          seatNumber <= seatsPerRow;
+          seatNumber += 1
+        ) {
+          if (seatNumber === 6) {
+            const aisle =
+              document.createElement("span");
+
+            aisle.className = "aisle";
+            row.appendChild(aisle);
+          }
+
+          const seatName =
+            `${rowName}${seatNumber}`;
+
+          const button =
+            document.createElement("button");
+
+          button.type = "button";
+          button.className = "seat";
+          button.textContent = seatNumber;
+          button.title = `Asiento ${seatName}`;
+
+          if (
+            occupiedSeats.includes(seatName)
+          ) {
+            button.classList.add("occupied");
+            button.disabled = true;
+          }
+
+          if (
+            selectedSeats.includes(seatName)
+          ) {
+            button.classList.add("selected");
+          }
+
+          button.addEventListener(
+            "click",
+            () => toggleSeat(
+              seatName,
+              button
+            )
+          );
+
+          row.appendChild(button);
+        }
+
+        const lastLabel =
+          document.createElement("span");
+
+        lastLabel.className = "row-label";
+        lastLabel.textContent = rowName;
+        row.appendChild(lastLabel);
+
+        seatMap.appendChild(row);
+      });
+    }
+
+    function toggleSeat(
+      seatName,
+      button
+    ) {
+      const index =
+        selectedSeats.indexOf(seatName);
+
+      if (index === -1) {
+        selectedSeats.push(seatName);
+        button.classList.add("selected");
+      } else {
+        selectedSeats.splice(index, 1);
+        button.classList.remove("selected");
+      }
+
+      selectedSeats.sort(
+        compareSeatNames
+      );
+
+      updateSummary();
+    }
+
+    function compareSeatNames(a, b) {
+      const rowComparison =
+        a.charAt(0).localeCompare(
+          b.charAt(0)
+        );
+
+      if (rowComparison !== 0) {
+        return rowComparison;
+      }
+
+      return (
+        Number(a.slice(1)) -
+        Number(b.slice(1))
+      );
+    }
+
+    function updateSummary() {
+      const price =
+        Number(selectedShowtime?.price || 0);
+
+      const total =
+        selectedSeats.length * price;
+
+      document.getElementById(
+        "summaryMovie"
+      ).textContent =
+        selectedMovie?.title || "—";
+
+      document.getElementById(
+        "summaryShowtime"
+      ).textContent =
+        selectedShowtime
+          ? `${formatDate(
+              selectedShowtime.showDate
+            )} · ${formatTime(
+              selectedShowtime.showTime
+            )}`
+          : "—";
+
+      document.getElementById(
+        "summarySeats"
+      ).textContent =
+        selectedSeats.length
+          ? selectedSeats.join(", ")
+          : "Ninguno";
+
+      document.getElementById(
+        "summaryPrice"
+      ).textContent =
+        `$${price.toFixed(2)} c/u`;
+
+      document.getElementById(
+        "summaryTotal"
+      ).textContent =
+        `$${total.toFixed(2)}`;
+
+      document.getElementById(
+        "continueButton"
+      ).disabled =
+        selectedSeats.length === 0;
+    }
+
+    function openCustomerPage() {
+      if (
+        !selectedShowtime ||
+        selectedSeats.length === 0
+      ) {
+        showSeatMessage(
+          "error",
+          "Selecciona al menos un asiento."
+        );
+
+        return;
+      }
+
+      const total =
+        selectedSeats.length *
+        Number(selectedShowtime.price);
+
+      document.getElementById(
+        "customerSummary"
+      ).innerHTML = `
+        <div class="summary-row">
+          <span>Película</span>
+          <strong>
+            ${escapeHtml(selectedMovie.title)}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Tanda</span>
+          <strong>
+            ${escapeHtml(
+              formatDate(selectedShowtime.showDate)
+            )}
+            ·
+            ${escapeHtml(
+              formatTime(selectedShowtime.showTime)
+            )}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Asientos</span>
+          <strong>
+            ${escapeHtml(selectedSeats.join(", "))}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Total</span>
+          <strong>
+            $${total.toFixed(2)}
+          </strong>
+        </div>
+      `;
+
+      showCustomerMessage("", "");
+      showPage("customerPage");
+    }
+
+    async function createReservation(event) {
+      event.preventDefault();
+
+      const name =
+        document.getElementById(
+          "customerName"
+        ).value.trim();
+
+      const email =
+        document.getElementById(
+          "customerEmail"
+        ).value.trim();
+
+      const phone =
+        document.getElementById(
+          "customerPhone"
+        ).value.trim();
+
+      if (!name || !email || !phone) {
+        showCustomerMessage(
+          "error",
+          "Completa todos los datos del cliente."
+        );
+
+        return;
+      }
+
+      const button =
+        document.getElementById(
+          "purchaseButton"
+        );
+
+      button.disabled = true;
+      button.textContent =
+        "Procesando…";
+
+      showCustomerMessage("", "");
+      showPage("processingPage");
+
+      try {
+        const reservationResponse =
+          await fetch(
+            `${API_URL}/api/reservations`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+              body: JSON.stringify({
+                showtimeId:
+                  selectedShowtime.id,
+                seats: selectedSeats,
+                customer: {
+                  name,
+                  email,
+                  phone
+                }
+              })
+            }
+          );
+
+        const reservationData =
+          await readResponse(
+            reservationResponse
+          );
+
+        const reservation =
+          reservationData.reservation;
+
+        const paymentResponse =
+          await fetch(
+            `${API_URL}/api/reservations/` +
+            `${encodeURIComponent(
+              reservation.id
+            )}/pay`,
+            {
+              method: "POST"
+            }
+          );
+
+        const paymentData =
+          await readResponse(
+            paymentResponse
+          );
+
+        currentTicket =
+          paymentData.reservation;
+
+        renderTicket(currentTicket);
+        showPage("ticketPage");
+      } catch (error) {
+        showPage("customerPage");
+
+        showCustomerMessage(
+          "error",
+          error.message
+        );
+
+        if (
+          error.message
+            .toLowerCase()
+            .includes("asiento")
+        ) {
+          await loadOccupiedSeats();
+        }
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          "Reservar y pagar";
+      }
+    }
+
+    function renderTicket(ticket) {
+      const details =
+        document.getElementById(
+          "ticketDetails"
+        );
+
+      const customerName =
+        ticket.customer?.name || "—";
+
+      const customerEmail =
+        ticket.customer?.email || "—";
+
+      const seats =
+        Array.isArray(ticket.seats)
+          ? ticket.seats.join(", ")
+          : "—";
+
+      details.innerHTML = `
+        <div class="ticket-detail">
+          <span>Cliente</span>
+          <strong>
+            ${escapeHtml(customerName)}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Correo electrónico</span>
+          <strong>
+            ${escapeHtml(customerEmail)}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Película</span>
+          <strong>
+            ${escapeHtml(ticket.movie)}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Tanda</span>
+          <strong>
+            ${escapeHtml(ticket.time)}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Asientos</span>
+          <strong>
+            ${escapeHtml(seats)}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Total pagado</span>
+          <strong>
+            $${Number(
+              ticket.total || 0
+            ).toFixed(2)}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Número de reservación</span>
+          <strong>
+            ${escapeHtml(ticket.id)}
+          </strong>
+        </div>
+      `;
+
+      document.getElementById(
+        "qrCode"
+      ).innerHTML = "";
+
+      document.getElementById(
+        "qrToken"
+      ).textContent = ticket.qr;
+
+      if (
+        typeof QRCode !== "undefined"
+      ) {
+        new QRCode(
+          document.getElementById(
+            "qrCode"
+          ),
+          {
+            text: ticket.qr,
+            width: 170,
+            height: 170,
+            correctLevel:
+              QRCode.CorrectLevel.H
+          }
+        );
+      }
+    }
+
+    function startNewPurchase() {
+      selectedMovie = null;
+      selectedShowtime = null;
+      selectedSeats = [];
+      occupiedSeats = [];
+      currentTicket = null;
+
+      document.getElementById(
+        "customerName"
+      ).value = "";
+
+      document.getElementById(
+        "customerEmail"
+      ).value = "";
+
+      document.getElementById(
+        "customerPhone"
+      ).value = "";
+
+      showPage("catalogPage");
+      loadMovies();
+    }
+
+    function showSeatMessage(
+      type,
+      message
+    ) {
+      const box =
+        document.getElementById(
+          "seatMessage"
+        );
+
+      box.className = message
+        ? `form-message ${type}`
+        : "form-message";
+
+      box.textContent = message || "";
+    }
+
+    function showCustomerMessage(
+      type,
+      message
+    ) {
+      const box =
+        document.getElementById(
+          "customerMessage"
+        );
+
+      box.className = message
+        ? `form-message ${type}`
+        : "form-message";
+
+      box.textContent = message || "";
+    }
+
+    function normalizeDate(value) {
+      if (!value) {
+        return "";
+      }
+
+      return String(value).slice(0, 10);
+    }
+
+    function formatDate(value) {
+      const normalized =
+        normalizeDate(value);
+
+      if (!normalized) {
+        return "—";
+      }
+
+      const parts =
+        normalized.split("-");
+
+      if (parts.length !== 3) {
+        return normalized;
+      }
+
+      return (
+        `${parts[2]}/${parts[1]}/` +
+        `${parts[0]}`
+      );
+    }
+
+    function formatTime(value) {
+      if (!value) {
+        return "—";
+      }
+
+      const normalized =
+        String(value).slice(0, 5);
+
+      const parts =
+        normalized.split(":");
+
+      if (parts.length !== 2) {
+        return normalized;
+      }
+
+      const hour =
+        Number(parts[0]);
+
+      const minute =
+        parts[1];
+
+      if (!Number.isFinite(hour)) {
+        return normalized;
+      }
+
+      const suffix =
+        hour >= 12 ? "PM" : "AM";
+
+      const displayHour =
+        hour % 12 || 12;
+
+      return (
+        `${displayHour}:${minute} ` +
+        `${suffix}`
+      );
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    loadMovies();
   </script>
 </body>
 </html>
