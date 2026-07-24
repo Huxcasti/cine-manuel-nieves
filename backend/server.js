@@ -57,8 +57,8 @@ const pool = new Pool({
 
 /*
 ==================================================
-Convertir los nombres de PostgreSQL al formato
-que espera nuestra página web
+Convertir las taquillas de PostgreSQL al formato
+que espera la página web
 ==================================================
 */
 
@@ -80,11 +80,53 @@ function formatTicket(row) {
 
 /*
 ==================================================
-Crear la tabla automáticamente
+Convertir las películas al formato web
+==================================================
+*/
+
+function formatMovie(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    posterUrl: row.poster_url,
+    durationMinutes: row.duration_minutes,
+    rating: row.rating,
+    active: row.active,
+    created: row.created_at
+  };
+}
+
+/*
+==================================================
+Convertir las tandas al formato web
+==================================================
+*/
+
+function formatShowtime(row) {
+  return {
+    id: row.id,
+    movieId: row.movie_id,
+    movieTitle: row.movie_title,
+    showDate: row.show_date,
+    showTime: row.show_time,
+    price: Number(row.price),
+    active: row.active,
+    created: row.created_at
+  };
+}
+
+/*
+==================================================
+Crear las tablas automáticamente
 ==================================================
 */
 
 async function initializeDatabase() {
+  /*
+  Taquillas y reservaciones
+  */
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tickets (
       id UUID PRIMARY KEY,
@@ -101,6 +143,41 @@ async function initializeDatabase() {
     );
   `);
 
+  /*
+  Películas
+  */
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS movies (
+      id UUID PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      poster_url TEXT,
+      duration_minutes INTEGER,
+      rating TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  /*
+  Tandas
+  */
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS showtimes (
+      id UUID PRIMARY KEY,
+      movie_id UUID NOT NULL
+        REFERENCES movies(id)
+        ON DELETE CASCADE,
+      show_date DATE NOT NULL,
+      show_time TEXT NOT NULL,
+      price NUMERIC(10, 2) NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
   console.log("Base de datos preparada correctamente.");
 }
 
@@ -110,12 +187,11 @@ Reinicio diario a las 3:00 a. m.
 Zona horaria: Puerto Rico
 ==================================================
 
-El día operacional funciona así:
-
-Desde las 3:00 a. m. de hoy
+El día operacional funciona desde las 3:00 a. m.
 hasta las 2:59 a. m. del día siguiente.
 
-Todo lo anterior al último corte se elimina.
+Solamente se eliminan las taquillas y reservaciones.
+Las películas y las tandas no se borran.
 */
 
 async function cleanupPreviousBusinessDay() {
@@ -153,16 +229,6 @@ async function cleanupPreviousBusinessDay() {
 ==================================================
 Comprobar el reinicio cuando el servidor recibe uso
 ==================================================
-
-Render puede dormir el servidor gratuito.
-
-Por eso no dependemos de que permanezca encendido
-exactamente a las 3:00 a. m.
-
-Cuando el servidor vuelva a recibir una solicitud,
-comprueba el corte y elimina lo anterior.
-
-La comprobación ocurre como máximo una vez por minuto.
 */
 
 let lastCleanupCheck = 0;
@@ -200,7 +266,7 @@ app.get("/", async (req, res) => {
       database: "connected",
       dailyReset: "3:00 AM America/Puerto_Rico",
       app: "Cine Teatro Manuel Nieves Quintero",
-      version: "2.2"
+      version: "3.0"
     });
   } catch (error) {
     console.error("Error verificando la base de datos:", error);
@@ -513,19 +579,13 @@ app.use((req, res) => {
 
 /*
 ==================================================
-Iniciar el servidor después de preparar PostgreSQL
+Iniciar el servidor
 ==================================================
 */
 
 async function startServer() {
   try {
     await initializeDatabase();
-
-    /*
-    Al encender o despertar el servidor, comprueba
-    inmediatamente si corresponde borrar el día anterior.
-    */
-
     await cleanupPreviousBusinessDay();
 
     app.listen(PORT, () => {
@@ -533,6 +593,7 @@ async function startServer() {
       console.log(
         "Las ventas se reinician diariamente a las 3:00 a. m. de Puerto Rico."
       );
+      console.log("Las tablas de películas y tandas están preparadas.");
     });
   } catch (error) {
     console.error("No se pudo iniciar el servidor:", error);
