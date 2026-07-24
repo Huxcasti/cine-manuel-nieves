@@ -2,9 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Panel administrativo del cine</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Administración del cine</title>
 
   <style>
     * {
@@ -13,21 +17,32 @@
       padding: 0;
     }
 
+    :root {
+      --background: #070b14;
+      --panel: #121827;
+      --panel-light: #182033;
+      --border: #2a354e;
+      --text: #ffffff;
+      --muted: #aeb8cc;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
     body {
       min-height: 100vh;
       padding: 20px;
-      font-family: Arial, sans-serif;
-      background: #070b14;
-      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--background);
+      color: var(--text);
     }
 
     main {
-      max-width: 1100px;
+      width: 100%;
+      max-width: 1180px;
       margin: 0 auto;
-    }
-
-    header {
-      margin-bottom: 24px;
     }
 
     h1 {
@@ -35,71 +50,119 @@
       font-size: 30px;
     }
 
+    h2 {
+      margin-bottom: 16px;
+      font-size: 22px;
+    }
+
+    h3 {
+      margin-bottom: 14px;
+      font-size: 18px;
+    }
+
     .subtitle {
-      color: #b7c0d3;
+      color: var(--muted);
       line-height: 1.5;
     }
 
     .card {
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       padding: 20px;
-      border: 1px solid #273149;
+      border: 1px solid var(--border);
       border-radius: 18px;
-      background: #121827;
+      background: var(--panel);
     }
 
     .login-card {
+      width: 100%;
       max-width: 520px;
       margin: 60px auto;
     }
 
     label {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
+      color: #dbe4f5;
+      font-size: 14px;
       font-weight: bold;
     }
 
-    input {
+    input,
+    textarea,
+    select {
       width: 100%;
       margin-bottom: 14px;
-      padding: 14px;
+      padding: 13px;
       border: 1px solid #394765;
       border-radius: 10px;
       outline: none;
       background: #0c111d;
       color: white;
+      font-family: inherit;
       font-size: 16px;
     }
 
-    input:focus {
-      border-color: #2563eb;
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--primary);
+    }
+
+    input[type="checkbox"] {
+      width: auto;
+      margin: 0 8px 0 0;
     }
 
     button {
       border: none;
       border-radius: 10px;
-      padding: 13px 18px;
-      background: #22c55e;
+      padding: 12px 17px;
+      background: var(--success);
       color: #07100a;
       font-size: 15px;
       font-weight: bold;
       cursor: pointer;
     }
 
+    button:hover {
+      opacity: 0.92;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: white;
+    }
+
     button.secondary {
-      background: #2563eb;
+      background: #334155;
       color: white;
     }
 
     button.danger {
-      background: #ef4444;
+      background: var(--danger);
       color: white;
+    }
+
+    button.warning {
+      background: var(--warning);
+      color: #241500;
+    }
+
+    button.small {
+      padding: 8px 11px;
+      font-size: 13px;
     }
 
     button:disabled {
       background: #536076;
       color: #aab2c0;
       cursor: not-allowed;
+      opacity: 0.7;
     }
 
     .message {
@@ -107,37 +170,73 @@
       margin-top: 14px;
       padding: 13px;
       border-radius: 10px;
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
     .message.error {
       display: block;
-      border: 1px solid #ef4444;
+      border: 1px solid var(--danger);
       background: #3b1118;
     }
 
     .message.success {
       display: block;
-      border: 1px solid #22c55e;
+      border: 1px solid var(--success);
       background: #12351f;
+    }
+
+    .message.info {
+      display: block;
+      border: 1px solid var(--primary);
+      background: #14254d;
     }
 
     #dashboard {
       display: none;
     }
 
-    .top-actions {
+    .dashboard-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 22px;
     }
 
-    .top-actions div {
+    .header-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+    }
+
+    .navigation {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 8px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+    }
+
+    .navigation button {
+      flex: 0 0 auto;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .navigation button.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .page-section {
+      display: none;
+    }
+
+    .page-section.active {
+      display: block;
     }
 
     .stats {
@@ -149,15 +248,15 @@
 
     .stat {
       padding: 18px;
-      border: 1px solid #273149;
+      border: 1px solid var(--border);
       border-radius: 16px;
-      background: #121827;
+      background: var(--panel);
     }
 
     .stat-label {
       display: block;
       margin-bottom: 8px;
-      color: #aeb8cc;
+      color: var(--muted);
       font-size: 14px;
     }
 
@@ -166,32 +265,68 @@
       font-weight: bold;
     }
 
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      color: #dbe4f5;
+    }
+
     .table-wrapper {
+      width: 100%;
       overflow-x: auto;
     }
 
     table {
       width: 100%;
-      min-width: 900px;
+      min-width: 850px;
       border-collapse: collapse;
     }
 
     th,
     td {
       padding: 13px;
-      border-bottom: 1px solid #273149;
+      border-bottom: 1px solid var(--border);
       text-align: left;
       vertical-align: top;
     }
 
     th {
-      color: #aeb8cc;
-      font-size: 13px;
+      color: var(--muted);
+      font-size: 12px;
       text-transform: uppercase;
     }
 
     td {
       font-size: 14px;
+      line-height: 1.45;
     }
 
     .badge {
@@ -202,60 +337,107 @@
       font-weight: bold;
     }
 
-    .badge.paid {
+    .badge.success {
       background: #12351f;
       color: #86efac;
     }
 
-    .badge.pending {
+    .badge.warning {
       background: #3b2a0b;
       color: #fcd34d;
     }
 
-    .badge.used {
+    .badge.danger {
+      background: #3b1118;
+      color: #fca5a5;
+    }
+
+    .badge.info {
       background: #172554;
       color: #93c5fd;
     }
 
-    .badge.available {
-      background: #12351f;
-      color: #86efac;
-    }
-
     .empty {
-      padding: 35px;
-      color: #aeb8cc;
+      padding: 34px;
+      color: var(--muted);
       text-align: center;
     }
 
     .loading {
       display: none;
-      margin-bottom: 16px;
-      color: #aeb8cc;
+      margin: 10px 0 16px;
+      color: var(--muted);
     }
 
-    @media (max-width: 800px) {
+    .poster-preview {
+      display: block;
+      width: 65px;
+      height: 95px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #0c111d;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .danger-zone {
+      border-color: #7f1d1d;
+    }
+
+    @media (max-width: 850px) {
       .stats {
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .top-actions {
-        align-items: flex-start;
+      .grid-two {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard-header {
         flex-direction: column;
       }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 520px) {
       body {
-        padding: 14px;
+        padding: 13px;
+      }
+
+      h1 {
+        font-size: 25px;
       }
 
       .stats {
         grid-template-columns: 1fr;
       }
 
-      h1 {
-        font-size: 25px;
+      .card {
+        padding: 16px;
+      }
+
+      .section-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .header-actions,
+      .section-actions,
+      .form-actions {
+        width: 100%;
+      }
+
+      .header-actions button,
+      .section-actions button,
+      .form-actions button {
+        flex: 1;
       }
     }
   </style>
@@ -272,16 +454,23 @@
 
       <br />
 
-      <label for="adminKey">Clave del administrador</label>
+      <label for="adminKey">
+        Contraseña del administrador
+      </label>
 
       <input
         id="adminKey"
         type="password"
-        placeholder="Escribe la clave"
+        placeholder="Escribe la contraseña"
         autocomplete="current-password"
       />
 
-      <button id="loginButton" type="button" onclick="login()">
+      <button
+        id="loginButton"
+        class="primary"
+        type="button"
+        onclick="login()"
+      >
         Entrar al panel
       </button>
 
@@ -289,22 +478,20 @@
     </section>
 
     <section id="dashboard">
-      <header>
-        <h1>📊 Administración del cine</h1>
-
-        <p class="subtitle">
-          Reservaciones, ventas y entradas escaneadas.
-        </p>
-      </header>
-
-      <div class="top-actions">
-        <h2>Resumen general</h2>
-
+      <header class="dashboard-header">
         <div>
+          <h1>📊 Administración del cine</h1>
+
+          <p class="subtitle">
+            Reservaciones, películas, tandas y configuración.
+          </p>
+        </div>
+
+        <div class="header-actions">
           <button
             class="secondary"
             type="button"
-            onclick="loadReservations()"
+            onclick="refreshCurrentSection()"
           >
             Actualizar
           </button>
@@ -317,79 +504,600 @@
             Cerrar sesión
           </button>
         </div>
-      </div>
+      </header>
 
-      <section class="stats">
-        <article class="stat">
-          <span class="stat-label">Reservaciones</span>
-          <strong class="stat-value" id="reservationCount">0</strong>
-        </article>
+      <nav class="navigation">
+        <button
+          id="navReservations"
+          class="active"
+          type="button"
+          onclick="showSection('reservations')"
+        >
+          🎟 Reservaciones
+        </button>
 
-        <article class="stat">
-          <span class="stat-label">Taquillas vendidas</span>
-          <strong class="stat-value" id="ticketCount">0</strong>
-        </article>
+        <button
+          id="navMovies"
+          type="button"
+          onclick="showSection('movies')"
+        >
+          🎬 Películas
+        </button>
 
-        <article class="stat">
-          <span class="stat-label">Ventas totales</span>
-          <strong class="stat-value" id="salesTotal">$0.00</strong>
-        </article>
+        <button
+          id="navShowtimes"
+          type="button"
+          onclick="showSection('showtimes')"
+        >
+          🕒 Tandas
+        </button>
 
-        <article class="stat">
-          <span class="stat-label">Entradas utilizadas</span>
-          <strong class="stat-value" id="usedCount">0</strong>
-        </article>
-      </section>
+        <button
+          id="navPassword"
+          type="button"
+          onclick="showSection('password')"
+        >
+          🔐 Contraseña
+        </button>
+      </nav>
 
       <p class="loading" id="loadingMessage">
-        Cargando reservaciones…
+        Cargando información…
       </p>
 
-      <section class="card">
-        <h2>Reservaciones</h2>
+      <!-- RESERVACIONES -->
 
-        <br />
+      <section
+        id="reservationsSection"
+        class="page-section active"
+      >
+        <div class="stats">
+          <article class="stat">
+            <span class="stat-label">
+              Reservaciones
+            </span>
 
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Película</th>
-                <th>Tanda</th>
-                <th>Asientos</th>
-                <th>Total</th>
-                <th>Pago</th>
-                <th>Entrada</th>
-              </tr>
-            </thead>
+            <strong
+              class="stat-value"
+              id="reservationCount"
+            >
+              0
+            </strong>
+          </article>
 
-            <tbody id="reservationRows"></tbody>
-          </table>
+          <article class="stat">
+            <span class="stat-label">
+              Taquillas vendidas
+            </span>
 
-          <div class="empty" id="emptyMessage">
-            Todavía no hay reservaciones.
-          </div>
+            <strong
+              class="stat-value"
+              id="ticketCount"
+            >
+              0
+            </strong>
+          </article>
+
+          <article class="stat">
+            <span class="stat-label">
+              Ventas pagadas
+            </span>
+
+            <strong
+              class="stat-value"
+              id="salesTotal"
+            >
+              $0.00
+            </strong>
+          </article>
+
+          <article class="stat">
+            <span class="stat-label">
+              Entradas utilizadas
+            </span>
+
+            <strong
+              class="stat-value"
+              id="usedCount"
+            >
+              0
+            </strong>
+          </article>
         </div>
+
+        <section class="card">
+          <div class="section-header">
+            <div>
+              <h2>Reservaciones</h2>
+
+              <p class="subtitle">
+                Ventas y entradas registradas.
+              </p>
+            </div>
+
+            <button
+              class="primary"
+              type="button"
+              onclick="loadReservations()"
+            >
+              Actualizar
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Película</th>
+                  <th>Tanda</th>
+                  <th>Asientos</th>
+                  <th>Total</th>
+                  <th>Pago</th>
+                  <th>Entrada</th>
+                </tr>
+              </thead>
+
+              <tbody id="reservationRows"></tbody>
+            </table>
+
+            <div
+              class="empty"
+              id="reservationEmptyMessage"
+            >
+              Todavía no hay reservaciones.
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- PELÍCULAS -->
+
+      <section
+        id="moviesSection"
+        class="page-section"
+      >
+        <div class="grid-two">
+          <section class="card">
+            <h2 id="movieFormTitle">
+              Añadir película
+            </h2>
+
+            <input
+              id="movieId"
+              type="hidden"
+            />
+
+            <label for="movieTitle">
+              Título
+            </label>
+
+            <input
+              id="movieTitle"
+              type="text"
+              placeholder="Nombre de la película"
+            />
+
+            <label for="movieDescription">
+              Descripción
+            </label>
+
+            <textarea
+              id="movieDescription"
+              placeholder="Sinopsis o información"
+            ></textarea>
+
+            <label for="moviePosterUrl">
+              URL del afiche
+            </label>
+
+            <input
+              id="moviePosterUrl"
+              type="url"
+              placeholder="https://..."
+            />
+
+            <label for="movieDuration">
+              Duración en minutos
+            </label>
+
+            <input
+              id="movieDuration"
+              type="number"
+              min="1"
+              placeholder="120"
+            />
+
+            <label for="movieRating">
+              Clasificación
+            </label>
+
+            <input
+              id="movieRating"
+              type="text"
+              placeholder="PG-13"
+            />
+
+            <label class="checkbox-row">
+              <input
+                id="movieActive"
+                type="checkbox"
+                checked
+              />
+
+              Película activa y visible
+            </label>
+
+            <div class="form-actions">
+              <button
+                id="saveMovieButton"
+                class="primary"
+                type="button"
+                onclick="saveMovie()"
+              >
+                Guardar película
+              </button>
+
+              <button
+                class="secondary"
+                type="button"
+                onclick="resetMovieForm()"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <div
+              class="message"
+              id="movieMessage"
+            ></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <div>
+                <h2>Películas registradas</h2>
+
+                <p class="subtitle">
+                  Edita, activa o elimina películas.
+                </p>
+              </div>
+
+              <button
+                class="primary"
+                type="button"
+                onclick="loadMovies()"
+              >
+                Actualizar
+              </button>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Afiche</th>
+                    <th>Película</th>
+                    <th>Duración</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody id="movieRows"></tbody>
+              </table>
+
+              <div
+                class="empty"
+                id="movieEmptyMessage"
+              >
+                Todavía no hay películas.
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- TANDAS -->
+
+      <section
+        id="showtimesSection"
+        class="page-section"
+      >
+        <div class="grid-two">
+          <section class="card">
+            <h2 id="showtimeFormTitle">
+              Añadir tanda
+            </h2>
+
+            <input
+              id="showtimeId"
+              type="hidden"
+            />
+
+            <label for="showtimeMovie">
+              Película
+            </label>
+
+            <select id="showtimeMovie">
+              <option value="">
+                Selecciona una película
+              </option>
+            </select>
+
+            <label for="showtimeDate">
+              Fecha
+            </label>
+
+            <input
+              id="showtimeDate"
+              type="date"
+            />
+
+            <label for="showtimeTime">
+              Hora
+            </label>
+
+            <input
+              id="showtimeTime"
+              type="time"
+            />
+
+            <label for="showtimePrice">
+              Precio por taquilla
+            </label>
+
+            <input
+              id="showtimePrice"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="8.00"
+            />
+
+            <label class="checkbox-row">
+              <input
+                id="showtimeActive"
+                type="checkbox"
+                checked
+              />
+
+              Tanda activa y disponible
+            </label>
+
+            <div class="form-actions">
+              <button
+                id="saveShowtimeButton"
+                class="primary"
+                type="button"
+                onclick="saveShowtime()"
+              >
+                Guardar tanda
+              </button>
+
+              <button
+                class="secondary"
+                type="button"
+                onclick="resetShowtimeForm()"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <div
+              class="message"
+              id="showtimeMessage"
+            ></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <div>
+                <h2>Tandas registradas</h2>
+
+                <p class="subtitle">
+                  Horarios disponibles para cada película.
+                </p>
+              </div>
+
+              <button
+                class="primary"
+                type="button"
+                onclick="loadShowtimes()"
+              >
+                Actualizar
+              </button>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Película</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody id="showtimeRows"></tbody>
+              </table>
+
+              <div
+                class="empty"
+                id="showtimeEmptyMessage"
+              >
+                Todavía no hay tandas.
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- CONTRASEÑA -->
+
+      <section
+        id="passwordSection"
+        class="page-section"
+      >
+        <section class="card danger-zone">
+          <h2>Cambiar contraseña</h2>
+
+          <p class="subtitle">
+            La nueva contraseña debe tener al menos
+            ocho caracteres.
+          </p>
+
+          <br />
+
+          <label for="currentPassword">
+            Contraseña actual
+          </label>
+
+          <input
+            id="currentPassword"
+            type="password"
+            autocomplete="current-password"
+          />
+
+          <label for="newPassword">
+            Nueva contraseña
+          </label>
+
+          <input
+            id="newPassword"
+            type="password"
+            minlength="8"
+            autocomplete="new-password"
+          />
+
+          <label for="confirmPassword">
+            Confirmar nueva contraseña
+          </label>
+
+          <input
+            id="confirmPassword"
+            type="password"
+            minlength="8"
+            autocomplete="new-password"
+          />
+
+          <button
+            id="changePasswordButton"
+            class="warning"
+            type="button"
+            onclick="changePassword()"
+          >
+            Cambiar contraseña
+          </button>
+
+          <div
+            class="message"
+            id="passwordMessage"
+          ></div>
+        </section>
       </section>
     </section>
   </main>
 
   <script>
-    const API_URL = "https://cine-manuel-nieves.onrender.com";
+    const API_URL =
+      "https://cine-manuel-nieves.onrender.com";
 
     let currentAdminKey = "";
+    let currentSection = "reservations";
+    let moviesCache = [];
+    let showtimesCache = [];
+
+    function setLoading(visible) {
+      document.getElementById(
+        "loadingMessage"
+      ).style.display = visible ? "block" : "none";
+    }
+
+    function setMessage(elementId, type, message) {
+      const box = document.getElementById(elementId);
+
+      box.className = message
+        ? `message ${type}`
+        : "message";
+
+      box.textContent = message || "";
+    }
+
+    async function parseResponse(response) {
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch (error) {
+        data = {};
+      }
+
+      if (!response.ok) {
+        const message =
+          data.error ||
+          data.message ||
+          "Ocurrió un error.";
+
+        throw new Error(message);
+      }
+
+      return data;
+    }
+
+    async function adminFetch(path, options = {}) {
+      const headers = {
+        ...(options.headers || {}),
+        "x-admin-key": currentAdminKey
+      };
+
+      if (
+        options.body &&
+        !headers["Content-Type"]
+      ) {
+        headers["Content-Type"] =
+          "application/json";
+      }
+
+      const response = await fetch(
+        `${API_URL}${path}`,
+        {
+          ...options,
+          headers
+        }
+      );
+
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        logout();
+        throw new Error(
+          "La sesión administrativa no es válida."
+        );
+      }
+
+      return parseResponse(response);
+    }
 
     async function login() {
-      const keyInput = document.getElementById("adminKey");
-      const loginButton = document.getElementById("loginButton");
+      const keyInput =
+        document.getElementById("adminKey");
+
+      const loginButton =
+        document.getElementById("loginButton");
+
       const key = keyInput.value.trim();
 
       if (!key) {
-        showLoginMessage(
+        setMessage(
+          "loginMessage",
           "error",
-          "Escribe la clave del administrador."
+          "Escribe la contraseña del administrador."
         );
 
         return;
@@ -397,92 +1105,211 @@
 
       loginButton.disabled = true;
       loginButton.textContent = "Verificando…";
-
-      currentAdminKey = key;
-
-      try {
-        const success = await loadReservations(true);
-
-        if (!success) {
-          currentAdminKey = "";
-          return;
-        }
-
-        sessionStorage.setItem("cineAdminKey", key);
-
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
-      } finally {
-        loginButton.disabled = false;
-        loginButton.textContent = "Entrar al panel";
-      }
-    }
-
-    async function loadReservations(fromLogin = false) {
-      const loadingMessage =
-        document.getElementById("loadingMessage");
-
-      loadingMessage.style.display = "block";
+      setMessage("loginMessage", "", "");
 
       try {
         const response = await fetch(
-          `${API_URL}/api/admin/reservations`,
+          `${API_URL}/api/admin/login`,
           {
+            method: "POST",
             headers: {
-              "x-admin-key": currentAdminKey
-            }
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              password: key
+            })
           }
         );
 
-        if (response.status === 401 || response.status === 403) {
-          if (fromLogin) {
-            showLoginMessage(
-              "error",
-              "La clave no es correcta."
-            );
-          } else {
-            alert("La sesión no es válida.");
-            logout();
+        await parseResponse(response);
+
+        currentAdminKey = key;
+
+        sessionStorage.setItem(
+          "cineAdminKey",
+          key
+        );
+
+        document.getElementById(
+          "loginSection"
+        ).style.display = "none";
+
+        document.getElementById(
+          "dashboard"
+        ).style.display = "block";
+
+        await loadReservations();
+      } catch (error) {
+        currentAdminKey = "";
+
+        setMessage(
+          "loginMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent =
+          "Entrar al panel";
+      }
+    }
+
+    function logout() {
+      currentAdminKey = "";
+
+      sessionStorage.removeItem(
+        "cineAdminKey"
+      );
+
+      document.getElementById(
+        "dashboard"
+      ).style.display = "none";
+
+      document.getElementById(
+        "loginSection"
+      ).style.display = "block";
+
+      document.getElementById(
+        "adminKey"
+      ).value = "";
+
+      setMessage("loginMessage", "", "");
+    }
+
+    async function restoreSession() {
+      const savedKey =
+        sessionStorage.getItem("cineAdminKey");
+
+      if (!savedKey) {
+        return;
+      }
+
+      currentAdminKey = savedKey;
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/admin/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              password: savedKey
+            })
           }
+        );
 
-          return false;
-        }
+        await parseResponse(response);
 
-        if (!response.ok) {
-          throw new Error("No se pudieron cargar los datos.");
-        }
+        document.getElementById(
+          "loginSection"
+        ).style.display = "none";
 
-        const reservations = await response.json();
+        document.getElementById(
+          "dashboard"
+        ).style.display = "block";
+
+        await loadReservations();
+      } catch (error) {
+        logout();
+      }
+    }
+
+    function showSection(sectionName) {
+      currentSection = sectionName;
+
+      const sectionNames = [
+        "reservations",
+        "movies",
+        "showtimes",
+        "password"
+      ];
+
+      sectionNames.forEach((name) => {
+        const section = document.getElementById(
+          `${name}Section`
+        );
+
+        const navigationButton =
+          document.getElementById(
+            `nav${capitalize(name)}`
+          );
+
+        section.classList.toggle(
+          "active",
+          name === sectionName
+        );
+
+        navigationButton.classList.toggle(
+          "active",
+          name === sectionName
+        );
+      });
+
+      if (sectionName === "reservations") {
+        loadReservations();
+      }
+
+      if (sectionName === "movies") {
+        loadMovies();
+      }
+
+      if (sectionName === "showtimes") {
+        loadMoviesForSelect();
+        loadShowtimes();
+      }
+    }
+
+    async function refreshCurrentSection() {
+      if (currentSection === "reservations") {
+        await loadReservations();
+      }
+
+      if (currentSection === "movies") {
+        await loadMovies();
+      }
+
+      if (currentSection === "showtimes") {
+        await loadMoviesForSelect();
+        await loadShowtimes();
+      }
+    }
+
+    async function loadReservations() {
+      setLoading(true);
+
+      try {
+        const reservations = await adminFetch(
+          "/api/admin/reservations"
+        );
 
         renderReservations(reservations);
         updateStatistics(reservations);
-
-        return true;
       } catch (error) {
-        console.error(error);
-
-        if (fromLogin) {
-          showLoginMessage(
-            "error",
-            "No se pudo conectar con el servidor."
-          );
-        } else {
-          alert("No se pudieron cargar las reservaciones.");
-        }
-
-        return false;
+        alert(error.message);
       } finally {
-        loadingMessage.style.display = "none";
+        setLoading(false);
       }
     }
 
     function renderReservations(reservations) {
-      const rows = document.getElementById("reservationRows");
-      const emptyMessage = document.getElementById("emptyMessage");
+      const rows =
+        document.getElementById(
+          "reservationRows"
+        );
+
+      const emptyMessage =
+        document.getElementById(
+          "reservationEmptyMessage"
+        );
 
       rows.innerHTML = "";
 
-      if (!Array.isArray(reservations) || reservations.length === 0) {
+      if (
+        !Array.isArray(reservations) ||
+        reservations.length === 0
+      ) {
         emptyMessage.style.display = "block";
         return;
       }
@@ -490,43 +1317,75 @@
       emptyMessage.style.display = "none";
 
       reservations.forEach((ticket) => {
-        const row = document.createElement("tr");
+        const row =
+          document.createElement("tr");
 
         const createdDate = ticket.created
-          ? new Date(ticket.created).toLocaleString("es-PR")
+          ? new Date(
+              ticket.created
+            ).toLocaleString("es-PR")
           : "—";
 
-        const seats = Array.isArray(ticket.seats)
+        const seats = Array.isArray(
+          ticket.seats
+        )
           ? ticket.seats.join(", ")
           : "—";
 
-        const paymentClass =
-          ticket.paymentStatus === "paid" ? "paid" : "pending";
+        const paid =
+          ticket.paymentStatus === "paid" ||
+          ticket.paymentStatus === "approved";
 
-        const paymentText =
-          ticket.paymentStatus === "paid" ? "Pagado" : "Pendiente";
+        const paymentClass = paid
+          ? "success"
+          : "warning";
 
-        const usedClass = ticket.used ? "used" : "available";
-        const usedText = ticket.used ? "Utilizada" : "Disponible";
+        const paymentText = paid
+          ? "Pagado"
+          : "Pendiente";
+
+        const usedClass = ticket.used
+          ? "info"
+          : "success";
+
+        const usedText = ticket.used
+          ? "Utilizada"
+          : "Disponible";
 
         row.innerHTML = `
           <td>${escapeHtml(createdDate)}</td>
 
           <td>
             <strong>
-              ${escapeHtml(ticket.customer?.name || "—")}
+              ${escapeHtml(
+                ticket.customer?.name || "—"
+              )}
             </strong>
+
             <br />
-            ${escapeHtml(ticket.customer?.email || "—")}
+
+            <span class="muted">
+              ${escapeHtml(
+                ticket.customer?.email || "—"
+              )}
+            </span>
           </td>
 
-          <td>${escapeHtml(ticket.movie || "—")}</td>
+          <td>
+            ${escapeHtml(ticket.movie || "—")}
+          </td>
 
-          <td>${escapeHtml(ticket.time || "—")}</td>
+          <td>
+            ${escapeHtml(ticket.time || "—")}
+          </td>
 
           <td>${escapeHtml(seats)}</td>
 
-          <td>$${Number(ticket.total || 0).toFixed(2)}</td>
+          <td>
+            $${Number(
+              ticket.total || 0
+            ).toFixed(2)}
+          </td>
 
           <td>
             <span class="badge ${paymentClass}">
@@ -546,79 +1405,1039 @@
     }
 
     function updateStatistics(reservations) {
-      const safeReservations = Array.isArray(reservations)
-        ? reservations
-        : [];
+      const safeReservations =
+        Array.isArray(reservations)
+          ? reservations
+          : [];
 
-      const ticketCount = safeReservations.reduce(
-        (total, ticket) => {
-          return total + (
-            Array.isArray(ticket.seats)
-              ? ticket.seats.length
-              : 0
-          );
-        },
-        0
-      );
+      const ticketCount =
+        safeReservations.reduce(
+          (total, ticket) => {
+            return (
+              total +
+              (
+                Array.isArray(ticket.seats)
+                  ? ticket.seats.length
+                  : 0
+              )
+            );
+          },
+          0
+        );
 
-      const salesTotal = safeReservations.reduce(
-        (total, ticket) => {
-          if (ticket.paymentStatus !== "paid") {
-            return total;
-          }
+      const salesTotal =
+        safeReservations.reduce(
+          (total, ticket) => {
+            const paid =
+              ticket.paymentStatus === "paid" ||
+              ticket.paymentStatus ===
+                "approved";
 
-          return total + Number(ticket.total || 0);
-        },
-        0
-      );
+            if (!paid) {
+              return total;
+            }
 
-      const usedCount = safeReservations.reduce(
-        (total, ticket) => {
-          if (!ticket.used) {
-            return total;
-          }
+            return (
+              total +
+              Number(ticket.total || 0)
+            );
+          },
+          0
+        );
 
-          return total + (
-            Array.isArray(ticket.seats)
-              ? ticket.seats.length
-              : 0
-          );
-        },
-        0
-      );
+      const usedCount =
+        safeReservations.reduce(
+          (total, ticket) => {
+            if (!ticket.used) {
+              return total;
+            }
 
-      document.getElementById("reservationCount").textContent =
+            return (
+              total +
+              (
+                Array.isArray(ticket.seats)
+                  ? ticket.seats.length
+                  : 0
+              )
+            );
+          },
+          0
+        );
+
+      document.getElementById(
+        "reservationCount"
+      ).textContent =
         safeReservations.length;
 
-      document.getElementById("ticketCount").textContent =
-        ticketCount;
+      document.getElementById(
+        "ticketCount"
+      ).textContent = ticketCount;
 
-      document.getElementById("salesTotal").textContent =
+      document.getElementById(
+        "salesTotal"
+      ).textContent =
         `$${salesTotal.toFixed(2)}`;
 
-      document.getElementById("usedCount").textContent =
-        usedCount;
+      document.getElementById(
+        "usedCount"
+      ).textContent = usedCount;
     }
 
-    function showLoginMessage(type, message) {
-      const box = document.getElementById("loginMessage");
+    async function loadMovies() {
+      setLoading(true);
 
-      box.className = `message ${type}`;
-      box.textContent = message;
+      try {
+        const movies = await adminFetch(
+          "/api/admin/movies"
+        );
+
+        moviesCache = Array.isArray(movies)
+          ? movies
+          : [];
+
+        renderMovies(moviesCache);
+        renderMovieOptions();
+      } catch (error) {
+        setMessage(
+          "movieMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        setLoading(false);
+      }
     }
 
-    function logout() {
-      currentAdminKey = "";
-      sessionStorage.removeItem("cineAdminKey");
+    async function loadMoviesForSelect() {
+      try {
+        const movies = await adminFetch(
+          "/api/admin/movies"
+        );
 
-      document.getElementById("dashboard").style.display = "none";
-      document.getElementById("loginSection").style.display = "block";
-      document.getElementById("adminKey").value = "";
-      document.getElementById("loginMessage").className = "message";
+        moviesCache = Array.isArray(movies)
+          ? movies
+          : [];
+
+        renderMovieOptions();
+      } catch (error) {
+        setMessage(
+          "showtimeMessage",
+          "error",
+          error.message
+        );
+      }
+    }
+
+    function renderMovies(movies) {
+      const rows =
+        document.getElementById("movieRows");
+
+      const emptyMessage =
+        document.getElementById(
+          "movieEmptyMessage"
+        );
+
+      rows.innerHTML = "";
+
+      if (
+        !Array.isArray(movies) ||
+        movies.length === 0
+      ) {
+        emptyMessage.style.display = "block";
+        return;
+      }
+
+      emptyMessage.style.display = "none";
+
+      movies.forEach((movie) => {
+        const row =
+          document.createElement("tr");
+
+        const poster = movie.posterUrl
+          ? `
+            <img
+              class="poster-preview"
+              src="${escapeHtml(movie.posterUrl)}"
+              alt="Afiche"
+              onerror="this.style.display='none'"
+            />
+          `
+          : `<span class="muted">Sin afiche</span>`;
+
+        const statusClass = movie.active
+          ? "success"
+          : "danger";
+
+        const statusText = movie.active
+          ? "Activa"
+          : "Inactiva";
+
+        row.innerHTML = `
+          <td>${poster}</td>
+
+          <td>
+            <strong>
+              ${escapeHtml(movie.title)}
+            </strong>
+
+            <br />
+
+            <span class="muted">
+              ${escapeHtml(movie.rating || "Sin clasificación")}
+            </span>
+          </td>
+
+          <td>
+            ${
+              movie.durationMinutes
+                ? `${movie.durationMinutes} min`
+                : "—"
+            }
+          </td>
+
+          <td>
+            <span class="badge ${statusClass}">
+              ${statusText}
+            </span>
+          </td>
+
+          <td>
+            <div class="table-actions">
+              <button
+                class="small primary"
+                type="button"
+                onclick="editMovie('${movie.id}')"
+              >
+                Editar
+              </button>
+
+              <button
+                class="small danger"
+                type="button"
+                onclick="deleteMovie('${movie.id}')"
+              >
+                Eliminar
+              </button>
+            </div>
+          </td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+    function renderMovieOptions() {
+      const select =
+        document.getElementById(
+          "showtimeMovie"
+        );
+
+      const currentValue = select.value;
+
+      select.innerHTML = `
+        <option value="">
+          Selecciona una película
+        </option>
+      `;
+
+      moviesCache.forEach((movie) => {
+        const option =
+          document.createElement("option");
+
+        option.value = movie.id;
+        option.textContent =
+          movie.active
+            ? movie.title
+            : `${movie.title} (inactiva)`;
+
+        select.appendChild(option);
+      });
+
+      select.value = currentValue;
+    }
+
+    async function saveMovie() {
+      const id =
+        document.getElementById(
+          "movieId"
+        ).value;
+
+      const title =
+        document.getElementById(
+          "movieTitle"
+        ).value.trim();
+
+      const description =
+        document.getElementById(
+          "movieDescription"
+        ).value.trim();
+
+      const posterUrl =
+        document.getElementById(
+          "moviePosterUrl"
+        ).value.trim();
+
+      const durationValue =
+        document.getElementById(
+          "movieDuration"
+        ).value;
+
+      const rating =
+        document.getElementById(
+          "movieRating"
+        ).value.trim();
+
+      const active =
+        document.getElementById(
+          "movieActive"
+        ).checked;
+
+      if (!title) {
+        setMessage(
+          "movieMessage",
+          "error",
+          "Escribe el título de la película."
+        );
+
+        return;
+      }
+
+      const button =
+        document.getElementById(
+          "saveMovieButton"
+        );
+
+      button.disabled = true;
+      button.textContent = "Guardando…";
+
+      setMessage("movieMessage", "", "");
+
+      try {
+        const body = {
+          title,
+          description,
+          posterUrl,
+          durationMinutes:
+            durationValue === ""
+              ? null
+              : Number(durationValue),
+          rating,
+          active
+        };
+
+        if (id) {
+          await adminFetch(
+            `/api/admin/movies/${id}`,
+            {
+              method: "PUT",
+              body: JSON.stringify(body)
+            }
+          );
+
+          setMessage(
+            "movieMessage",
+            "success",
+            "Película actualizada correctamente."
+          );
+        } else {
+          await adminFetch(
+            "/api/admin/movies",
+            {
+              method: "POST",
+              body: JSON.stringify(body)
+            }
+          );
+
+          setMessage(
+            "movieMessage",
+            "success",
+            "Película creada correctamente."
+          );
+        }
+
+        resetMovieForm(false);
+        await loadMovies();
+      } catch (error) {
+        setMessage(
+          "movieMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          id
+            ? "Actualizar película"
+            : "Guardar película";
+      }
+    }
+
+    function editMovie(id) {
+      const movie = moviesCache.find(
+        (item) => item.id === id
+      );
+
+      if (!movie) {
+        return;
+      }
+
+      document.getElementById(
+        "movieId"
+      ).value = movie.id;
+
+      document.getElementById(
+        "movieTitle"
+      ).value = movie.title || "";
+
+      document.getElementById(
+        "movieDescription"
+      ).value = movie.description || "";
+
+      document.getElementById(
+        "moviePosterUrl"
+      ).value = movie.posterUrl || "";
+
+      document.getElementById(
+        "movieDuration"
+      ).value =
+        movie.durationMinutes || "";
+
+      document.getElementById(
+        "movieRating"
+      ).value = movie.rating || "";
+
+      document.getElementById(
+        "movieActive"
+      ).checked = Boolean(movie.active);
+
+      document.getElementById(
+        "movieFormTitle"
+      ).textContent = "Editar película";
+
+      document.getElementById(
+        "saveMovieButton"
+      ).textContent = "Actualizar película";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    function resetMovieForm(
+      clearMessage = true
+    ) {
+      document.getElementById(
+        "movieId"
+      ).value = "";
+
+      document.getElementById(
+        "movieTitle"
+      ).value = "";
+
+      document.getElementById(
+        "movieDescription"
+      ).value = "";
+
+      document.getElementById(
+        "moviePosterUrl"
+      ).value = "";
+
+      document.getElementById(
+        "movieDuration"
+      ).value = "";
+
+      document.getElementById(
+        "movieRating"
+      ).value = "";
+
+      document.getElementById(
+        "movieActive"
+      ).checked = true;
+
+      document.getElementById(
+        "movieFormTitle"
+      ).textContent = "Añadir película";
+
+      document.getElementById(
+        "saveMovieButton"
+      ).textContent = "Guardar película";
+
+      if (clearMessage) {
+        setMessage("movieMessage", "", "");
+      }
+    }
+
+    async function deleteMovie(id) {
+      const movie = moviesCache.find(
+        (item) => item.id === id
+      );
+
+      const confirmed = confirm(
+        `¿Eliminar la película "${movie?.title || ""}"?\n\nTambién se eliminarán sus tandas.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await adminFetch(
+          `/api/admin/movies/${id}`,
+          {
+            method: "DELETE"
+          }
+        );
+
+        resetMovieForm();
+        await loadMovies();
+
+        alert(
+          "Película eliminada correctamente."
+        );
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function loadShowtimes() {
+      setLoading(true);
+
+      try {
+        const showtimes = await adminFetch(
+          "/api/admin/showtimes"
+        );
+
+        showtimesCache =
+          Array.isArray(showtimes)
+            ? showtimes
+            : [];
+
+        renderShowtimes(showtimesCache);
+      } catch (error) {
+        setMessage(
+          "showtimeMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderShowtimes(showtimes) {
+      const rows =
+        document.getElementById(
+          "showtimeRows"
+        );
+
+      const emptyMessage =
+        document.getElementById(
+          "showtimeEmptyMessage"
+        );
+
+      rows.innerHTML = "";
+
+      if (
+        !Array.isArray(showtimes) ||
+        showtimes.length === 0
+      ) {
+        emptyMessage.style.display = "block";
+        return;
+      }
+
+      emptyMessage.style.display = "none";
+
+      showtimes.forEach((showtime) => {
+        const row =
+          document.createElement("tr");
+
+        const statusClass =
+          showtime.active
+            ? "success"
+            : "danger";
+
+        const statusText =
+          showtime.active
+            ? "Activa"
+            : "Inactiva";
+
+        const formattedDate =
+          formatDate(showtime.showDate);
+
+        row.innerHTML = `
+          <td>
+            <strong>
+              ${escapeHtml(
+                showtime.movieTitle || "—"
+              )}
+            </strong>
+          </td>
+
+          <td>${escapeHtml(formattedDate)}</td>
+
+          <td>
+            ${escapeHtml(
+              formatTime(showtime.showTime)
+            )}
+          </td>
+
+          <td>
+            $${Number(
+              showtime.price || 0
+            ).toFixed(2)}
+          </td>
+
+          <td>
+            <span class="badge ${statusClass}">
+              ${statusText}
+            </span>
+          </td>
+
+          <td>
+            <div class="table-actions">
+              <button
+                class="small primary"
+                type="button"
+                onclick="editShowtime('${showtime.id}')"
+              >
+                Editar
+              </button>
+
+              <button
+                class="small danger"
+                type="button"
+                onclick="deleteShowtime('${showtime.id}')"
+              >
+                Eliminar
+              </button>
+            </div>
+          </td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+    async function saveShowtime() {
+      const id =
+        document.getElementById(
+          "showtimeId"
+        ).value;
+
+      const movieId =
+        document.getElementById(
+          "showtimeMovie"
+        ).value;
+
+      const showDate =
+        document.getElementById(
+          "showtimeDate"
+        ).value;
+
+      const showTime =
+        document.getElementById(
+          "showtimeTime"
+        ).value;
+
+      const price =
+        document.getElementById(
+          "showtimePrice"
+        ).value;
+
+      const active =
+        document.getElementById(
+          "showtimeActive"
+        ).checked;
+
+      if (
+        !movieId ||
+        !showDate ||
+        !showTime ||
+        price === ""
+      ) {
+        setMessage(
+          "showtimeMessage",
+          "error",
+          "Completa todos los datos de la tanda."
+        );
+
+        return;
+      }
+
+      const button =
+        document.getElementById(
+          "saveShowtimeButton"
+        );
+
+      button.disabled = true;
+      button.textContent = "Guardando…";
+
+      setMessage("showtimeMessage", "", "");
+
+      try {
+        const body = {
+          movieId,
+          showDate,
+          showTime,
+          price: Number(price),
+          active
+        };
+
+        if (id) {
+          await adminFetch(
+            `/api/admin/showtimes/${id}`,
+            {
+              method: "PUT",
+              body: JSON.stringify(body)
+            }
+          );
+
+          setMessage(
+            "showtimeMessage",
+            "success",
+            "Tanda actualizada correctamente."
+          );
+        } else {
+          await adminFetch(
+            "/api/admin/showtimes",
+            {
+              method: "POST",
+              body: JSON.stringify(body)
+            }
+          );
+
+          setMessage(
+            "showtimeMessage",
+            "success",
+            "Tanda creada correctamente."
+          );
+        }
+
+        resetShowtimeForm(false);
+        await loadShowtimes();
+      } catch (error) {
+        setMessage(
+          "showtimeMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          id
+            ? "Actualizar tanda"
+            : "Guardar tanda";
+      }
+    }
+
+    function editShowtime(id) {
+      const showtime =
+        showtimesCache.find(
+          (item) => item.id === id
+        );
+
+      if (!showtime) {
+        return;
+      }
+
+      document.getElementById(
+        "showtimeId"
+      ).value = showtime.id;
+
+      document.getElementById(
+        "showtimeMovie"
+      ).value = showtime.movieId;
+
+      document.getElementById(
+        "showtimeDate"
+      ).value =
+        normalizeDate(showtime.showDate);
+
+      document.getElementById(
+        "showtimeTime"
+      ).value =
+        normalizeTime(showtime.showTime);
+
+      document.getElementById(
+        "showtimePrice"
+      ).value = Number(
+        showtime.price || 0
+      ).toFixed(2);
+
+      document.getElementById(
+        "showtimeActive"
+      ).checked =
+        Boolean(showtime.active);
+
+      document.getElementById(
+        "showtimeFormTitle"
+      ).textContent = "Editar tanda";
+
+      document.getElementById(
+        "saveShowtimeButton"
+      ).textContent = "Actualizar tanda";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    function resetShowtimeForm(
+      clearMessage = true
+    ) {
+      document.getElementById(
+        "showtimeId"
+      ).value = "";
+
+      document.getElementById(
+        "showtimeMovie"
+      ).value = "";
+
+      document.getElementById(
+        "showtimeDate"
+      ).value = "";
+
+      document.getElementById(
+        "showtimeTime"
+      ).value = "";
+
+      document.getElementById(
+        "showtimePrice"
+      ).value = "";
+
+      document.getElementById(
+        "showtimeActive"
+      ).checked = true;
+
+      document.getElementById(
+        "showtimeFormTitle"
+      ).textContent = "Añadir tanda";
+
+      document.getElementById(
+        "saveShowtimeButton"
+      ).textContent = "Guardar tanda";
+
+      if (clearMessage) {
+        setMessage(
+          "showtimeMessage",
+          "",
+          ""
+        );
+      }
+    }
+
+    async function deleteShowtime(id) {
+      const showtime =
+        showtimesCache.find(
+          (item) => item.id === id
+        );
+
+      const confirmed = confirm(
+        `¿Eliminar la tanda de "${showtime?.movieTitle || ""}"?`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await adminFetch(
+          `/api/admin/showtimes/${id}`,
+          {
+            method: "DELETE"
+          }
+        );
+
+        resetShowtimeForm();
+        await loadShowtimes();
+
+        alert(
+          "Tanda eliminada correctamente."
+        );
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function changePassword() {
+      const currentPassword =
+        document.getElementById(
+          "currentPassword"
+        ).value;
+
+      const newPassword =
+        document.getElementById(
+          "newPassword"
+        ).value;
+
+      const confirmPassword =
+        document.getElementById(
+          "confirmPassword"
+        ).value;
+
+      if (
+        !currentPassword ||
+        !newPassword ||
+        !confirmPassword
+      ) {
+        setMessage(
+          "passwordMessage",
+          "error",
+          "Completa todos los campos."
+        );
+
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        setMessage(
+          "passwordMessage",
+          "error",
+          "La nueva contraseña debe tener al menos ocho caracteres."
+        );
+
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setMessage(
+          "passwordMessage",
+          "error",
+          "Las contraseñas nuevas no coinciden."
+        );
+
+        return;
+      }
+
+      const button =
+        document.getElementById(
+          "changePasswordButton"
+        );
+
+      button.disabled = true;
+      button.textContent = "Cambiando…";
+
+      setMessage("passwordMessage", "", "");
+
+      try {
+        await adminFetch(
+          "/api/admin/password",
+          {
+            method: "PUT",
+            body: JSON.stringify({
+              currentPassword,
+              newPassword
+            })
+          }
+        );
+
+        currentAdminKey = newPassword;
+
+        sessionStorage.setItem(
+          "cineAdminKey",
+          newPassword
+        );
+
+        document.getElementById(
+          "currentPassword"
+        ).value = "";
+
+        document.getElementById(
+          "newPassword"
+        ).value = "";
+
+        document.getElementById(
+          "confirmPassword"
+        ).value = "";
+
+        setMessage(
+          "passwordMessage",
+          "success",
+          "Contraseña actualizada correctamente."
+        );
+      } catch (error) {
+        setMessage(
+          "passwordMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          "Cambiar contraseña";
+      }
+    }
+
+    function normalizeDate(value) {
+      if (!value) {
+        return "";
+      }
+
+      return String(value).slice(0, 10);
+    }
+
+    function normalizeTime(value) {
+      if (!value) {
+        return "";
+      }
+
+      return String(value).slice(0, 5);
+    }
+
+    function formatDate(value) {
+      const normalized =
+        normalizeDate(value);
+
+      if (!normalized) {
+        return "—";
+      }
+
+      const parts = normalized.split("-");
+
+      if (parts.length !== 3) {
+        return normalized;
+      }
+
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function formatTime(value) {
+      const normalized =
+        normalizeTime(value);
+
+      if (!normalized) {
+        return "—";
+      }
+
+      const [hourString, minute] =
+        normalized.split(":");
+
+      const hour = Number(hourString);
+
+      if (!Number.isFinite(hour)) {
+        return normalized;
+      }
+
+      const suffix =
+        hour >= 12 ? "PM" : "AM";
+
+      const displayHour =
+        hour % 12 || 12;
+
+      return `${displayHour}:${minute} ${suffix}`;
+    }
+
+    function capitalize(value) {
+      return (
+        value.charAt(0).toUpperCase() +
+        value.slice(1)
+      );
     }
 
     function escapeHtml(value) {
-      return String(value)
+      return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -626,22 +2445,16 @@
         .replaceAll("'", "&#039;");
     }
 
-    async function restoreSession() {
-      const savedKey = sessionStorage.getItem("cineAdminKey");
-
-      if (!savedKey) {
-        return;
-      }
-
-      currentAdminKey = savedKey;
-
-      const success = await loadReservations();
-
-      if (success) {
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
-      }
-    }
+    document
+      .getElementById("adminKey")
+      .addEventListener(
+        "keydown",
+        (event) => {
+          if (event.key === "Enter") {
+            login();
+          }
+        }
+      );
 
     restoreSession();
   </script>
