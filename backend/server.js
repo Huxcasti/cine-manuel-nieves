@@ -11,13 +11,11 @@ const PORT = process.env.PORT || 3000;
 CLAVE DEL PANEL ADMINISTRATIVO
 ==================================================
 
-La clave configurada como ADMIN_KEY en Render tiene prioridad.
-
-"gracias" es solamente una clave temporal para que veas
-exactamente dónde iría. No dejes esa clave en producción.
+La contraseña debe estar configurada en Render
+como una variable llamada ADMIN_KEY.
 */
 
-const ADMIN_KEY = process.env.ADMIN_KEY || "gracias";
+const ADMIN_KEY = process.env.ADMIN_KEY;
 
 app.use(cors());
 app.use(express.json());
@@ -33,13 +31,20 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+if (!ADMIN_KEY) {
+  console.error("Falta la variable ADMIN_KEY.");
+  process.exit(1);
+}
+
 /*
 ==================================================
 Conexión con PostgreSQL
 ==================================================
 */
 
-const useSSL = process.env.DATABASE_URL.includes("render.com");
+const useSSL =
+  process.env.DATABASE_URL.includes("render.com") ||
+  process.env.DATABASE_URL.includes("supabase.com");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -101,6 +106,87 @@ async function initializeDatabase() {
 
 /*
 ==================================================
+Reinicio diario a las 3:00 a. m.
+Zona horaria: Puerto Rico
+==================================================
+
+El día operacional funciona así:
+
+Desde las 3:00 a. m. de hoy
+hasta las 2:59 a. m. del día siguiente.
+
+Todo lo anterior al último corte se elimina.
+*/
+
+async function cleanupPreviousBusinessDay() {
+  const result = await pool.query(`
+    DELETE FROM tickets
+    WHERE created_at < (
+      (
+        CASE
+          WHEN
+            (NOW() AT TIME ZONE 'America/Puerto_Rico')::time
+            >= TIME '03:00:00'
+          THEN
+            DATE_TRUNC(
+              'day',
+              NOW() AT TIME ZONE 'America/Puerto_Rico'
+            ) + INTERVAL '3 hours'
+          ELSE
+            DATE_TRUNC(
+              'day',
+              NOW() AT TIME ZONE 'America/Puerto_Rico'
+            ) - INTERVAL '21 hours'
+        END
+      ) AT TIME ZONE 'America/Puerto_Rico'
+    );
+  `);
+
+  if (result.rowCount > 0) {
+    console.log(
+      `Reinicio diario completado: ${result.rowCount} reservaciones eliminadas.`
+    );
+  }
+}
+
+/*
+==================================================
+Comprobar el reinicio cuando el servidor recibe uso
+==================================================
+
+Render puede dormir el servidor gratuito.
+
+Por eso no dependemos de que permanezca encendido
+exactamente a las 3:00 a. m.
+
+Cuando el servidor vuelva a recibir una solicitud,
+comprueba el corte y elimina lo anterior.
+
+La comprobación ocurre como máximo una vez por minuto.
+*/
+
+let lastCleanupCheck = 0;
+
+app.use(async (req, res, next) => {
+  const now = Date.now();
+
+  if (now - lastCleanupCheck < 60_000) {
+    return next();
+  }
+
+  lastCleanupCheck = now;
+
+  try {
+    await cleanupPreviousBusinessDay();
+  } catch (error) {
+    console.error("Error realizando el reinicio diario:", error);
+  }
+
+  next();
+});
+
+/*
+==================================================
 Servidor funcionando
 ==================================================
 */
@@ -112,8 +198,9 @@ app.get("/", async (req, res) => {
     res.json({
       status: "online",
       database: "connected",
+      dailyReset: "3:00 AM America/Puerto_Rico",
       app: "Cine Teatro Manuel Nieves Quintero",
-      version: "2.1"
+      version: "2.2"
     });
   } catch (error) {
     console.error("Error verificando la base de datos:", error);
@@ -369,14 +456,6 @@ app.post("/api/checkin/:code", async (req, res) => {
 ==================================================
 Reservaciones del panel administrativo
 ==================================================
-
-Esta es la ruta que utiliza admin.html:
-
-GET /api/admin/reservations
-
-La clave llega en el encabezado:
-
-x-admin-key
 */
 
 app.get("/api/admin/reservations", async (req, res) => {
@@ -410,11 +489,8 @@ app.get("/api/admin/reservations", async (req, res) => {
 
 /*
 ==================================================
-Ruta pública eliminada por seguridad
+Ruta pública bloqueada por seguridad
 ==================================================
-
-La antigua ruta /api/reservations mostraba públicamente
-nombres, correos y teléfonos. Ahora queda bloqueada.
 */
 
 app.get("/api/reservations", (req, res) => {
@@ -445,8 +521,18 @@ async function startServer() {
   try {
     await initializeDatabase();
 
+    /*
+    Al encender o despertar el servidor, comprueba
+    inmediatamente si corresponde borrar el día anterior.
+    */
+
+    await cleanupPreviousBusinessDay();
+
     app.listen(PORT, () => {
       console.log(`Servidor iniciado en el puerto ${PORT}.`);
+      console.log(
+        "Las ventas se reinician diariamente a las 3:00 a. m. de Puerto Rico."
+      );
     });
   } catch (error) {
     console.error("No se pudo iniciar el servidor:", error);
