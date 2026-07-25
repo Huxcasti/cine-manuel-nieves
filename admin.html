@@ -1121,6 +1121,7 @@
 
       if (
         options.body &&
+        !(options.body instanceof FormData) &&
         !headers["Content-Type"]
       ) {
         headers["Content-Type"] =
