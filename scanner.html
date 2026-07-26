@@ -304,13 +304,37 @@
           await scanner.pause(true);
         }
 
+        let employeeKey =
+          sessionStorage.getItem("cineEmployeeKey");
+
+        if (!employeeKey) {
+          employeeKey = prompt(
+            "Escribe la contraseña del administrador:"
+          )?.trim();
+        }
+
+        if (!employeeKey) {
+          throw new Error(
+            "Se necesita la contraseña para validar entradas."
+          );
+        }
+
+        sessionStorage.setItem(
+          "cineEmployeeKey",
+          employeeKey
+        );
+
         const response = await fetch(
-          `${API_URL}/api/checkin/${encodeURIComponent(qrCode)}`,
+          `${API_URL}/api/admin/checkin`,
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
-            }
+              "Content-Type": "application/json",
+              "x-admin-key": employeeKey
+            },
+            body: JSON.stringify({
+              qr: qrCode
+            })
           }
         );
 
@@ -329,15 +353,28 @@
             "warning",
             "⚠️",
             "Taquilla ya utilizada",
-            data.message,
+            data.error ||
+              data.message ||
+              "Esta taquilla ya fue utilizada.",
             data.ticket
           );
         } else {
+          if (
+            response.status === 401 ||
+            response.status === 403
+          ) {
+            sessionStorage.removeItem(
+              "cineEmployeeKey"
+            );
+          }
+
           showResult(
             "error",
             "❌",
             "Entrada rechazada",
-            data.message || "La taquilla no es válida.",
+            data.error ||
+              data.message ||
+              "La taquilla no es válida.",
             data.ticket
           );
         }
@@ -347,8 +384,9 @@
         showResult(
           "error",
           "❌",
-          "Error de conexión",
-          "No se pudo conectar con el servidor."
+          "No se pudo validar",
+          error.message ||
+            "No se pudo conectar con el servidor."
         );
       } finally {
         document.getElementById("loadingMessage").style.display = "none";
