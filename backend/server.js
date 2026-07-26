@@ -1228,6 +1228,33 @@ app.put(
 );
 
 app.delete(
+  "/api/admin/showtimes",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        DELETE FROM showtimes;
+      `);
+
+      res.json({
+        success: true,
+        deleted: result.rowCount,
+        message: `Se eliminaron ${result.rowCount} tandas.`
+      });
+    } catch (error) {
+      console.error(
+        "Error eliminando todas las tandas:",
+        error
+      );
+
+      res.status(500).json({
+        error: "No se pudieron eliminar todas las tandas."
+      });
+    }
+  }
+);
+
+app.delete(
   "/api/admin/showtimes/:id",
   requireAdmin,
   async (req, res) => {
