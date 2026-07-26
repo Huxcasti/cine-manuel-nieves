@@ -965,13 +965,23 @@
                 </p>
               </div>
 
-              <button
-                class="primary"
-                type="button"
-                onclick="loadShowtimes()"
-              >
-                Actualizar
-              </button>
+              <div class="section-actions">
+                <button
+                  class="primary"
+                  type="button"
+                  onclick="loadShowtimes()"
+                >
+                  Actualizar
+                </button>
+
+                <button
+                  class="danger"
+                  type="button"
+                  onclick="deleteAllShowtimes()"
+                >
+                  Eliminar todo
+                </button>
+              </div>
             </div>
 
             <div class="table-wrapper">
@@ -2425,6 +2435,49 @@
           "",
           ""
         );
+      }
+    }
+
+
+    async function deleteAllShowtimes() {
+      if (showtimesCache.length === 0) {
+        alert("No hay tandas para eliminar.");
+        return;
+      }
+
+      const confirmed = confirm(
+        `¿Seguro que deseas eliminar las ${showtimesCache.length} tandas registradas?\n\nEsta acción no se puede deshacer.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      const finalConfirmation = confirm(
+        "Confirmación final: ¿eliminar todas las tandas?"
+      );
+
+      if (!finalConfirmation) {
+        return;
+      }
+
+      try {
+        const result = await adminFetch(
+          "/api/admin/showtimes",
+          {
+            method: "DELETE"
+          }
+        );
+
+        resetShowtimeForm();
+        await loadShowtimes();
+
+        alert(
+          result.message ||
+          "Todas las tandas fueron eliminadas."
+        );
+      } catch (error) {
+        alert(error.message);
       }
     }
 
