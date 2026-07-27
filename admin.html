@@ -2,13 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
-
-  <title>Administración del cine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#070b14" />
+  <title>Panel administrativo | Cine Teatro Manuel Nieves Quintero</title>
+  <link rel="icon" type="image/png" href="Logo.PNG" />
 
   <style>
     * {
@@ -19,24 +16,58 @@
 
     :root {
       --background: #070b14;
-      --panel: #121827;
-      --panel-light: #182033;
-      --border: #2a354e;
+      --background-soft: #0a1020;
+      --panel: #111827;
+      --panel-light: #182235;
+      --panel-dark: #0b1220;
+      --border: #2d3a55;
       --text: #ffffff;
       --muted: #aeb8cc;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --success: #22c55e;
-      --danger: #ef4444;
-      --warning: #f59e0b;
+      --yellow: #ffc62a;
+      --yellow-dark: #e8a500;
+      --aqua: #49cbc5;
+      --aqua-dark: #249f9c;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+    }
+
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
       min-height: 100vh;
       padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      overflow-x: hidden;
       font-family: Arial, Helvetica, sans-serif;
-      background: var(--background);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(73, 203, 197, 0.09), transparent 28%),
+        radial-gradient(circle at 92% 0%, rgba(255, 198, 42, 0.08), transparent 27%),
+        linear-gradient(180deg, var(--background-soft), var(--background));
       color: var(--text);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active {
+      transform: scale(0.98);
     }
 
     main {
@@ -60,7 +91,8 @@
       font-size: 18px;
     }
 
-    .subtitle {
+    .subtitle,
+    .muted {
       color: var(--muted);
       line-height: 1.5;
     }
@@ -70,21 +102,103 @@
       padding: 20px;
       border: 1px solid var(--border);
       border-radius: 18px;
-      background: var(--panel);
+      background: rgba(17, 24, 39, 0.96);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    /* =========================================================
+       PANTALLA DE ACCESO
+    ========================================================= */
+
+    .login-wrapper {
+      display: flex;
+      min-height: calc(100vh - 40px);
+      align-items: center;
+      justify-content: center;
     }
 
     .login-card {
+      position: relative;
       width: 100%;
-      max-width: 520px;
-      margin: 60px auto;
+      max-width: 590px;
+      margin: 20px auto;
+      padding: 30px;
+      overflow: hidden;
+      border: 1px solid rgba(73, 203, 197, 0.34);
+      border-radius: 25px;
+      background:
+        radial-gradient(circle at top right, rgba(73, 203, 197, 0.15), transparent 36%),
+        radial-gradient(circle at top left, rgba(255, 198, 42, 0.12), transparent 32%),
+        linear-gradient(180deg, rgba(20, 29, 46, 0.99), rgba(11, 18, 32, 0.99));
+      box-shadow: var(--shadow);
+    }
+
+    .login-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 8%;
+      width: 84%;
+      height: 3px;
+      border-radius: 0 0 999px 999px;
+      background: linear-gradient(90deg, transparent, var(--yellow), var(--aqua), transparent);
+    }
+
+    .login-logo-box {
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(174, 184, 204, 0.16);
+    }
+
+    .login-logo {
+      display: block;
+      width: 100%;
+      max-width: 470px;
+      max-height: 220px;
+      margin: 0 auto;
+      border-radius: 18px;
+      object-fit: contain;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.25);
+    }
+
+    .login-heading {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .access-pill {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      border: 1px solid rgba(73, 203, 197, 0.3);
+      border-radius: 999px;
+      background: rgba(73, 203, 197, 0.08);
+      color: #77e4df;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.7px;
+    }
+
+    .login-heading h1 {
+      margin-bottom: 9px;
+      font-size: 31px;
+      line-height: 1.15;
+    }
+
+    .login-heading p {
+      max-width: 430px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
     }
 
     label {
       display: block;
-      margin-bottom: 7px;
-      color: #dbe4f5;
+      margin-bottom: 8px;
+      color: #e2e8f3;
       font-size: 14px;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     input,
@@ -94,12 +208,25 @@
       margin-bottom: 14px;
       padding: 13px;
       border: 1px solid #394765;
-      border-radius: 10px;
+      border-radius: 11px;
       outline: none;
       background: #0c111d;
       color: white;
-      font-family: inherit;
       font-size: 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #7e899d;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--aqua);
+      background: #0a101b;
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
     }
 
     textarea {
@@ -107,89 +234,173 @@
       resize: vertical;
     }
 
-    input:focus,
-    textarea:focus,
-    select:focus {
-      border-color: var(--primary);
-    }
-
     input[type="checkbox"] {
       width: auto;
       margin: 0 8px 0 0;
     }
 
-    button {
-      border: none;
+    .password-field {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .password-field input {
+      height: 58px;
+      margin: 0;
+      padding-left: 50px;
+      border-radius: 14px;
+      background: rgba(7, 11, 20, 0.76);
+    }
+
+    .password-icon {
+      position: absolute;
+      top: 50%;
+      left: 16px;
+      width: 21px;
+      height: 21px;
+      color: #7e8ba4;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .password-field:focus-within .password-icon {
+      color: var(--aqua);
+    }
+
+    .login-button {
+      position: relative;
+      width: 100%;
+      min-height: 56px;
+      padding: 15px 52px 15px 20px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
+      color: #1d1700;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 15px 32px rgba(232, 165, 0, 0.23);
+      transition: filter 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .login-button::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      font-size: 24px;
+      transform: translateY(-53%);
+    }
+
+    .login-button:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+      box-shadow: 0 18px 38px rgba(232, 165, 0, 0.3);
+    }
+
+    .login-button:disabled {
+      background: #596274;
+      color: #d1d5db;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .login-button:disabled::after {
+      display: none;
+    }
+
+    /* =========================================================
+       BOTONES Y MENSAJES
+    ========================================================= */
+
+    .btn {
       border-radius: 10px;
       padding: 12px 17px;
-      background: var(--success);
-      color: #07100a;
       font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
+      font-weight: 800;
+      transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease;
     }
 
-    button:hover {
-      opacity: 0.92;
+    .btn:hover {
+      filter: brightness(1.06);
     }
 
-    button.primary {
-      background: var(--primary);
+    .btn-primary {
+      background: var(--blue);
       color: white;
     }
 
-    button.secondary {
+    .btn-secondary {
       background: #334155;
       color: white;
     }
 
-    button.danger {
-      background: var(--danger);
+    .btn-success {
+      background: var(--green);
+      color: #07100a;
+    }
+
+    .btn-danger {
+      background: var(--red);
       color: white;
     }
 
-    button.warning {
-      background: var(--warning);
+    .btn-warning {
+      background: var(--orange);
       color: #241500;
     }
 
-    button.small {
+    .btn-brand {
+      background: linear-gradient(135deg, var(--aqua), var(--aqua-dark));
+      color: #041817;
+    }
+
+    .btn-small {
       padding: 8px 11px;
       font-size: 13px;
     }
 
-    button:disabled {
+    .btn:disabled {
       background: #536076;
       color: #aab2c0;
       cursor: not-allowed;
-      opacity: 0.7;
+      opacity: 0.72;
+      transform: none;
+      filter: none;
     }
 
     .message {
       display: none;
       margin-top: 14px;
       padding: 13px;
-      border-radius: 10px;
+      border-radius: 11px;
       line-height: 1.45;
     }
 
     .message.error {
       display: block;
-      border: 1px solid var(--danger);
+      border: 1px solid var(--red);
       background: #3b1118;
     }
 
     .message.success {
       display: block;
-      border: 1px solid var(--success);
+      border: 1px solid var(--green);
       background: #12351f;
     }
 
     .message.info {
       display: block;
-      border: 1px solid var(--primary);
-      background: #14254d;
+      border: 1px solid var(--aqua);
+      background: #0d3335;
     }
+
+    #loginMessage {
+      text-align: center;
+    }
+
+    /* =========================================================
+       DASHBOARD
+    ========================================================= */
 
     #dashboard {
       display: none;
@@ -198,12 +409,43 @@
     .dashboard-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 18px;
       margin-bottom: 22px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(17, 24, 39, 0.92);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
     }
 
-    .header-actions {
+    .dashboard-brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .dashboard-logo {
+      display: block;
+      width: 78px;
+      height: 62px;
+      flex: 0 0 78px;
+      border: 1px solid rgba(73, 203, 197, 0.24);
+      border-radius: 13px;
+      object-fit: cover;
+      background: #0c111d;
+    }
+
+    .dashboard-brand h1 {
+      margin-bottom: 5px;
+      font-size: 27px;
+    }
+
+    .header-actions,
+    .section-actions,
+    .form-actions,
+    .table-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
@@ -211,24 +453,36 @@
 
     .navigation {
       display: flex;
-      gap: 10px;
+      gap: 9px;
       margin-bottom: 20px;
       padding: 8px;
       overflow-x: auto;
       border: 1px solid var(--border);
       border-radius: 14px;
-      background: var(--panel);
+      background: rgba(17, 24, 39, 0.95);
+      scrollbar-width: thin;
     }
 
     .navigation button {
       flex: 0 0 auto;
+      padding: 11px 15px;
+      border-radius: 10px;
       background: transparent;
       color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .navigation button.active {
-      background: var(--primary);
-      color: white;
+      background: linear-gradient(135deg, var(--aqua), var(--aqua-dark));
+      color: #041817;
+    }
+
+    .loading {
+      display: none;
+      margin: 10px 0 16px;
+      color: var(--muted);
     }
 
     .page-section {
@@ -250,7 +504,9 @@
       padding: 18px;
       border: 1px solid var(--border);
       border-radius: 16px;
-      background: var(--panel);
+      background:
+        linear-gradient(145deg, rgba(73, 203, 197, 0.06), transparent 56%),
+        var(--panel);
     }
 
     .stat-label {
@@ -262,7 +518,7 @@
 
     .stat-value {
       font-size: 27px;
-      font-weight: bold;
+      font-weight: 900;
     }
 
     .section-header {
@@ -273,12 +529,6 @@
       margin-bottom: 16px;
     }
 
-    .section-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
     .grid-two {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -286,9 +536,6 @@
     }
 
     .form-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
       margin-top: 4px;
     }
 
@@ -334,7 +581,7 @@
       padding: 5px 9px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: bold;
+      font-weight: 900;
     }
 
     .badge.success {
@@ -353,20 +600,14 @@
     }
 
     .badge.info {
-      background: #172554;
-      color: #93c5fd;
+      background: #0d3335;
+      color: #79e4df;
     }
 
     .empty {
       padding: 34px;
       color: var(--muted);
       text-align: center;
-    }
-
-    .loading {
-      display: none;
-      margin: 10px 0 16px;
-      color: var(--muted);
     }
 
     .poster-preview {
@@ -410,16 +651,6 @@
       line-height: 1.45;
     }
 
-    .table-actions {
-      display: flex;
-      gap: 7px;
-      flex-wrap: wrap;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
     .danger-zone {
       border-color: #7f1d1d;
     }
@@ -434,6 +665,7 @@
       }
 
       .dashboard-header {
+        align-items: flex-start;
         flex-direction: column;
       }
     }
@@ -441,10 +673,53 @@
     @media (max-width: 520px) {
       body {
         padding: 13px;
+        padding-top: max(13px, env(safe-area-inset-top));
+        padding-bottom: max(13px, env(safe-area-inset-bottom));
       }
 
-      h1 {
-        font-size: 25px;
+      .login-wrapper {
+        min-height: calc(100vh - 26px);
+      }
+
+      .login-card {
+        margin: 14px auto;
+        padding: 20px 17px;
+        border-radius: 21px;
+      }
+
+      .login-logo-box {
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+      }
+
+      .login-logo {
+        border-radius: 14px;
+      }
+
+      .login-heading h1 {
+        font-size: 26px;
+      }
+
+      .login-heading p {
+        font-size: 14px;
+      }
+
+      .dashboard-header {
+        padding: 15px;
+      }
+
+      .dashboard-logo {
+        width: 64px;
+        height: 52px;
+        flex-basis: 64px;
+      }
+
+      .dashboard-brand h1 {
+        font-size: 22px;
+      }
+
+      .dashboard-brand .subtitle {
+        font-size: 13px;
       }
 
       .stats {
@@ -466,9 +741,9 @@
         width: 100%;
       }
 
-      .header-actions button,
-      .section-actions button,
-      .form-actions button {
+      .header-actions .btn,
+      .section-actions .btn,
+      .form-actions .btn {
         flex: 1;
       }
     }
@@ -477,171 +752,136 @@
 
 <body>
   <main>
-    <section class="card login-card" id="loginSection">
-      <h1>🎬 Panel administrativo</h1>
+    <!-- ======================================================
+         ACCESO ADMINISTRATIVO
+    ======================================================= -->
+    <div class="login-wrapper" id="loginWrapper">
+      <section class="login-card" id="loginSection">
+        <div class="login-logo-box">
+          <img
+            class="login-logo"
+            src="Logo.PNG"
+            alt="Cine Teatro Manuel Nieves Quintero"
+          />
+        </div>
 
-      <p class="subtitle">
-        Cine Teatro Manuel Nieves Quintero
-      </p>
-
-      <br />
-
-      <label for="adminKey">
-        Contraseña del administrador
-      </label>
-
-      <input
-        id="adminKey"
-        type="password"
-        placeholder="Escribe la contraseña"
-        autocomplete="current-password"
-      />
-
-      <button
-        id="loginButton"
-        class="primary"
-        type="button"
-        onclick="login()"
-      >
-        Entrar al panel
-      </button>
-
-      <div class="message" id="loginMessage"></div>
-    </section>
-
-    <section id="dashboard">
-      <header class="dashboard-header">
-        <div>
-          <h1>📊 Administración del cine</h1>
-
-          <p class="subtitle">
-            Reservaciones, películas, tandas y configuración.
+        <div class="login-heading">
+          <span class="access-pill">ACCESO SEGURO</span>
+          <h1>Panel administrativo</h1>
+          <p>
+            Gestiona reservaciones, películas, tandas y empleados
+            desde un solo lugar.
           </p>
         </div>
 
-        <div class="header-actions">
-          <button
-            class="secondary"
-            type="button"
-            onclick="refreshCurrentSection()"
+        <label for="adminKey">Contraseña del administrador</label>
+
+        <div class="password-field">
+          <svg
+            class="password-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
           >
+            <rect x="4" y="10" width="16" height="11" rx="2"></rect>
+            <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+          </svg>
+
+          <input
+            id="adminKey"
+            type="password"
+            placeholder="Escribe la contraseña"
+            autocomplete="current-password"
+            enterkeyhint="go"
+          />
+        </div>
+
+        <button
+          id="loginButton"
+          class="login-button"
+          type="button"
+          onclick="login()"
+        >
+          Entrar al panel
+        </button>
+
+        <div class="message" id="loginMessage" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- ======================================================
+         DASHBOARD
+    ======================================================= -->
+    <section id="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <img
+            class="dashboard-logo"
+            src="Logo.PNG"
+            alt="Logo del Cine Teatro Manuel Nieves Quintero"
+          />
+
+          <div>
+            <h1>Administración del cine</h1>
+            <p class="subtitle">
+              Reservaciones, películas, tandas, empleados y configuración.
+            </p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn btn-secondary" type="button" onclick="refreshCurrentSection()">
             Actualizar
           </button>
-
-          <button
-            class="danger"
-            type="button"
-            onclick="logout()"
-          >
+          <button class="btn btn-danger" type="button" onclick="logout()">
             Cerrar sesión
           </button>
         </div>
       </header>
 
       <nav class="navigation">
-        <button
-          id="navReservations"
-          class="active"
-          type="button"
-          onclick="showSection('reservations')"
-        >
+        <button id="navReservations" class="active" type="button" onclick="showSection('reservations')">
           🎟 Reservaciones
         </button>
-
-        <button
-          id="navMovies"
-          type="button"
-          onclick="showSection('movies')"
-        >
+        <button id="navMovies" type="button" onclick="showSection('movies')">
           🎬 Películas
         </button>
-
-        <button
-          id="navShowtimes"
-          type="button"
-          onclick="showSection('showtimes')"
-        >
+        <button id="navShowtimes" type="button" onclick="showSection('showtimes')">
           🕒 Tandas
         </button>
-
-        <button
-          id="navEmployees"
-          type="button"
-          onclick="showSection('employees')"
-        >
+        <button id="navEmployees" type="button" onclick="showSection('employees')">
           👥 Empleados
         </button>
-
-        <button
-          id="navPassword"
-          type="button"
-          onclick="showSection('password')"
-        >
+        <button id="navPassword" type="button" onclick="showSection('password')">
           🔐 Contraseña
         </button>
       </nav>
 
-      <p class="loading" id="loadingMessage">
-        Cargando información…
-      </p>
+      <p class="loading" id="loadingMessage">Cargando información…</p>
 
       <!-- RESERVACIONES -->
-
-      <section
-        id="reservationsSection"
-        class="page-section active"
-      >
+      <section id="reservationsSection" class="page-section active">
         <div class="stats">
           <article class="stat">
-            <span class="stat-label">
-              Reservaciones
-            </span>
-
-            <strong
-              class="stat-value"
-              id="reservationCount"
-            >
-              0
-            </strong>
+            <span class="stat-label">Reservaciones</span>
+            <strong class="stat-value" id="reservationCount">0</strong>
           </article>
 
           <article class="stat">
-            <span class="stat-label">
-              Taquillas vendidas
-            </span>
-
-            <strong
-              class="stat-value"
-              id="ticketCount"
-            >
-              0
-            </strong>
+            <span class="stat-label">Taquillas vendidas</span>
+            <strong class="stat-value" id="ticketCount">0</strong>
           </article>
 
           <article class="stat">
-            <span class="stat-label">
-              Ventas pagadas
-            </span>
-
-            <strong
-              class="stat-value"
-              id="salesTotal"
-            >
-              $0.00
-            </strong>
+            <span class="stat-label">Ventas pagadas</span>
+            <strong class="stat-value" id="salesTotal">$0.00</strong>
           </article>
 
           <article class="stat">
-            <span class="stat-label">
-              Entradas utilizadas
-            </span>
-
-            <strong
-              class="stat-value"
-              id="usedCount"
-            >
-              0
-            </strong>
+            <span class="stat-label">Entradas utilizadas</span>
+            <strong class="stat-value" id="usedCount">0</strong>
           </article>
         </div>
 
@@ -649,17 +889,10 @@
           <div class="section-header">
             <div>
               <h2>Reservaciones</h2>
-
-              <p class="subtitle">
-                Ventas y entradas registradas.
-              </p>
+              <p class="subtitle">Ventas y entradas registradas.</p>
             </div>
 
-            <button
-              class="primary"
-              type="button"
-              onclick="loadReservations()"
-            >
+            <button class="btn btn-primary" type="button" onclick="loadReservations()">
               Actualizar
             </button>
           </div>
@@ -678,14 +911,10 @@
                   <th>Entrada</th>
                 </tr>
               </thead>
-
               <tbody id="reservationRows"></tbody>
             </table>
 
-            <div
-              class="empty"
-              id="reservationEmptyMessage"
-            >
+            <div class="empty" id="reservationEmptyMessage">
               Todavía no hay reservaciones.
             </div>
           </div>
@@ -693,45 +922,19 @@
       </section>
 
       <!-- PELÍCULAS -->
-
-      <section
-        id="moviesSection"
-        class="page-section"
-      >
+      <section id="moviesSection" class="page-section">
         <div class="grid-two">
           <section class="card">
-            <h2 id="movieFormTitle">
-              Añadir película
-            </h2>
+            <h2 id="movieFormTitle">Añadir película</h2>
+            <input id="movieId" type="hidden" />
 
-            <input
-              id="movieId"
-              type="hidden"
-            />
+            <label for="movieTitle">Título</label>
+            <input id="movieTitle" type="text" placeholder="Nombre de la película" />
 
-            <label for="movieTitle">
-              Título
-            </label>
+            <label for="movieDescription">Descripción</label>
+            <textarea id="movieDescription" placeholder="Sinopsis o información"></textarea>
 
-            <input
-              id="movieTitle"
-              type="text"
-              placeholder="Nombre de la película"
-            />
-
-            <label for="movieDescription">
-              Descripción
-            </label>
-
-            <textarea
-              id="movieDescription"
-              placeholder="Sinopsis o información"
-            ></textarea>
-
-            <label for="moviePosterFile">
-              Afiche de la película
-            </label>
-
+            <label for="moviePosterFile">Afiche de la película</label>
             <div class="poster-uploader">
               <div class="poster-upload-row">
                 <img
@@ -750,7 +953,7 @@
 
                   <button
                     id="uploadPosterButton"
-                    class="secondary"
+                    class="btn btn-secondary"
                     type="button"
                     onclick="uploadPoster()"
                   >
@@ -760,87 +963,49 @@
               </div>
 
               <p class="poster-help">
-                Formatos permitidos: JPG, PNG o WEBP.
-                Tamaño máximo: 6 MB.
+                Formatos permitidos: JPG, PNG o WEBP. Tamaño máximo: 6 MB.
               </p>
             </div>
 
-            <input
-              id="moviePosterUrl"
-              type="hidden"
-            />
+            <input id="moviePosterUrl" type="hidden" />
 
-            <label for="movieDuration">
-              Duración en minutos
-            </label>
+            <label for="movieDuration">Duración en minutos</label>
+            <input id="movieDuration" type="number" min="1" placeholder="120" />
 
-            <input
-              id="movieDuration"
-              type="number"
-              min="1"
-              placeholder="120"
-            />
-
-            <label for="movieRating">
-              Clasificación
-            </label>
-
-            <input
-              id="movieRating"
-              type="text"
-              placeholder="PG-13"
-            />
+            <label for="movieRating">Clasificación</label>
+            <input id="movieRating" type="text" placeholder="PG-13" />
 
             <label class="checkbox-row">
-              <input
-                id="movieActive"
-                type="checkbox"
-                checked
-              />
-
+              <input id="movieActive" type="checkbox" checked />
               Película activa y visible
             </label>
 
             <div class="form-actions">
               <button
                 id="saveMovieButton"
-                class="primary"
+                class="btn btn-primary"
                 type="button"
                 onclick="saveMovie()"
               >
                 Guardar película
               </button>
 
-              <button
-                class="secondary"
-                type="button"
-                onclick="resetMovieForm()"
-              >
+              <button class="btn btn-secondary" type="button" onclick="resetMovieForm()">
                 Limpiar
               </button>
             </div>
 
-            <div
-              class="message"
-              id="movieMessage"
-            ></div>
+            <div class="message" id="movieMessage"></div>
           </section>
 
           <section class="card">
             <div class="section-header">
               <div>
                 <h2>Películas registradas</h2>
-
-                <p class="subtitle">
-                  Edita, activa o elimina películas.
-                </p>
+                <p class="subtitle">Edita, activa o elimina películas.</p>
               </div>
 
-              <button
-                class="primary"
-                type="button"
-                onclick="loadMovies()"
-              >
+              <button class="btn btn-primary" type="button" onclick="loadMovies()">
                 Actualizar
               </button>
             </div>
@@ -856,14 +1021,10 @@
                     <th>Acciones</th>
                   </tr>
                 </thead>
-
                 <tbody id="movieRows"></tbody>
               </table>
 
-              <div
-                class="empty"
-                id="movieEmptyMessage"
-              >
+              <div class="empty" id="movieEmptyMessage">
                 Todavía no hay películas.
               </div>
             </div>
@@ -872,121 +1033,61 @@
       </section>
 
       <!-- TANDAS -->
-
-      <section
-        id="showtimesSection"
-        class="page-section"
-      >
+      <section id="showtimesSection" class="page-section">
         <div class="grid-two">
           <section class="card">
-            <h2 id="showtimeFormTitle">
-              Añadir tanda
-            </h2>
+            <h2 id="showtimeFormTitle">Añadir tanda</h2>
+            <input id="showtimeId" type="hidden" />
 
-            <input
-              id="showtimeId"
-              type="hidden"
-            />
-
-            <label for="showtimeMovie">
-              Película
-            </label>
-
+            <label for="showtimeMovie">Película</label>
             <select id="showtimeMovie">
-              <option value="">
-                Selecciona una película
-              </option>
+              <option value="">Selecciona una película</option>
             </select>
 
-            <label for="showtimeDate">
-              Fecha
-            </label>
+            <label for="showtimeDate">Fecha</label>
+            <input id="showtimeDate" type="date" />
 
-            <input
-              id="showtimeDate"
-              type="date"
-            />
+            <label for="showtimeTime">Hora</label>
+            <input id="showtimeTime" type="time" />
 
-            <label for="showtimeTime">
-              Hora
-            </label>
-
-            <input
-              id="showtimeTime"
-              type="time"
-            />
-
-            <label for="showtimePrice">
-              Precio por taquilla
-            </label>
-
-            <input
-              id="showtimePrice"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="8.00"
-            />
+            <label for="showtimePrice">Precio por taquilla</label>
+            <input id="showtimePrice" type="number" min="0" step="0.01" placeholder="8.00" />
 
             <label class="checkbox-row">
-              <input
-                id="showtimeActive"
-                type="checkbox"
-                checked
-              />
-
+              <input id="showtimeActive" type="checkbox" checked />
               Tanda activa y disponible
             </label>
 
             <div class="form-actions">
               <button
                 id="saveShowtimeButton"
-                class="primary"
+                class="btn btn-primary"
                 type="button"
                 onclick="saveShowtime()"
               >
                 Guardar tanda
               </button>
 
-              <button
-                class="secondary"
-                type="button"
-                onclick="resetShowtimeForm()"
-              >
+              <button class="btn btn-secondary" type="button" onclick="resetShowtimeForm()">
                 Limpiar
               </button>
             </div>
 
-            <div
-              class="message"
-              id="showtimeMessage"
-            ></div>
+            <div class="message" id="showtimeMessage"></div>
           </section>
 
           <section class="card">
             <div class="section-header">
               <div>
                 <h2>Tandas registradas</h2>
-
-                <p class="subtitle">
-                  Horarios disponibles para cada película.
-                </p>
+                <p class="subtitle">Horarios disponibles para cada película.</p>
               </div>
 
               <div class="section-actions">
-                <button
-                  class="primary"
-                  type="button"
-                  onclick="loadShowtimes()"
-                >
+                <button class="btn btn-primary" type="button" onclick="loadShowtimes()">
                   Actualizar
                 </button>
-
-                <button
-                  class="danger"
-                  type="button"
-                  onclick="deleteAllShowtimes()"
-                >
+                <button class="btn btn-danger" type="button" onclick="deleteAllShowtimes()">
                   Eliminar todo
                 </button>
               </div>
@@ -1004,14 +1105,10 @@
                     <th>Acciones</th>
                   </tr>
                 </thead>
-
                 <tbody id="showtimeRows"></tbody>
               </table>
 
-              <div
-                class="empty"
-                id="showtimeEmptyMessage"
-              >
+              <div class="empty" id="showtimeEmptyMessage">
                 Todavía no hay tandas.
               </div>
             </div>
@@ -1020,7 +1117,6 @@
       </section>
 
       <!-- EMPLEADOS -->
-
       <section id="employeesSection" class="page-section">
         <div class="grid-two">
           <section class="card">
@@ -1034,8 +1130,17 @@
             <input id="employeeUsername" type="text" placeholder="Ej. maria" autocomplete="off" />
 
             <label for="employeePassword">Contraseña</label>
-            <input id="employeePassword" type="password" minlength="8" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
-            <p class="poster-help">Al editar, deja la contraseña vacía para conservar la actual.</p>
+            <input
+              id="employeePassword"
+              type="password"
+              minlength="8"
+              placeholder="Mínimo 8 caracteres"
+              autocomplete="new-password"
+            />
+
+            <p class="poster-help">
+              Al editar, deja la contraseña vacía para conservar la actual.
+            </p>
 
             <label class="checkbox-row">
               <input id="employeeActive" type="checkbox" checked />
@@ -1043,9 +1148,20 @@
             </label>
 
             <div class="form-actions">
-              <button id="saveEmployeeButton" class="primary" type="button" onclick="saveEmployee()">Guardar empleado</button>
-              <button class="secondary" type="button" onclick="resetEmployeeForm()">Limpiar</button>
+              <button
+                id="saveEmployeeButton"
+                class="btn btn-primary"
+                type="button"
+                onclick="saveEmployee()"
+              >
+                Guardar empleado
+              </button>
+
+              <button class="btn btn-secondary" type="button" onclick="resetEmployeeForm()">
+                Limpiar
+              </button>
             </div>
+
             <div class="message" id="employeeMessage"></div>
           </section>
 
@@ -1055,102 +1171,104 @@
                 <h2>Empleados y escaneos</h2>
                 <p class="subtitle">Cada asiento validado cuenta como una taquilla.</p>
               </div>
-              <button class="primary" type="button" onclick="loadEmployees()">Actualizar</button>
+
+              <button class="btn btn-primary" type="button" onclick="loadEmployees()">
+                Actualizar
+              </button>
             </div>
+
             <div class="table-wrapper">
               <table>
-                <thead><tr><th>Empleado</th><th>Usuario</th><th>Estado</th><th>Escaneos</th><th>Taquillas</th><th>Último escaneo</th><th>Acciones</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Empleado</th>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                    <th>Escaneos</th>
+                    <th>Taquillas</th>
+                    <th>Último escaneo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
                 <tbody id="employeeRows"></tbody>
               </table>
-              <div class="empty" id="employeeEmptyMessage">Todavía no hay empleados.</div>
+
+              <div class="empty" id="employeeEmptyMessage">
+                Todavía no hay empleados.
+              </div>
             </div>
           </section>
         </div>
 
         <section class="card">
           <div class="section-header">
-            <div><h2>Historial de escaneos</h2><p class="subtitle">Últimos 200 registros de entrada.</p></div>
-            <button class="primary" type="button" onclick="loadCheckins()">Actualizar</button>
+            <div>
+              <h2>Historial de escaneos</h2>
+              <p class="subtitle">Últimos 200 registros de entrada.</p>
+            </div>
+
+            <button class="btn btn-primary" type="button" onclick="loadCheckins()">
+              Actualizar
+            </button>
           </div>
+
           <div class="table-wrapper">
             <table>
-              <thead><tr><th>Fecha</th><th>Empleado</th><th>Película</th><th>Tanda</th><th>Asientos</th><th>Taquillas</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Empleado</th>
+                  <th>Película</th>
+                  <th>Tanda</th>
+                  <th>Asientos</th>
+                  <th>Taquillas</th>
+                </tr>
+              </thead>
               <tbody id="checkinRows"></tbody>
             </table>
-            <div class="empty" id="checkinEmptyMessage">Todavía no hay escaneos.</div>
+
+            <div class="empty" id="checkinEmptyMessage">
+              Todavía no hay escaneos.
+            </div>
           </div>
         </section>
       </section>
 
       <!-- CONTRASEÑA -->
-
-      <section
-        id="passwordSection"
-        class="page-section"
-      >
+      <section id="passwordSection" class="page-section">
         <section class="card danger-zone">
           <h2>Cambiar contraseña</h2>
-
           <p class="subtitle">
-            La nueva contraseña debe tener al menos
-            ocho caracteres.
+            La nueva contraseña debe tener al menos ocho caracteres.
           </p>
-
           <br />
 
-          <label for="currentPassword">
-            Contraseña actual
-          </label>
+          <label for="currentPassword">Contraseña actual</label>
+          <input id="currentPassword" type="password" autocomplete="current-password" />
 
-          <input
-            id="currentPassword"
-            type="password"
-            autocomplete="current-password"
-          />
+          <label for="newPassword">Nueva contraseña</label>
+          <input id="newPassword" type="password" minlength="8" autocomplete="new-password" />
 
-          <label for="newPassword">
-            Nueva contraseña
-          </label>
-
-          <input
-            id="newPassword"
-            type="password"
-            minlength="8"
-            autocomplete="new-password"
-          />
-
-          <label for="confirmPassword">
-            Confirmar nueva contraseña
-          </label>
-
-          <input
-            id="confirmPassword"
-            type="password"
-            minlength="8"
-            autocomplete="new-password"
-          />
+          <label for="confirmPassword">Confirmar nueva contraseña</label>
+          <input id="confirmPassword" type="password" minlength="8" autocomplete="new-password" />
 
           <button
             id="changePasswordButton"
-            class="warning"
+            class="btn btn-warning"
             type="button"
             onclick="changePassword()"
           >
             Cambiar contraseña
           </button>
 
-          <div
-            class="message"
-            id="passwordMessage"
-          ></div>
+          <div class="message" id="passwordMessage"></div>
         </section>
       </section>
     </section>
   </main>
 
   <script>
-    const API_URL =
-      "https://cine-manuel-nieves.onrender.com";
+    const API_URL = "https://cine-manuel-nieves.onrender.com";
 
     let currentAdminKey = "";
     let currentSection = "reservations";
@@ -1159,18 +1277,12 @@
     let employeesCache = [];
 
     function setLoading(visible) {
-      document.getElementById(
-        "loadingMessage"
-      ).style.display = visible ? "block" : "none";
+      document.getElementById("loadingMessage").style.display = visible ? "block" : "none";
     }
 
     function setMessage(elementId, type, message) {
       const box = document.getElementById(elementId);
-
-      box.className = message
-        ? `message ${type}`
-        : "message";
-
+      box.className = message ? `message ${type}` : "message";
       box.textContent = message || "";
     }
 
@@ -1184,12 +1296,7 @@
       }
 
       if (!response.ok) {
-        const message =
-          data.error ||
-          data.message ||
-          "Ocurrió un error.";
-
-        throw new Error(message);
+        throw new Error(data.error || data.message || "Ocurrió un error.");
       }
 
       return data;
@@ -1206,47 +1313,29 @@
         !(options.body instanceof FormData) &&
         !headers["Content-Type"]
       ) {
-        headers["Content-Type"] =
-          "application/json";
+        headers["Content-Type"] = "application/json";
       }
 
-      const response = await fetch(
-        `${API_URL}${path}`,
-        {
-          ...options,
-          headers
-        }
-      );
+      const response = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers
+      });
 
-      if (
-        response.status === 401 ||
-        response.status === 403
-      ) {
+      if (response.status === 401 || response.status === 403) {
         logout();
-        throw new Error(
-          "La sesión administrativa no es válida."
-        );
+        throw new Error("La sesión administrativa no es válida.");
       }
 
       return parseResponse(response);
     }
 
     async function login() {
-      const keyInput =
-        document.getElementById("adminKey");
-
-      const loginButton =
-        document.getElementById("loginButton");
-
+      const keyInput = document.getElementById("adminKey");
+      const loginButton = document.getElementById("loginButton");
       const key = keyInput.value.trim();
 
       if (!key) {
-        setMessage(
-          "loginMessage",
-          "error",
-          "Escribe la contraseña del administrador."
-        );
-
+        setMessage("loginMessage", "error", "Escribe la contraseña del administrador.");
         return;
       }
 
@@ -1255,108 +1344,57 @@
       setMessage("loginMessage", "", "");
 
       try {
-        const response = await fetch(
-          `${API_URL}/api/admin/login`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              password: key
-            })
-          }
-        );
+        const response = await fetch(`${API_URL}/api/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: key })
+        });
 
         await parseResponse(response);
-
         currentAdminKey = key;
-
-        sessionStorage.setItem(
-          "cineAdminKey",
-          key
-        );
-
-        document.getElementById(
-          "loginSection"
-        ).style.display = "none";
-
-        document.getElementById(
-          "dashboard"
-        ).style.display = "block";
-
+        sessionStorage.setItem("cineAdminKey", key);
+        openDashboard();
         await loadReservations();
       } catch (error) {
         currentAdminKey = "";
-
-        setMessage(
-          "loginMessage",
-          "error",
-          error.message
-        );
+        setMessage("loginMessage", "error", error.message);
       } finally {
         loginButton.disabled = false;
-        loginButton.textContent =
-          "Entrar al panel";
+        loginButton.textContent = "Entrar al panel";
       }
+    }
+
+    function openDashboard() {
+      document.getElementById("loginWrapper").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
 
     function logout() {
       currentAdminKey = "";
-
-      sessionStorage.removeItem(
-        "cineAdminKey"
-      );
-
-      document.getElementById(
-        "dashboard"
-      ).style.display = "none";
-
-      document.getElementById(
-        "loginSection"
-      ).style.display = "block";
-
-      document.getElementById(
-        "adminKey"
-      ).value = "";
-
+      sessionStorage.removeItem("cineAdminKey");
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("loginWrapper").style.display = "flex";
+      document.getElementById("adminKey").value = "";
       setMessage("loginMessage", "", "");
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
 
     async function restoreSession() {
-      const savedKey =
-        sessionStorage.getItem("cineAdminKey");
-
-      if (!savedKey) {
-        return;
-      }
+      const savedKey = sessionStorage.getItem("cineAdminKey");
+      if (!savedKey) return;
 
       currentAdminKey = savedKey;
 
       try {
-        const response = await fetch(
-          `${API_URL}/api/admin/login`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              password: savedKey
-            })
-          }
-        );
+        const response = await fetch(`${API_URL}/api/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: savedKey })
+        });
 
         await parseResponse(response);
-
-        document.getElementById(
-          "loginSection"
-        ).style.display = "none";
-
-        document.getElementById(
-          "dashboard"
-        ).style.display = "block";
-
+        openDashboard();
         await loadReservations();
       } catch (error) {
         logout();
@@ -1365,49 +1403,19 @@
 
     function showSection(sectionName) {
       currentSection = sectionName;
+      const names = ["reservations", "movies", "showtimes", "employees", "password"];
 
-      const sectionNames = [
-        "reservations",
-        "movies",
-        "showtimes",
-        "employees",
-        "password"
-      ];
-
-      sectionNames.forEach((name) => {
-        const section = document.getElementById(
-          `${name}Section`
-        );
-
-        const navigationButton =
-          document.getElementById(
-            `nav${capitalize(name)}`
-          );
-
-        section.classList.toggle(
-          "active",
-          name === sectionName
-        );
-
-        navigationButton.classList.toggle(
-          "active",
-          name === sectionName
-        );
+      names.forEach((name) => {
+        document.getElementById(`${name}Section`).classList.toggle("active", name === sectionName);
+        document.getElementById(`nav${capitalize(name)}`).classList.toggle("active", name === sectionName);
       });
 
-      if (sectionName === "reservations") {
-        loadReservations();
-      }
-
-      if (sectionName === "movies") {
-        loadMovies();
-      }
-
+      if (sectionName === "reservations") loadReservations();
+      if (sectionName === "movies") loadMovies();
       if (sectionName === "showtimes") {
         loadMoviesForSelect();
         loadShowtimes();
       }
-
       if (sectionName === "employees") {
         loadEmployees();
         loadCheckins();
@@ -1415,19 +1423,12 @@
     }
 
     async function refreshCurrentSection() {
-      if (currentSection === "reservations") {
-        await loadReservations();
-      }
-
-      if (currentSection === "movies") {
-        await loadMovies();
-      }
-
+      if (currentSection === "reservations") await loadReservations();
+      if (currentSection === "movies") await loadMovies();
       if (currentSection === "showtimes") {
         await loadMoviesForSelect();
         await loadShowtimes();
       }
-
       if (currentSection === "employees") {
         await loadEmployees();
         await loadCheckins();
@@ -1438,10 +1439,7 @@
       setLoading(true);
 
       try {
-        const reservations = await adminFetch(
-          "/api/admin/reservations"
-        );
-
+        const reservations = await adminFetch("/api/admin/reservations");
         renderReservations(reservations);
         updateStatistics(reservations);
       } catch (error) {
@@ -1452,22 +1450,11 @@
     }
 
     function renderReservations(reservations) {
-      const rows =
-        document.getElementById(
-          "reservationRows"
-        );
-
-      const emptyMessage =
-        document.getElementById(
-          "reservationEmptyMessage"
-        );
-
+      const rows = document.getElementById("reservationRows");
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
       rows.innerHTML = "";
 
-      if (
-        !Array.isArray(reservations) ||
-        reservations.length === 0
-      ) {
+      if (!Array.isArray(reservations) || reservations.length === 0) {
         emptyMessage.style.display = "block";
         return;
       }
@@ -1475,87 +1462,26 @@
       emptyMessage.style.display = "none";
 
       reservations.forEach((ticket) => {
-        const row =
-          document.createElement("tr");
-
+        const row = document.createElement("tr");
         const createdDate = ticket.created
-          ? new Date(
-              ticket.created
-            ).toLocaleString("es-PR")
+          ? new Date(ticket.created).toLocaleString("es-PR")
           : "—";
-
-        const seats = Array.isArray(
-          ticket.seats
-        )
-          ? ticket.seats.join(", ")
-          : "—";
-
-        const paid =
-          ticket.paymentStatus === "paid" ||
-          ticket.paymentStatus === "approved";
-
-        const paymentClass = paid
-          ? "success"
-          : "warning";
-
-        const paymentText = paid
-          ? "Pagado"
-          : "Pendiente";
-
-        const usedClass = ticket.used
-          ? "info"
-          : "success";
-
-        const usedText = ticket.used
-          ? "Utilizada"
-          : "Disponible";
+        const seats = Array.isArray(ticket.seats) ? ticket.seats.join(", ") : "—";
+        const paid = ticket.paymentStatus === "paid" || ticket.paymentStatus === "approved";
+        const used = Boolean(ticket.used);
 
         row.innerHTML = `
           <td>${escapeHtml(createdDate)}</td>
-
           <td>
-            <strong>
-              ${escapeHtml(
-                ticket.customer?.name || "—"
-              )}
-            </strong>
-
-            <br />
-
-            <span class="muted">
-              ${escapeHtml(
-                ticket.customer?.email || "—"
-              )}
-            </span>
+            <strong>${escapeHtml(ticket.customer?.name || "—")}</strong><br />
+            <span class="muted">${escapeHtml(ticket.customer?.email || "—")}</span>
           </td>
-
-          <td>
-            ${escapeHtml(ticket.movie || "—")}
-          </td>
-
-          <td>
-            ${escapeHtml(ticket.time || "—")}
-          </td>
-
+          <td>${escapeHtml(ticket.movie || "—")}</td>
+          <td>${escapeHtml(ticket.time || "—")}</td>
           <td>${escapeHtml(seats)}</td>
-
-          <td>
-            $${Number(
-              ticket.total || 0
-            ).toFixed(2)}
-          </td>
-
-          <td>
-            <span class="badge ${paymentClass}">
-              ${paymentText}
-            </span>
-          </td>
-
-          <td>
-            <span class="badge ${usedClass}">
-              ${usedText}
-            </span>
-          </td>
+          <td>$${Number(ticket.total || 0).toFixed(2)}</td>
+          <td><span class="badge ${paid ? "success" : "warning"}">${paid ? "Pagado" : "Pendiente"}</span></td>
+          <td><span class="badge ${used ? "info" : "success"}">${used ? "Utilizada" : "Disponible"}</span></td>
         `;
 
         rows.appendChild(row);
@@ -1563,104 +1489,38 @@
     }
 
     function updateStatistics(reservations) {
-      const safeReservations =
-        Array.isArray(reservations)
-          ? reservations
-          : [];
+      const safeReservations = Array.isArray(reservations) ? reservations : [];
 
-      const ticketCount =
-        safeReservations.reduce(
-          (total, ticket) => {
-            return (
-              total +
-              (
-                Array.isArray(ticket.seats)
-                  ? ticket.seats.length
-                  : 0
-              )
-            );
-          },
-          0
-        );
+      const ticketCount = safeReservations.reduce((total, ticket) => {
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
 
-      const salesTotal =
-        safeReservations.reduce(
-          (total, ticket) => {
-            const paid =
-              ticket.paymentStatus === "paid" ||
-              ticket.paymentStatus ===
-                "approved";
+      const salesTotal = safeReservations.reduce((total, ticket) => {
+        const paid = ticket.paymentStatus === "paid" || ticket.paymentStatus === "approved";
+        return paid ? total + Number(ticket.total || 0) : total;
+      }, 0);
 
-            if (!paid) {
-              return total;
-            }
+      const usedCount = safeReservations.reduce((total, ticket) => {
+        if (!ticket.used) return total;
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
 
-            return (
-              total +
-              Number(ticket.total || 0)
-            );
-          },
-          0
-        );
-
-      const usedCount =
-        safeReservations.reduce(
-          (total, ticket) => {
-            if (!ticket.used) {
-              return total;
-            }
-
-            return (
-              total +
-              (
-                Array.isArray(ticket.seats)
-                  ? ticket.seats.length
-                  : 0
-              )
-            );
-          },
-          0
-        );
-
-      document.getElementById(
-        "reservationCount"
-      ).textContent =
-        safeReservations.length;
-
-      document.getElementById(
-        "ticketCount"
-      ).textContent = ticketCount;
-
-      document.getElementById(
-        "salesTotal"
-      ).textContent =
-        `$${salesTotal.toFixed(2)}`;
-
-      document.getElementById(
-        "usedCount"
-      ).textContent = usedCount;
+      document.getElementById("reservationCount").textContent = safeReservations.length;
+      document.getElementById("ticketCount").textContent = ticketCount;
+      document.getElementById("salesTotal").textContent = `$${salesTotal.toFixed(2)}`;
+      document.getElementById("usedCount").textContent = usedCount;
     }
 
     async function loadMovies() {
       setLoading(true);
 
       try {
-        const movies = await adminFetch(
-          "/api/admin/movies"
-        );
-
-        moviesCache = Array.isArray(movies)
-          ? movies
-          : [];
-
+        const movies = await adminFetch("/api/admin/movies");
+        moviesCache = Array.isArray(movies) ? movies : [];
         renderMovies(moviesCache);
         renderMovieOptions();
       } catch (error) {
-        setMessage(
-          "movieMessage",
-          "error",
-          error.message
-        );
+        setMessage("movieMessage", "error", error.message);
       } finally {
         setLoading(false);
       }
@@ -1668,39 +1528,20 @@
 
     async function loadMoviesForSelect() {
       try {
-        const movies = await adminFetch(
-          "/api/admin/movies"
-        );
-
-        moviesCache = Array.isArray(movies)
-          ? movies
-          : [];
-
+        const movies = await adminFetch("/api/admin/movies");
+        moviesCache = Array.isArray(movies) ? movies : [];
         renderMovieOptions();
       } catch (error) {
-        setMessage(
-          "showtimeMessage",
-          "error",
-          error.message
-        );
+        setMessage("showtimeMessage", "error", error.message);
       }
     }
 
     function renderMovies(movies) {
-      const rows =
-        document.getElementById("movieRows");
-
-      const emptyMessage =
-        document.getElementById(
-          "movieEmptyMessage"
-        );
-
+      const rows = document.getElementById("movieRows");
+      const emptyMessage = document.getElementById("movieEmptyMessage");
       rows.innerHTML = "";
 
-      if (
-        !Array.isArray(movies) ||
-        movies.length === 0
-      ) {
+      if (!Array.isArray(movies) || movies.length === 0) {
         emptyMessage.style.display = "block";
         return;
       }
@@ -1708,74 +1549,23 @@
       emptyMessage.style.display = "none";
 
       movies.forEach((movie) => {
-        const row =
-          document.createElement("tr");
-
+        const row = document.createElement("tr");
         const poster = movie.posterUrl
-          ? `
-            <img
-              class="poster-preview"
-              src="${escapeHtml(movie.posterUrl)}"
-              alt="Afiche"
-              onerror="this.style.display='none'"
-            />
-          `
+          ? `<img class="poster-preview" src="${escapeHtml(movie.posterUrl)}" alt="Afiche" onerror="this.style.display='none'" />`
           : `<span class="muted">Sin afiche</span>`;
-
-        const statusClass = movie.active
-          ? "success"
-          : "danger";
-
-        const statusText = movie.active
-          ? "Activa"
-          : "Inactiva";
 
         row.innerHTML = `
           <td>${poster}</td>
-
           <td>
-            <strong>
-              ${escapeHtml(movie.title)}
-            </strong>
-
-            <br />
-
-            <span class="muted">
-              ${escapeHtml(movie.rating || "Sin clasificación")}
-            </span>
+            <strong>${escapeHtml(movie.title)}</strong><br />
+            <span class="muted">${escapeHtml(movie.rating || "Sin clasificación")}</span>
           </td>
-
-          <td>
-            ${
-              movie.durationMinutes
-                ? `${movie.durationMinutes} min`
-                : "—"
-            }
-          </td>
-
-          <td>
-            <span class="badge ${statusClass}">
-              ${statusText}
-            </span>
-          </td>
-
+          <td>${movie.durationMinutes ? `${movie.durationMinutes} min` : "—"}</td>
+          <td><span class="badge ${movie.active ? "success" : "danger"}">${movie.active ? "Activa" : "Inactiva"}</span></td>
           <td>
             <div class="table-actions">
-              <button
-                class="small primary"
-                type="button"
-                onclick="editMovie('${movie.id}')"
-              >
-                Editar
-              </button>
-
-              <button
-                class="small danger"
-                type="button"
-                onclick="deleteMovie('${movie.id}')"
-              >
-                Eliminar
-              </button>
+              <button class="btn btn-small btn-primary" type="button" onclick="editMovie('${movie.id}')">Editar</button>
+              <button class="btn btn-small btn-danger" type="button" onclick="deleteMovie('${movie.id}')">Eliminar</button>
             </div>
           </td>
         `;
@@ -1785,29 +1575,14 @@
     }
 
     function renderMovieOptions() {
-      const select =
-        document.getElementById(
-          "showtimeMovie"
-        );
-
+      const select = document.getElementById("showtimeMovie");
       const currentValue = select.value;
-
-      select.innerHTML = `
-        <option value="">
-          Selecciona una película
-        </option>
-      `;
+      select.innerHTML = `<option value="">Selecciona una película</option>`;
 
       moviesCache.forEach((movie) => {
-        const option =
-          document.createElement("option");
-
+        const option = document.createElement("option");
         option.value = movie.id;
-        option.textContent =
-          movie.active
-            ? movie.title
-            : `${movie.title} (inactiva)`;
-
+        option.textContent = movie.active ? movie.title : `${movie.title} (inactiva)`;
         select.appendChild(option);
       });
 
@@ -1815,10 +1590,7 @@
     }
 
     function showPosterPreview(url) {
-      const preview =
-        document.getElementById(
-          "moviePosterPreview"
-        );
+      const preview = document.getElementById("moviePosterPreview");
 
       if (!url) {
         preview.removeAttribute("src");
@@ -1831,59 +1603,32 @@
     }
 
     function previewSelectedPoster() {
-      const input =
-        document.getElementById(
-          "moviePosterFile"
-        );
-
+      const input = document.getElementById("moviePosterFile");
       const file = input.files?.[0];
 
       if (!file) {
-        const savedUrl =
-          document.getElementById(
-            "moviePosterUrl"
-          ).value;
-
-        showPosterPreview(savedUrl);
+        showPosterPreview(document.getElementById("moviePosterUrl").value);
         return;
       }
 
-      showPosterPreview(
-        URL.createObjectURL(file)
-      );
+      showPosterPreview(URL.createObjectURL(file));
     }
 
     async function uploadPoster() {
-      const input =
-        document.getElementById(
-          "moviePosterFile"
-        );
-
+      const input = document.getElementById("moviePosterFile");
       const file = input.files?.[0];
 
       if (!file) {
-        setMessage(
-          "movieMessage",
-          "error",
-          "Selecciona una imagen primero."
-        );
+        setMessage("movieMessage", "error", "Selecciona una imagen primero.");
         return;
       }
 
       if (file.size > 6 * 1024 * 1024) {
-        setMessage(
-          "movieMessage",
-          "error",
-          "El afiche no puede superar 6 MB."
-        );
+        setMessage("movieMessage", "error", "El afiche no puede superar 6 MB.");
         return;
       }
 
-      const button =
-        document.getElementById(
-          "uploadPosterButton"
-        );
-
+      const button = document.getElementById("uploadPosterButton");
       button.disabled = true;
       button.textContent = "Subiendo…";
       setMessage("movieMessage", "info", "Subiendo afiche…");
@@ -1892,31 +1637,20 @@
         const formData = new FormData();
         formData.append("poster", file);
 
-        const data = await adminFetch(
-          "/api/admin/posters",
-          {
-            method: "POST",
-            body: formData
-          }
-        );
+        const data = await adminFetch("/api/admin/posters", {
+          method: "POST",
+          body: formData
+        });
 
-        document.getElementById(
-          "moviePosterUrl"
-        ).value = data.posterUrl;
-
+        document.getElementById("moviePosterUrl").value = data.posterUrl;
         showPosterPreview(data.posterUrl);
-
         setMessage(
           "movieMessage",
           "success",
           "Afiche subido correctamente. Ahora guarda la película."
         );
       } catch (error) {
-        setMessage(
-          "movieMessage",
-          "error",
-          error.message
-        );
+        setMessage("movieMessage", "error", error.message);
       } finally {
         button.disabled = false;
         button.textContent = "📷 Subir afiche";
@@ -1924,73 +1658,28 @@
     }
 
     async function saveMovie() {
-      const id =
-        document.getElementById(
-          "movieId"
-        ).value;
-
-      const title =
-        document.getElementById(
-          "movieTitle"
-        ).value.trim();
-
-      const description =
-        document.getElementById(
-          "movieDescription"
-        ).value.trim();
-
-      const posterUrl =
-        document.getElementById(
-          "moviePosterUrl"
-        ).value.trim();
-
-      const selectedPosterFile =
-        document.getElementById(
-          "moviePosterFile"
-        ).files?.[0];
+      const id = document.getElementById("movieId").value;
+      const title = document.getElementById("movieTitle").value.trim();
+      const description = document.getElementById("movieDescription").value.trim();
+      const posterUrl = document.getElementById("moviePosterUrl").value.trim();
+      const selectedPosterFile = document.getElementById("moviePosterFile").files?.[0];
+      const durationValue = document.getElementById("movieDuration").value;
+      const rating = document.getElementById("movieRating").value.trim();
+      const active = document.getElementById("movieActive").checked;
 
       if (selectedPosterFile && !posterUrl) {
-        setMessage(
-          "movieMessage",
-          "error",
-          "Pulsa “Subir afiche” antes de guardar la película."
-        );
+        setMessage("movieMessage", "error", "Pulsa “Subir afiche” antes de guardar la película.");
         return;
       }
-
-      const durationValue =
-        document.getElementById(
-          "movieDuration"
-        ).value;
-
-      const rating =
-        document.getElementById(
-          "movieRating"
-        ).value.trim();
-
-      const active =
-        document.getElementById(
-          "movieActive"
-        ).checked;
 
       if (!title) {
-        setMessage(
-          "movieMessage",
-          "error",
-          "Escribe el título de la película."
-        );
-
+        setMessage("movieMessage", "error", "Escribe el título de la película.");
         return;
       }
 
-      const button =
-        document.getElementById(
-          "saveMovieButton"
-        );
-
+      const button = document.getElementById("saveMovieButton");
       button.disabled = true;
       button.textContent = "Guardando…";
-
       setMessage("movieMessage", "", "");
 
       try {
@@ -1998,196 +1687,81 @@
           title,
           description,
           posterUrl,
-          durationMinutes:
-            durationValue === ""
-              ? null
-              : Number(durationValue),
+          durationMinutes: durationValue === "" ? null : Number(durationValue),
           rating,
           active
         };
 
         if (id) {
-          await adminFetch(
-            `/api/admin/movies/${id}`,
-            {
-              method: "PUT",
-              body: JSON.stringify(body)
-            }
-          );
-
-          setMessage(
-            "movieMessage",
-            "success",
-            "Película actualizada correctamente."
-          );
+          await adminFetch(`/api/admin/movies/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(body)
+          });
+          setMessage("movieMessage", "success", "Película actualizada correctamente.");
         } else {
-          await adminFetch(
-            "/api/admin/movies",
-            {
-              method: "POST",
-              body: JSON.stringify(body)
-            }
-          );
-
-          setMessage(
-            "movieMessage",
-            "success",
-            "Película creada correctamente."
-          );
+          await adminFetch("/api/admin/movies", {
+            method: "POST",
+            body: JSON.stringify(body)
+          });
+          setMessage("movieMessage", "success", "Película creada correctamente.");
         }
 
         resetMovieForm(false);
         await loadMovies();
       } catch (error) {
-        setMessage(
-          "movieMessage",
-          "error",
-          error.message
-        );
+        setMessage("movieMessage", "error", error.message);
       } finally {
         button.disabled = false;
-        button.textContent =
-          id
-            ? "Actualizar película"
-            : "Guardar película";
+        button.textContent = id ? "Actualizar película" : "Guardar película";
       }
     }
 
     function editMovie(id) {
-      const movie = moviesCache.find(
-        (item) => item.id === id
-      );
+      const movie = moviesCache.find((item) => item.id === id);
+      if (!movie) return;
 
-      if (!movie) {
-        return;
-      }
-
-      document.getElementById(
-        "movieId"
-      ).value = movie.id;
-
-      document.getElementById(
-        "movieTitle"
-      ).value = movie.title || "";
-
-      document.getElementById(
-        "movieDescription"
-      ).value = movie.description || "";
-
-      document.getElementById(
-        "moviePosterUrl"
-      ).value = movie.posterUrl || "";
-
-      document.getElementById(
-        "moviePosterFile"
-      ).value = "";
-
+      document.getElementById("movieId").value = movie.id;
+      document.getElementById("movieTitle").value = movie.title || "";
+      document.getElementById("movieDescription").value = movie.description || "";
+      document.getElementById("moviePosterUrl").value = movie.posterUrl || "";
+      document.getElementById("moviePosterFile").value = "";
       showPosterPreview(movie.posterUrl || "");
-
-      document.getElementById(
-        "movieDuration"
-      ).value =
-        movie.durationMinutes || "";
-
-      document.getElementById(
-        "movieRating"
-      ).value = movie.rating || "";
-
-      document.getElementById(
-        "movieActive"
-      ).checked = Boolean(movie.active);
-
-      document.getElementById(
-        "movieFormTitle"
-      ).textContent = "Editar película";
-
-      document.getElementById(
-        "saveMovieButton"
-      ).textContent = "Actualizar película";
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+      document.getElementById("movieDuration").value = movie.durationMinutes || "";
+      document.getElementById("movieRating").value = movie.rating || "";
+      document.getElementById("movieActive").checked = Boolean(movie.active);
+      document.getElementById("movieFormTitle").textContent = "Editar película";
+      document.getElementById("saveMovieButton").textContent = "Actualizar película";
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function resetMovieForm(
-      clearMessage = true
-    ) {
-      document.getElementById(
-        "movieId"
-      ).value = "";
-
-      document.getElementById(
-        "movieTitle"
-      ).value = "";
-
-      document.getElementById(
-        "movieDescription"
-      ).value = "";
-
-      document.getElementById(
-        "moviePosterUrl"
-      ).value = "";
-
-      document.getElementById(
-        "moviePosterFile"
-      ).value = "";
-
+    function resetMovieForm(clearMessage = true) {
+      document.getElementById("movieId").value = "";
+      document.getElementById("movieTitle").value = "";
+      document.getElementById("movieDescription").value = "";
+      document.getElementById("moviePosterUrl").value = "";
+      document.getElementById("moviePosterFile").value = "";
       showPosterPreview("");
-
-      document.getElementById(
-        "movieDuration"
-      ).value = "";
-
-      document.getElementById(
-        "movieRating"
-      ).value = "";
-
-      document.getElementById(
-        "movieActive"
-      ).checked = true;
-
-      document.getElementById(
-        "movieFormTitle"
-      ).textContent = "Añadir película";
-
-      document.getElementById(
-        "saveMovieButton"
-      ).textContent = "Guardar película";
-
-      if (clearMessage) {
-        setMessage("movieMessage", "", "");
-      }
+      document.getElementById("movieDuration").value = "";
+      document.getElementById("movieRating").value = "";
+      document.getElementById("movieActive").checked = true;
+      document.getElementById("movieFormTitle").textContent = "Añadir película";
+      document.getElementById("saveMovieButton").textContent = "Guardar película";
+      if (clearMessage) setMessage("movieMessage", "", "");
     }
 
     async function deleteMovie(id) {
-      const movie = moviesCache.find(
-        (item) => item.id === id
-      );
-
+      const movie = moviesCache.find((item) => item.id === id);
       const confirmed = confirm(
         `¿Eliminar la película "${movie?.title || ""}"?\n\nTambién se eliminarán sus tandas.`
       );
 
-      if (!confirmed) {
-        return;
-      }
+      if (!confirmed) return;
 
       try {
-        await adminFetch(
-          `/api/admin/movies/${id}`,
-          {
-            method: "DELETE"
-          }
-        );
-
+        await adminFetch(`/api/admin/movies/${id}`, { method: "DELETE" });
         resetMovieForm();
         await loadMovies();
-
-        alert(
-          "Película eliminada correctamente."
-        );
+        alert("Película eliminada correctamente.");
       } catch (error) {
         alert(error.message);
       }
@@ -2197,44 +1771,22 @@
       setLoading(true);
 
       try {
-        const showtimes = await adminFetch(
-          "/api/admin/showtimes"
-        );
-
-        showtimesCache =
-          Array.isArray(showtimes)
-            ? showtimes
-            : [];
-
+        const showtimes = await adminFetch("/api/admin/showtimes");
+        showtimesCache = Array.isArray(showtimes) ? showtimes : [];
         renderShowtimes(showtimesCache);
       } catch (error) {
-        setMessage(
-          "showtimeMessage",
-          "error",
-          error.message
-        );
+        setMessage("showtimeMessage", "error", error.message);
       } finally {
         setLoading(false);
       }
     }
 
     function renderShowtimes(showtimes) {
-      const rows =
-        document.getElementById(
-          "showtimeRows"
-        );
-
-      const emptyMessage =
-        document.getElementById(
-          "showtimeEmptyMessage"
-        );
-
+      const rows = document.getElementById("showtimeRows");
+      const emptyMessage = document.getElementById("showtimeEmptyMessage");
       rows.innerHTML = "";
 
-      if (
-        !Array.isArray(showtimes) ||
-        showtimes.length === 0
-      ) {
+      if (!Array.isArray(showtimes) || showtimes.length === 0) {
         emptyMessage.style.display = "block";
         return;
       }
@@ -2242,68 +1794,18 @@
       emptyMessage.style.display = "none";
 
       showtimes.forEach((showtime) => {
-        const row =
-          document.createElement("tr");
-
-        const statusClass =
-          showtime.active
-            ? "success"
-            : "danger";
-
-        const statusText =
-          showtime.active
-            ? "Activa"
-            : "Inactiva";
-
-        const formattedDate =
-          formatDate(showtime.showDate);
+        const row = document.createElement("tr");
 
         row.innerHTML = `
-          <td>
-            <strong>
-              ${escapeHtml(
-                showtime.movieTitle || "—"
-              )}
-            </strong>
-          </td>
-
-          <td>${escapeHtml(formattedDate)}</td>
-
-          <td>
-            ${escapeHtml(
-              formatTime(showtime.showTime)
-            )}
-          </td>
-
-          <td>
-            $${Number(
-              showtime.price || 0
-            ).toFixed(2)}
-          </td>
-
-          <td>
-            <span class="badge ${statusClass}">
-              ${statusText}
-            </span>
-          </td>
-
+          <td><strong>${escapeHtml(showtime.movieTitle || "—")}</strong></td>
+          <td>${escapeHtml(formatDate(showtime.showDate))}</td>
+          <td>${escapeHtml(formatTime(showtime.showTime))}</td>
+          <td>$${Number(showtime.price || 0).toFixed(2)}</td>
+          <td><span class="badge ${showtime.active ? "success" : "danger"}">${showtime.active ? "Activa" : "Inactiva"}</span></td>
           <td>
             <div class="table-actions">
-              <button
-                class="small primary"
-                type="button"
-                onclick="editShowtime('${showtime.id}')"
-              >
-                Editar
-              </button>
-
-              <button
-                class="small danger"
-                type="button"
-                onclick="deleteShowtime('${showtime.id}')"
-              >
-                Eliminar
-              </button>
+              <button class="btn btn-small btn-primary" type="button" onclick="editShowtime('${showtime.id}')">Editar</button>
+              <button class="btn btn-small btn-danger" type="button" onclick="deleteShowtime('${showtime.id}')">Eliminar</button>
             </div>
           </td>
         `;
@@ -2313,59 +1815,21 @@
     }
 
     async function saveShowtime() {
-      const id =
-        document.getElementById(
-          "showtimeId"
-        ).value;
+      const id = document.getElementById("showtimeId").value;
+      const movieId = document.getElementById("showtimeMovie").value;
+      const showDate = document.getElementById("showtimeDate").value;
+      const showTime = document.getElementById("showtimeTime").value;
+      const price = document.getElementById("showtimePrice").value;
+      const active = document.getElementById("showtimeActive").checked;
 
-      const movieId =
-        document.getElementById(
-          "showtimeMovie"
-        ).value;
-
-      const showDate =
-        document.getElementById(
-          "showtimeDate"
-        ).value;
-
-      const showTime =
-        document.getElementById(
-          "showtimeTime"
-        ).value;
-
-      const price =
-        document.getElementById(
-          "showtimePrice"
-        ).value;
-
-      const active =
-        document.getElementById(
-          "showtimeActive"
-        ).checked;
-
-      if (
-        !movieId ||
-        !showDate ||
-        !showTime ||
-        price === ""
-      ) {
-        setMessage(
-          "showtimeMessage",
-          "error",
-          "Completa todos los datos de la tanda."
-        );
-
+      if (!movieId || !showDate || !showTime || price === "") {
+        setMessage("showtimeMessage", "error", "Completa todos los datos de la tanda.");
         return;
       }
 
-      const button =
-        document.getElementById(
-          "saveShowtimeButton"
-        );
-
+      const button = document.getElementById("saveShowtimeButton");
       button.disabled = true;
       button.textContent = "Guardando…";
-
       setMessage("showtimeMessage", "", "");
 
       try {
@@ -2378,149 +1842,55 @@
         };
 
         if (id) {
-          await adminFetch(
-            `/api/admin/showtimes/${id}`,
-            {
-              method: "PUT",
-              body: JSON.stringify(body)
-            }
-          );
-
-          setMessage(
-            "showtimeMessage",
-            "success",
-            "Tanda actualizada correctamente."
-          );
+          await adminFetch(`/api/admin/showtimes/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(body)
+          });
+          setMessage("showtimeMessage", "success", "Tanda actualizada correctamente.");
         } else {
-          await adminFetch(
-            "/api/admin/showtimes",
-            {
-              method: "POST",
-              body: JSON.stringify(body)
-            }
-          );
-
-          setMessage(
-            "showtimeMessage",
-            "success",
-            "Tanda creada correctamente."
-          );
+          await adminFetch("/api/admin/showtimes", {
+            method: "POST",
+            body: JSON.stringify(body)
+          });
+          setMessage("showtimeMessage", "success", "Tanda creada correctamente.");
         }
 
         resetShowtimeForm(false);
         await loadShowtimes();
       } catch (error) {
-        setMessage(
-          "showtimeMessage",
-          "error",
-          error.message
-        );
+        setMessage("showtimeMessage", "error", error.message);
       } finally {
         button.disabled = false;
-        button.textContent =
-          id
-            ? "Actualizar tanda"
-            : "Guardar tanda";
+        button.textContent = id ? "Actualizar tanda" : "Guardar tanda";
       }
     }
 
     function editShowtime(id) {
-      const showtime =
-        showtimesCache.find(
-          (item) => item.id === id
-        );
+      const showtime = showtimesCache.find((item) => item.id === id);
+      if (!showtime) return;
 
-      if (!showtime) {
-        return;
-      }
-
-      document.getElementById(
-        "showtimeId"
-      ).value = showtime.id;
-
-      document.getElementById(
-        "showtimeMovie"
-      ).value = showtime.movieId;
-
-      document.getElementById(
-        "showtimeDate"
-      ).value =
-        normalizeDate(showtime.showDate);
-
-      document.getElementById(
-        "showtimeTime"
-      ).value =
-        normalizeTime(showtime.showTime);
-
-      document.getElementById(
-        "showtimePrice"
-      ).value = Number(
-        showtime.price || 0
-      ).toFixed(2);
-
-      document.getElementById(
-        "showtimeActive"
-      ).checked =
-        Boolean(showtime.active);
-
-      document.getElementById(
-        "showtimeFormTitle"
-      ).textContent = "Editar tanda";
-
-      document.getElementById(
-        "saveShowtimeButton"
-      ).textContent = "Actualizar tanda";
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+      document.getElementById("showtimeId").value = showtime.id;
+      document.getElementById("showtimeMovie").value = showtime.movieId;
+      document.getElementById("showtimeDate").value = normalizeDate(showtime.showDate);
+      document.getElementById("showtimeTime").value = normalizeTime(showtime.showTime);
+      document.getElementById("showtimePrice").value = Number(showtime.price || 0).toFixed(2);
+      document.getElementById("showtimeActive").checked = Boolean(showtime.active);
+      document.getElementById("showtimeFormTitle").textContent = "Editar tanda";
+      document.getElementById("saveShowtimeButton").textContent = "Actualizar tanda";
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function resetShowtimeForm(
-      clearMessage = true
-    ) {
-      document.getElementById(
-        "showtimeId"
-      ).value = "";
-
-      document.getElementById(
-        "showtimeMovie"
-      ).value = "";
-
-      document.getElementById(
-        "showtimeDate"
-      ).value = "";
-
-      document.getElementById(
-        "showtimeTime"
-      ).value = "";
-
-      document.getElementById(
-        "showtimePrice"
-      ).value = "";
-
-      document.getElementById(
-        "showtimeActive"
-      ).checked = true;
-
-      document.getElementById(
-        "showtimeFormTitle"
-      ).textContent = "Añadir tanda";
-
-      document.getElementById(
-        "saveShowtimeButton"
-      ).textContent = "Guardar tanda";
-
-      if (clearMessage) {
-        setMessage(
-          "showtimeMessage",
-          "",
-          ""
-        );
-      }
+    function resetShowtimeForm(clearMessage = true) {
+      document.getElementById("showtimeId").value = "";
+      document.getElementById("showtimeMovie").value = "";
+      document.getElementById("showtimeDate").value = "";
+      document.getElementById("showtimeTime").value = "";
+      document.getElementById("showtimePrice").value = "";
+      document.getElementById("showtimeActive").checked = true;
+      document.getElementById("showtimeFormTitle").textContent = "Añadir tanda";
+      document.getElementById("saveShowtimeButton").textContent = "Guardar tanda";
+      if (clearMessage) setMessage("showtimeMessage", "", "");
     }
-
 
     async function deleteAllShowtimes() {
       if (showtimesCache.length === 0) {
@@ -2532,66 +1902,28 @@
         `¿Seguro que deseas eliminar las ${showtimesCache.length} tandas registradas?\n\nEsta acción no se puede deshacer.`
       );
 
-      if (!confirmed) {
-        return;
-      }
-
-      const finalConfirmation = confirm(
-        "Confirmación final: ¿eliminar todas las tandas?"
-      );
-
-      if (!finalConfirmation) {
-        return;
-      }
+      if (!confirmed) return;
+      if (!confirm("Confirmación final: ¿eliminar todas las tandas?")) return;
 
       try {
-        const result = await adminFetch(
-          "/api/admin/showtimes",
-          {
-            method: "DELETE"
-          }
-        );
-
+        const result = await adminFetch("/api/admin/showtimes", { method: "DELETE" });
         resetShowtimeForm();
         await loadShowtimes();
-
-        alert(
-          result.message ||
-          "Todas las tandas fueron eliminadas."
-        );
+        alert(result.message || "Todas las tandas fueron eliminadas.");
       } catch (error) {
         alert(error.message);
       }
     }
 
     async function deleteShowtime(id) {
-      const showtime =
-        showtimesCache.find(
-          (item) => item.id === id
-        );
-
-      const confirmed = confirm(
-        `¿Eliminar la tanda de "${showtime?.movieTitle || ""}"?`
-      );
-
-      if (!confirmed) {
-        return;
-      }
+      const showtime = showtimesCache.find((item) => item.id === id);
+      if (!confirm(`¿Eliminar la tanda de "${showtime?.movieTitle || ""}"?`)) return;
 
       try {
-        await adminFetch(
-          `/api/admin/showtimes/${id}`,
-          {
-            method: "DELETE"
-          }
-        );
-
+        await adminFetch(`/api/admin/showtimes/${id}`, { method: "DELETE" });
         resetShowtimeForm();
         await loadShowtimes();
-
-        alert(
-          "Tanda eliminada correctamente."
-        );
+        alert("Tanda eliminada correctamente.");
       } catch (error) {
         alert(error.message);
       }
@@ -2599,24 +1931,36 @@
 
     async function loadEmployees() {
       setLoading(true);
+
       try {
         const employees = await adminFetch("/api/admin/employees");
         employeesCache = Array.isArray(employees) ? employees : [];
         renderEmployees(employeesCache);
       } catch (error) {
         setMessage("employeeMessage", "error", error.message);
-      } finally { setLoading(false); }
+      } finally {
+        setLoading(false);
+      }
     }
 
     function renderEmployees(employees) {
       const rows = document.getElementById("employeeRows");
       const empty = document.getElementById("employeeEmptyMessage");
       rows.innerHTML = "";
-      if (!employees.length) { empty.style.display = "block"; return; }
+
+      if (!employees.length) {
+        empty.style.display = "block";
+        return;
+      }
+
       empty.style.display = "none";
+
       employees.forEach((employee) => {
         const row = document.createElement("tr");
-        const lastScan = employee.lastScan ? new Date(employee.lastScan).toLocaleString("es-PR") : "—";
+        const lastScan = employee.lastScan
+          ? new Date(employee.lastScan).toLocaleString("es-PR")
+          : "—";
+
         row.innerHTML = `
           <td><strong>${escapeHtml(employee.name)}</strong></td>
           <td>${escapeHtml(employee.username)}</td>
@@ -2624,10 +1968,14 @@
           <td>${Number(employee.scans || 0)}</td>
           <td><strong>${Number(employee.ticketsScanned || 0)}</strong></td>
           <td>${escapeHtml(lastScan)}</td>
-          <td><div class="table-actions">
-            <button class="small primary" type="button" onclick="editEmployee('${employee.id}')">Editar</button>
-            <button class="small danger" type="button" onclick="deleteEmployee('${employee.id}')">Eliminar</button>
-          </div></td>`;
+          <td>
+            <div class="table-actions">
+              <button class="btn btn-small btn-primary" type="button" onclick="editEmployee('${employee.id}')">Editar</button>
+              <button class="btn btn-small btn-danger" type="button" onclick="deleteEmployee('${employee.id}')">Eliminar</button>
+            </div>
+          </td>
+        `;
+
         rows.appendChild(row);
       });
     }
@@ -2638,21 +1986,48 @@
       const username = document.getElementById("employeeUsername").value.trim().toLowerCase();
       const password = document.getElementById("employeePassword").value;
       const active = document.getElementById("employeeActive").checked;
-      if (!name || !username) { setMessage("employeeMessage", "error", "Escribe el nombre y el usuario."); return; }
-      if ((!id && password.length < 8) || (id && password && password.length < 8)) { setMessage("employeeMessage", "error", "La contraseña debe tener al menos 8 caracteres."); return; }
+
+      if (!name || !username) {
+        setMessage("employeeMessage", "error", "Escribe el nombre y el usuario.");
+        return;
+      }
+
+      if ((!id && password.length < 8) || (id && password && password.length < 8)) {
+        setMessage("employeeMessage", "error", "La contraseña debe tener al menos 8 caracteres.");
+        return;
+      }
+
       const button = document.getElementById("saveEmployeeButton");
-      button.disabled = true; button.textContent = "Guardando…"; setMessage("employeeMessage", "", "");
+      button.disabled = true;
+      button.textContent = "Guardando…";
+      setMessage("employeeMessage", "", "");
+
       try {
-        await adminFetch(id ? `/api/admin/employees/${id}` : "/api/admin/employees", { method: id ? "PUT" : "POST", body: JSON.stringify({ name, username, password, active }) });
-        setMessage("employeeMessage", "success", id ? "Empleado actualizado correctamente." : "Empleado creado correctamente.");
-        resetEmployeeForm(false); await loadEmployees();
-      } catch (error) { setMessage("employeeMessage", "error", error.message); }
-      finally { button.disabled = false; button.textContent = id ? "Actualizar empleado" : "Guardar empleado"; }
+        await adminFetch(id ? `/api/admin/employees/${id}` : "/api/admin/employees", {
+          method: id ? "PUT" : "POST",
+          body: JSON.stringify({ name, username, password, active })
+        });
+
+        setMessage(
+          "employeeMessage",
+          "success",
+          id ? "Empleado actualizado correctamente." : "Empleado creado correctamente."
+        );
+
+        resetEmployeeForm(false);
+        await loadEmployees();
+      } catch (error) {
+        setMessage("employeeMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = id ? "Actualizar empleado" : "Guardar empleado";
+      }
     }
 
     function editEmployee(id) {
       const employee = employeesCache.find((item) => item.id === id);
       if (!employee) return;
+
       document.getElementById("employeeId").value = employee.id;
       document.getElementById("employeeName").value = employee.name || "";
       document.getElementById("employeeUsername").value = employee.username || "";
@@ -2676,214 +2051,141 @@
 
     async function deleteEmployee(id) {
       const employee = employeesCache.find((item) => item.id === id);
-      if (!confirm(`¿Eliminar al empleado "${employee?.name || ""}"?\n\nSu historial de escaneos se conservará.`)) return;
+
+      if (!confirm(`¿Eliminar al empleado "${employee?.name || ""}"?\n\nSu historial de escaneos se conservará.`)) {
+        return;
+      }
+
       try {
         await adminFetch(`/api/admin/employees/${id}`, { method: "DELETE" });
-        resetEmployeeForm(); await loadEmployees(); await loadCheckins(); alert("Empleado eliminado correctamente.");
-      } catch (error) { alert(error.message); }
+        resetEmployeeForm();
+        await loadEmployees();
+        await loadCheckins();
+        alert("Empleado eliminado correctamente.");
+      } catch (error) {
+        alert(error.message);
+      }
     }
 
     async function loadCheckins() {
       try {
         const checkins = await adminFetch("/api/admin/checkins?limit=200");
         renderCheckins(Array.isArray(checkins) ? checkins : []);
-      } catch (error) { setMessage("employeeMessage", "error", error.message); }
+      } catch (error) {
+        setMessage("employeeMessage", "error", error.message);
+      }
     }
 
     function renderCheckins(checkins) {
       const rows = document.getElementById("checkinRows");
       const empty = document.getElementById("checkinEmptyMessage");
       rows.innerHTML = "";
-      if (!checkins.length) { empty.style.display = "block"; return; }
+
+      if (!checkins.length) {
+        empty.style.display = "block";
+        return;
+      }
+
       empty.style.display = "none";
+
       checkins.forEach((checkin) => {
         const row = document.createElement("tr");
-        const scannedAt = checkin.scannedAt ? new Date(checkin.scannedAt).toLocaleString("es-PR") : "—";
+        const scannedAt = checkin.scannedAt
+          ? new Date(checkin.scannedAt).toLocaleString("es-PR")
+          : "—";
         const seats = Array.isArray(checkin.seats) ? checkin.seats.join(", ") : "—";
+
         row.innerHTML = `
           <td>${escapeHtml(scannedAt)}</td>
-          <td><strong>${escapeHtml(checkin.employeeName || "—")}</strong><br><span class="muted">${escapeHtml(checkin.employeeUsername || "—")}</span></td>
+          <td>
+            <strong>${escapeHtml(checkin.employeeName || "—")}</strong><br />
+            <span class="muted">${escapeHtml(checkin.employeeUsername || "—")}</span>
+          </td>
           <td>${escapeHtml(checkin.movie || "—")}</td>
           <td>${escapeHtml(checkin.showTime || "—")}</td>
           <td>${escapeHtml(seats)}</td>
-          <td><strong>${Number(checkin.seatsCount || 0)}</strong></td>`;
+          <td><strong>${Number(checkin.seatsCount || 0)}</strong></td>
+        `;
+
         rows.appendChild(row);
       });
     }
 
     async function changePassword() {
-      const currentPassword =
-        document.getElementById(
-          "currentPassword"
-        ).value;
+      const currentPassword = document.getElementById("currentPassword").value;
+      const newPassword = document.getElementById("newPassword").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
 
-      const newPassword =
-        document.getElementById(
-          "newPassword"
-        ).value;
-
-      const confirmPassword =
-        document.getElementById(
-          "confirmPassword"
-        ).value;
-
-      if (
-        !currentPassword ||
-        !newPassword ||
-        !confirmPassword
-      ) {
-        setMessage(
-          "passwordMessage",
-          "error",
-          "Completa todos los campos."
-        );
-
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        setMessage("passwordMessage", "error", "Completa todos los campos.");
         return;
       }
 
       if (newPassword.length < 8) {
-        setMessage(
-          "passwordMessage",
-          "error",
-          "La nueva contraseña debe tener al menos ocho caracteres."
-        );
-
+        setMessage("passwordMessage", "error", "La nueva contraseña debe tener al menos ocho caracteres.");
         return;
       }
 
       if (newPassword !== confirmPassword) {
-        setMessage(
-          "passwordMessage",
-          "error",
-          "Las contraseñas nuevas no coinciden."
-        );
-
+        setMessage("passwordMessage", "error", "Las contraseñas nuevas no coinciden.");
         return;
       }
 
-      const button =
-        document.getElementById(
-          "changePasswordButton"
-        );
-
+      const button = document.getElementById("changePasswordButton");
       button.disabled = true;
       button.textContent = "Cambiando…";
-
       setMessage("passwordMessage", "", "");
 
       try {
-        await adminFetch(
-          "/api/admin/password",
-          {
-            method: "PUT",
-            body: JSON.stringify({
-              currentPassword,
-              newPassword
-            })
-          }
-        );
+        await adminFetch("/api/admin/password", {
+          method: "PUT",
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
 
         currentAdminKey = newPassword;
-
-        sessionStorage.setItem(
-          "cineAdminKey",
-          newPassword
-        );
-
-        document.getElementById(
-          "currentPassword"
-        ).value = "";
-
-        document.getElementById(
-          "newPassword"
-        ).value = "";
-
-        document.getElementById(
-          "confirmPassword"
-        ).value = "";
-
-        setMessage(
-          "passwordMessage",
-          "success",
-          "Contraseña actualizada correctamente."
-        );
+        sessionStorage.setItem("cineAdminKey", newPassword);
+        document.getElementById("currentPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("confirmPassword").value = "";
+        setMessage("passwordMessage", "success", "Contraseña actualizada correctamente.");
       } catch (error) {
-        setMessage(
-          "passwordMessage",
-          "error",
-          error.message
-        );
+        setMessage("passwordMessage", "error", error.message);
       } finally {
         button.disabled = false;
-        button.textContent =
-          "Cambiar contraseña";
+        button.textContent = "Cambiar contraseña";
       }
     }
 
     function normalizeDate(value) {
-      if (!value) {
-        return "";
-      }
-
-      return String(value).slice(0, 10);
+      return value ? String(value).slice(0, 10) : "";
     }
 
     function normalizeTime(value) {
-      if (!value) {
-        return "";
-      }
-
-      return String(value).slice(0, 5);
+      return value ? String(value).slice(0, 5) : "";
     }
 
     function formatDate(value) {
-      const normalized =
-        normalizeDate(value);
-
-      if (!normalized) {
-        return "—";
-      }
-
+      const normalized = normalizeDate(value);
+      if (!normalized) return "—";
       const parts = normalized.split("-");
-
-      if (parts.length !== 3) {
-        return normalized;
-      }
-
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : normalized;
     }
 
     function formatTime(value) {
-      const normalized =
-        normalizeTime(value);
+      const normalized = normalizeTime(value);
+      if (!normalized) return "—";
 
-      if (!normalized) {
-        return "—";
-      }
-
-      const [hourString, minute] =
-        normalized.split(":");
-
+      const [hourString, minute] = normalized.split(":");
       const hour = Number(hourString);
+      if (!Number.isFinite(hour)) return normalized;
 
-      if (!Number.isFinite(hour)) {
-        return normalized;
-      }
-
-      const suffix =
-        hour >= 12 ? "PM" : "AM";
-
-      const displayHour =
-        hour % 12 || 12;
-
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
       return `${displayHour}:${minute} ${suffix}`;
     }
 
     function capitalize(value) {
-      return (
-        value.charAt(0).toUpperCase() +
-        value.slice(1)
-      );
+      return value.charAt(0).toUpperCase() + value.slice(1);
     }
 
     function escapeHtml(value) {
@@ -2895,16 +2197,9 @@
         .replaceAll("'", "&#039;");
     }
 
-    document
-      .getElementById("adminKey")
-      .addEventListener(
-        "keydown",
-        (event) => {
-          if (event.key === "Enter") {
-            login();
-          }
-        }
-      );
+    document.getElementById("adminKey").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") login();
+    });
 
     restoreSession();
   </script>
