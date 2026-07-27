@@ -1163,6 +1163,112 @@
       }
     }
 
+
+    /* =========================================================
+       AFICHES ADAPTABLES SEGÚN LA ORIENTACIÓN DE LA FOTO
+       Vertical = tarjeta vertical
+       Horizontal = tarjeta horizontal
+       Cuadrada = formato cuadrado
+    ========================================================= */
+
+    .movie-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 380px));
+      justify-content: center;
+      align-items: start;
+      gap: 26px;
+    }
+
+    .movie-card {
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    .movie-poster-wrapper {
+      width: 100%;
+      height: auto;
+      min-height: 220px;
+      max-height: none;
+      overflow: hidden;
+      aspect-ratio: 2 / 3;
+      background:
+        radial-gradient(circle at center, #1d2a42, #0b1220);
+      transition: aspect-ratio 0.25s ease;
+    }
+
+    .movie-poster-wrapper.poster-portrait {
+      aspect-ratio: 2 / 3;
+    }
+
+    .movie-poster-wrapper.poster-landscape {
+      aspect-ratio: 16 / 9;
+    }
+
+    .movie-poster-wrapper.poster-square {
+      aspect-ratio: 1 / 1;
+    }
+
+    .movie-poster {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      background: #0b1220;
+    }
+
+    .movie-content {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .movie-description {
+      min-height: 72px;
+    }
+
+    .showtime-list,
+    .coming-soon-message {
+      margin-top: auto;
+    }
+
+    @media (min-width: 980px) {
+      .movie-grid {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 380px));
+      }
+
+      .movie-card:has(.poster-landscape) {
+        max-width: 620px;
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .movie-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .movie-card,
+      .movie-card:has(.poster-landscape) {
+        width: 100%;
+        max-width: 100%;
+        grid-column: auto;
+      }
+
+      .movie-poster-wrapper.poster-landscape {
+        aspect-ratio: 16 / 9;
+      }
+
+      .movie-poster-wrapper.poster-portrait {
+        aspect-ratio: 2 / 3;
+      }
+
+      .movie-poster-wrapper.poster-square {
+        aspect-ratio: 1 / 1;
+      }
+    }
+
     @media print {
       body {
         background: white;
@@ -1808,6 +1914,7 @@
                   alt="Afiche de ${escapeHtml(
                     movie.title
                   )}"
+                  onload="adaptPosterOrientation(this)"
                   onerror="showPosterPlaceholder(this)"
                 />
               `
@@ -1930,6 +2037,53 @@
           grid.appendChild(card);
         }
       );
+    }
+
+    function adaptPosterOrientation(image) {
+      const wrapper =
+        image.closest(
+          ".movie-poster-wrapper"
+        );
+
+      if (!wrapper) {
+        return;
+      }
+
+      wrapper.classList.remove(
+        "poster-portrait",
+        "poster-landscape",
+        "poster-square"
+      );
+
+      const width =
+        Number(image.naturalWidth || 0);
+
+      const height =
+        Number(image.naturalHeight || 0);
+
+      if (!width || !height) {
+        wrapper.classList.add(
+          "poster-portrait"
+        );
+        return;
+      }
+
+      const ratio =
+        width / height;
+
+      if (ratio >= 1.2) {
+        wrapper.classList.add(
+          "poster-landscape"
+        );
+      } else if (ratio <= 0.85) {
+        wrapper.classList.add(
+          "poster-portrait"
+        );
+      } else {
+        wrapper.classList.add(
+          "poster-square"
+        );
+      }
     }
 
     function createPosterPlaceholder(
