@@ -1196,7 +1196,7 @@
 
               <p class="trailer-status" id="trailerStatus">
                 Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 50 MB.
-                Al subir uno nuevo, el tráiler anterior se elimina automáticamente.
+                Puedes subir un tráiler diferente para cada película. Los videos anteriores no se reemplazarán.
               </p>
             </div>
 
@@ -2008,7 +2008,7 @@
       setMessage(
         "movieMessage",
         "info",
-        "Subiendo tráiler y eliminando el anterior. No cierres esta página…"
+        "Subiendo tráiler. No cierres esta página…"
       );
 
       try {
@@ -2041,7 +2041,7 @@
         setMessage(
           "movieMessage",
           "success",
-          "Tráiler anterior eliminado y nuevo tráiler subido. Ahora guarda la película."
+          "Tráiler subido correctamente. Ahora guarda o actualiza esta película."
         );
       } catch (error) {
         setMessage(
