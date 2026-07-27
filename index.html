@@ -563,6 +563,64 @@
       font-weight: 800;
     }
 
+    .ticket-type-selector {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .ticket-type-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid #334565;
+      border-radius: 14px;
+      background: #0c111d;
+    }
+
+    .ticket-type-name {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 900;
+    }
+
+    .ticket-type-price {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .ticket-counter {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ticket-counter button {
+      width: 38px;
+      height: 38px;
+      border: 1px solid #45649a;
+      border-radius: 10px;
+      background: #17294d;
+      color: white;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .ticket-counter strong {
+      min-width: 24px;
+      text-align: center;
+      font-size: 19px;
+    }
+
+    .ticket-selection-note {
+      margin-top: 14px;
+      color: #9ff3ef;
+      line-height: 1.5;
+      font-weight: 800;
+    }
+
     .screen {
       width: min(600px, 88%);
       margin: 0 auto 34px;
@@ -1599,6 +1657,56 @@
           </section>
 
           <section class="card">
+            <h2>Selecciona tus taquillas</h2>
+            <p class="subtitle">
+              Escoge cuántas taquillas necesitas por categoría. Luego selecciona
+              exactamente la misma cantidad de asientos.
+            </p>
+
+            <div class="ticket-type-selector">
+              <div class="ticket-type-row">
+                <div>
+                  <span class="ticket-type-name">Adulto</span>
+                  <span class="ticket-type-price" id="adultTicketPrice">$0.00</span>
+                </div>
+                <div class="ticket-counter">
+                  <button type="button" onclick="changeTicketType('adult', -1)">−</button>
+                  <strong id="adultTicketCount">0</strong>
+                  <button type="button" onclick="changeTicketType('adult', 1)">+</button>
+                </div>
+              </div>
+
+              <div class="ticket-type-row">
+                <div>
+                  <span class="ticket-type-name">Niño</span>
+                  <span class="ticket-type-price" id="childTicketPrice">$0.00</span>
+                </div>
+                <div class="ticket-counter">
+                  <button type="button" onclick="changeTicketType('child', -1)">−</button>
+                  <strong id="childTicketCount">0</strong>
+                  <button type="button" onclick="changeTicketType('child', 1)">+</button>
+                </div>
+              </div>
+
+              <div class="ticket-type-row">
+                <div>
+                  <span class="ticket-type-name">Senior</span>
+                  <span class="ticket-type-price" id="seniorTicketPrice">$0.00</span>
+                </div>
+                <div class="ticket-counter">
+                  <button type="button" onclick="changeTicketType('senior', -1)">−</button>
+                  <strong id="seniorTicketCount">0</strong>
+                  <button type="button" onclick="changeTicketType('senior', 1)">+</button>
+                </div>
+              </div>
+            </div>
+
+            <p class="ticket-selection-note" id="ticketSelectionNote">
+              Selecciona al menos una taquilla.
+            </p>
+          </section>
+
+          <section class="card">
             <h2>Selecciona tus asientos</h2>
 
             <p class="subtitle" style="margin-bottom: 25px;">
@@ -1651,6 +1759,11 @@
           <div class="summary-row">
             <span>Idioma</span>
             <strong id="summaryLanguage">—</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Taquillas</span>
+            <strong id="summaryTicketTypes">Ninguna</strong>
           </div>
 
           <div class="summary-row">
@@ -1958,6 +2071,11 @@
     let selectedMovie = null;
     let selectedShowtime = null;
     let selectedSeats = [];
+    let selectedTicketTypes = {
+      adult: 0,
+      child: 0,
+      senior: 0
+    };
     let occupiedSeats = [];
     let currentTicket = null;
 
@@ -2289,8 +2407,8 @@
                   `${formatTime(
                     showtime.showTime
                   )} · ` +
-                  `$${Number(
-                    showtime.price
+                  `Adulto $${Number(
+                    showtime.adultPrice ?? showtime.price ?? 0
                   ).toFixed(2)}`;
 
                 const expired =
@@ -2596,6 +2714,11 @@
       }
 
       selectedSeats = [];
+      selectedTicketTypes = {
+        adult: 0,
+        child: 0,
+        senior: 0
+      };
       occupiedSeats = [];
 
       renderSelectedMovie();
@@ -2603,6 +2726,83 @@
       showPage("seatsPage");
 
       await loadOccupiedSeats();
+    }
+
+    function getTicketPrice(type) {
+      if (!selectedShowtime) return 0;
+
+      const values = {
+        adult: selectedShowtime.adultPrice ?? selectedShowtime.price ?? 0,
+        child: selectedShowtime.childPrice ?? selectedShowtime.price ?? 0,
+        senior: selectedShowtime.seniorPrice ?? selectedShowtime.price ?? 0
+      };
+
+      return Number(values[type] || 0);
+    }
+
+    function getSelectedTicketCount() {
+      return (
+        selectedTicketTypes.adult +
+        selectedTicketTypes.child +
+        selectedTicketTypes.senior
+      );
+    }
+
+    function getTicketTypesTotal() {
+      return (
+        selectedTicketTypes.adult * getTicketPrice("adult") +
+        selectedTicketTypes.child * getTicketPrice("child") +
+        selectedTicketTypes.senior * getTicketPrice("senior")
+      );
+    }
+
+    function changeTicketType(type, amount) {
+      if (!Object.prototype.hasOwnProperty.call(selectedTicketTypes, type)) {
+        return;
+      }
+
+      selectedTicketTypes[type] = Math.max(
+        0,
+        selectedTicketTypes[type] + amount
+      );
+
+      const requiredSeats = getSelectedTicketCount();
+
+      while (selectedSeats.length > requiredSeats) {
+        selectedSeats.pop();
+      }
+
+      renderSeatMap();
+      updateSummary();
+    }
+
+    function renderTicketTypeSelector() {
+      document.getElementById("adultTicketPrice").textContent =
+        `$${getTicketPrice("adult").toFixed(2)} c/u`;
+      document.getElementById("childTicketPrice").textContent =
+        `$${getTicketPrice("child").toFixed(2)} c/u`;
+      document.getElementById("seniorTicketPrice").textContent =
+        `$${getTicketPrice("senior").toFixed(2)} c/u`;
+
+      document.getElementById("adultTicketCount").textContent =
+        selectedTicketTypes.adult;
+      document.getElementById("childTicketCount").textContent =
+        selectedTicketTypes.child;
+      document.getElementById("seniorTicketCount").textContent =
+        selectedTicketTypes.senior;
+
+      const requiredSeats = getSelectedTicketCount();
+      const selectedCount = selectedSeats.length;
+      const note = document.getElementById("ticketSelectionNote");
+
+      if (requiredSeats === 0) {
+        note.textContent = "Selecciona al menos una taquilla.";
+      } else if (selectedCount < requiredSeats) {
+        note.textContent =
+          `Ahora selecciona ${requiredSeats - selectedCount} asiento(s) más.`;
+      } else {
+        note.textContent = "Cantidad de taquillas y asientos completada.";
+      }
     }
 
     function renderSelectedMovie() {
@@ -2670,6 +2870,8 @@
           </div>
         </div>
       `;
+
+      renderTicketTypeSelector();
     }
 
     async function loadOccupiedSeats() {
@@ -2830,12 +3032,30 @@
       seatName,
       button
     ) {
+      const requiredSeats = getSelectedTicketCount();
+
+      if (requiredSeats === 0) {
+        showSeatMessage(
+          "error",
+          "Primero selecciona cuántas taquillas necesitas."
+        );
+        return;
+      }
+
       const index =
         selectedSeats.indexOf(
           seatName
         );
 
       if (index === -1) {
+        if (selectedSeats.length >= requiredSeats) {
+          showSeatMessage(
+            "error",
+            `Solo puedes seleccionar ${requiredSeats} asiento(s).`
+          );
+          return;
+        }
+
         selectedSeats.push(
           seatName
         );
@@ -2880,14 +3100,7 @@
     }
 
     function updateSummary() {
-      const price =
-        Number(
-          selectedShowtime?.price || 0
-        );
-
-      const total =
-        selectedSeats.length *
-        price;
+      const total = getTicketTypesTotal();
 
       document.getElementById(
         "summaryMovie"
@@ -2912,6 +3125,24 @@
           ? getSelectedLanguageLabel()
           : "—";
 
+      const ticketTypeParts = [];
+      if (selectedTicketTypes.adult) {
+        ticketTypeParts.push(`${selectedTicketTypes.adult} adulto(s)`);
+      }
+      if (selectedTicketTypes.child) {
+        ticketTypeParts.push(`${selectedTicketTypes.child} niño(s)`);
+      }
+      if (selectedTicketTypes.senior) {
+        ticketTypeParts.push(`${selectedTicketTypes.senior} senior`);
+      }
+
+      document.getElementById(
+        "summaryTicketTypes"
+      ).textContent =
+        ticketTypeParts.length
+          ? ticketTypeParts.join(", ")
+          : "Ninguna";
+
       document.getElementById(
         "summarySeats"
       ).textContent =
@@ -2922,37 +3153,41 @@
       document.getElementById(
         "summaryPrice"
       ).textContent =
-        `$${price.toFixed(2)} c/u`;
+        selectedShowtime
+          ? `Adulto $${getTicketPrice("adult").toFixed(2)} · Niño $${getTicketPrice("child").toFixed(2)} · Senior $${getTicketPrice("senior").toFixed(2)}`
+          : "$0.00";
 
       document.getElementById(
         "summaryTotal"
       ).textContent =
         `$${total.toFixed(2)}`;
 
+      const requiredSeats = getSelectedTicketCount();
+
       document.getElementById(
         "continueButton"
       ).disabled =
-        selectedSeats.length === 0;
+        requiredSeats === 0 ||
+        selectedSeats.length !== requiredSeats;
+
+      renderTicketTypeSelector();
     }
 
     function openCustomerPage() {
       if (
         !selectedShowtime ||
-        selectedSeats.length === 0
+        getSelectedTicketCount() === 0 ||
+        selectedSeats.length !== getSelectedTicketCount()
       ) {
         showSeatMessage(
           "error",
-          "Selecciona al menos un asiento."
+          "Selecciona las taquillas y la misma cantidad de asientos."
         );
 
         return;
       }
 
-      const total =
-        selectedSeats.length *
-        Number(
-          selectedShowtime.price
-        );
+      const total = getTicketTypesTotal();
 
       document.getElementById(
         "customerSummary"
@@ -2987,6 +3222,25 @@
           <span>Idioma</span>
           <strong>
             ${escapeHtml(getSelectedLanguageLabel())}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Taquillas</span>
+          <strong>
+            ${escapeHtml(
+              [
+                selectedTicketTypes.adult
+                  ? `${selectedTicketTypes.adult} adulto(s)`
+                  : "",
+                selectedTicketTypes.child
+                  ? `${selectedTicketTypes.child} niño(s)`
+                  : "",
+                selectedTicketTypes.senior
+                  ? `${selectedTicketTypes.senior} senior`
+                  : ""
+              ].filter(Boolean).join(", ")
+            )}
           </strong>
         </div>
 
@@ -3071,6 +3325,8 @@
                   selectedShowtime.id,
                 seats:
                   selectedSeats,
+                ticketTypes:
+                  selectedTicketTypes,
                 customer: {
                   name,
                   email,
@@ -3213,6 +3469,25 @@
         </div>
 
         <div class="ticket-detail">
+          <span>Taquillas</span>
+          <strong>
+            ${escapeHtml(
+              [
+                ticket.ticketTypes?.adult
+                  ? `${ticket.ticketTypes.adult} adulto(s)`
+                  : "",
+                ticket.ticketTypes?.child
+                  ? `${ticket.ticketTypes.child} niño(s)`
+                  : "",
+                ticket.ticketTypes?.senior
+                  ? `${ticket.ticketTypes.senior} senior`
+                  : ""
+              ].filter(Boolean).join(", ") || "—"
+            )}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
           <span>Asientos</span>
           <strong>
             ${escapeHtml(seats)}
@@ -3301,6 +3576,11 @@
       selectedMovie = null;
       selectedShowtime = null;
       selectedSeats = [];
+      selectedTicketTypes = {
+        adult: 0,
+        child: 0,
+        senior: 0
+      };
       occupiedSeats = [];
       currentTicket = null;
 
