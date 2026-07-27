@@ -1369,6 +1369,13 @@
             <label for="showtimePrice">Precio por taquilla</label>
             <input id="showtimePrice" type="number" min="0" step="0.01" placeholder="8.00" />
 
+            <label for="showtimeLanguage">Idioma de la tanda</label>
+            <select id="showtimeLanguage">
+              <option value="spanish">Español</option>
+              <option value="english">Inglés</option>
+              <option value="english_subtitled">Inglés con subtítulos en español</option>
+            </select>
+
             <label class="checkbox-row">
               <input id="showtimeActive" type="checkbox" checked />
               Tanda activa y disponible
@@ -1416,6 +1423,7 @@
                     <th>Película</th>
                     <th>Fecha</th>
                     <th>Hora</th>
+                    <th>Idioma</th>
                     <th>Precio</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -2317,6 +2325,16 @@
       }
     }
 
+    function getShowtimeLanguageLabel(showtime) {
+      const labels = {
+        spanish: "Español",
+        english: "Inglés",
+        english_subtitled: "Inglés con subtítulos en español"
+      };
+
+      return showtime?.languageLabel || labels[showtime?.language] || "Español";
+    }
+
     function renderShowtimes(showtimes) {
       const rows = document.getElementById("showtimeRows");
       const emptyMessage = document.getElementById("showtimeEmptyMessage");
@@ -2336,6 +2354,7 @@
           <td><strong>${escapeHtml(showtime.movieTitle || "—")}</strong></td>
           <td>${escapeHtml(formatDate(showtime.showDate))}</td>
           <td>${escapeHtml(formatTime(showtime.showTime))}</td>
+          <td><span class="badge info">${escapeHtml(getShowtimeLanguageLabel(showtime))}</span></td>
           <td>$${Number(showtime.price || 0).toFixed(2)}</td>
           <td><span class="badge ${showtime.active ? "success" : "danger"}">${showtime.active ? "Activa" : "Inactiva"}</span></td>
           <td>
@@ -2356,6 +2375,7 @@
       const showDate = document.getElementById("showtimeDate").value;
       const showTime = document.getElementById("showtimeTime").value;
       const price = document.getElementById("showtimePrice").value;
+      const language = document.getElementById("showtimeLanguage").value;
       const active = document.getElementById("showtimeActive").checked;
 
       if (!movieId || !showDate || !showTime || price === "") {
@@ -2374,6 +2394,7 @@
           showDate,
           showTime,
           price: Number(price),
+          language,
           active
         };
 
@@ -2410,6 +2431,7 @@
       document.getElementById("showtimeDate").value = normalizeDate(showtime.showDate);
       document.getElementById("showtimeTime").value = normalizeTime(showtime.showTime);
       document.getElementById("showtimePrice").value = Number(showtime.price || 0).toFixed(2);
+      document.getElementById("showtimeLanguage").value = showtime.language || "spanish";
       document.getElementById("showtimeActive").checked = Boolean(showtime.active);
       document.getElementById("showtimeFormTitle").textContent = "Editar tanda";
       document.getElementById("saveShowtimeButton").textContent = "Actualizar tanda";
@@ -2422,6 +2444,7 @@
       document.getElementById("showtimeDate").value = "";
       document.getElementById("showtimeTime").value = "";
       document.getElementById("showtimePrice").value = "";
+      document.getElementById("showtimeLanguage").value = "spanish";
       document.getElementById("showtimeActive").checked = true;
       document.getElementById("showtimeFormTitle").textContent = "Añadir tanda";
       document.getElementById("saveShowtimeButton").textContent = "Guardar tanda";
