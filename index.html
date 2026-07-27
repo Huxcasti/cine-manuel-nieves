@@ -397,8 +397,27 @@
       font-weight: 800;
     }
 
-    .showtime-button:hover {
+    .showtime-button:hover:not(:disabled) {
       background: var(--primary);
+    }
+
+    .showtime-button.showtime-expired,
+    .showtime-button:disabled {
+      border-color: #374151;
+      background: #1f2937;
+      color: #7f8a9d;
+      cursor: not-allowed;
+      opacity: 0.72;
+      transform: none;
+    }
+
+    .showtime-expired-note {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      color: #fca5a5;
+      font-size: 12px;
+      font-weight: 800;
     }
 
     .trailer-button {
@@ -2003,6 +2022,143 @@
       }
     }
 
+    function getPuertoRicoNowParts() {
+      const formatter =
+        new Intl.DateTimeFormat(
+          "en-CA",
+          {
+            timeZone:
+              "America/Puerto_Rico",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23"
+          }
+        );
+
+      const parts =
+        formatter.formatToParts(
+          new Date()
+        );
+
+      const values = {};
+
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          values[part.type] =
+            part.value;
+        }
+      });
+
+      return {
+        year: Number(values.year),
+        month: Number(values.month),
+        day: Number(values.day),
+        hour: Number(values.hour),
+        minute: Number(values.minute)
+      };
+    }
+
+    function getComparableDateTimeKey(
+      year,
+      month,
+      day,
+      hour,
+      minute
+    ) {
+      return (
+        Number(year) * 100000000 +
+        Number(month) * 1000000 +
+        Number(day) * 10000 +
+        Number(hour) * 100 +
+        Number(minute)
+      );
+    }
+
+    function getShowtimeDateParts(
+      showtime
+    ) {
+      const dateText =
+        normalizeDate(
+          showtime?.showDate
+        );
+
+      const dateParts =
+        dateText.split("-");
+
+      const timeText =
+        String(
+          showtime?.showTime || ""
+        ).slice(0, 5);
+
+      const timeParts =
+        timeText.split(":");
+
+      if (
+        dateParts.length !== 3 ||
+        timeParts.length !== 2
+      ) {
+        return null;
+      }
+
+      const parts = {
+        year: Number(dateParts[0]),
+        month: Number(dateParts[1]),
+        day: Number(dateParts[2]),
+        hour: Number(timeParts[0]),
+        minute: Number(timeParts[1])
+      };
+
+      if (
+        Object.values(parts).some(
+          (value) =>
+            !Number.isFinite(value)
+        )
+      ) {
+        return null;
+      }
+
+      return parts;
+    }
+
+    function isShowtimeExpired(
+      showtime
+    ) {
+      const showtimeParts =
+        getShowtimeDateParts(
+          showtime
+        );
+
+      if (!showtimeParts) {
+        return false;
+      }
+
+      const nowParts =
+        getPuertoRicoNowParts();
+
+      const showtimeKey =
+        getComparableDateTimeKey(
+          showtimeParts.year,
+          showtimeParts.month,
+          showtimeParts.day,
+          showtimeParts.hour,
+          showtimeParts.minute
+        );
+
+      const nowKey =
+        getComparableDateTimeKey(
+          nowParts.year,
+          nowParts.month,
+          nowParts.day,
+          nowParts.hour,
+          nowParts.minute
+        );
+
+      return nowKey >= showtimeKey;
+    }
+
     function renderMovies() {
       const grid =
         document.getElementById(
@@ -2091,16 +2247,35 @@
                     showtime.price
                   ).toFixed(2)}`;
 
+                const expired =
+                  isShowtimeExpired(
+                    showtime
+                  );
+
                 return `
                   <button
-                    class="showtime-button"
+                    class="showtime-button ${expired ? "showtime-expired" : ""}"
                     type="button"
-                    onclick="selectShowtime(
-                      '${movie.id}',
-                      '${showtime.id}'
-                    )"
+                    ${
+                      expired
+                        ? "disabled"
+                        : `onclick="selectShowtime(
+                            '${movie.id}',
+                            '${showtime.id}'
+                          )"`
+                    }
+                    aria-disabled="${expired ? "true" : "false"}"
+                    title="${
+                      expired
+                        ? "Esta tanda ya comenzó o finalizó."
+                        : "Seleccionar esta tanda"
+                    }"
                   >
-                    ${escapeHtml(label)}
+                    ${
+                      expired
+                        ? `${escapeHtml(label)} · CERRADA`
+                        : escapeHtml(label)
+                    }
                   </button>
                 `;
               })
@@ -2353,6 +2528,19 @@
           "No se pudo seleccionar esta tanda."
         );
 
+        return;
+      }
+
+      if (
+        isShowtimeExpired(
+          selectedShowtime
+        )
+      ) {
+        alert(
+          "Esta tanda ya comenzó o pasó de hora y no está disponible."
+        );
+
+        renderMovies();
         return;
       }
 
@@ -3179,6 +3367,21 @@
     }
 
     loadMovies();
+
+    setInterval(() => {
+      if (
+        document
+          .getElementById(
+            "catalogPage"
+          )
+          .classList.contains(
+            "active"
+          ) &&
+        movies.length > 0
+      ) {
+        renderMovies();
+      }
+    }, 30_000);
   </script>
 </body>
 </html>
