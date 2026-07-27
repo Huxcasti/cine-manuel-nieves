@@ -20,6 +20,9 @@ const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_POSTERS_BUCKET =
   process.env.SUPABASE_POSTERS_BUCKET || "posters";
+const SUPABASE_TRAILERS_BUCKET =
+  process.env.SUPABASE_TRAILERS_BUCKET ||
+  SUPABASE_POSTERS_BUCKET;
 
 app.use(cors());
 app.use(express.json());
@@ -116,6 +119,41 @@ function extensionFromMimeType(mimeType) {
   };
 
   return extensions[mimeType] || "jpg";
+}
+
+const trailerUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024
+  },
+  fileFilter: (req, file, callback) => {
+    const allowedTypes = new Set([
+      "video/mp4",
+      "video/webm",
+      "video/quicktime"
+    ]);
+
+    if (!allowedTypes.has(file.mimetype)) {
+      callback(
+        new Error(
+          "El trÃ¡iler debe ser MP4, WEBM o MOV."
+        )
+      );
+      return;
+    }
+
+    callback(null, true);
+  }
+});
+
+function trailerExtensionFromMimeType(mimeType) {
+  const extensions = {
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+    "video/quicktime": "mov"
+  };
+
+  return extensions[mimeType] || "mp4";
 }
 
 /*
@@ -2410,6 +2448,93 @@ app.post(
 
 /*
 ==================================================
+SUBIR TRÃILER A SUPABASE STORAGE
+==================================================
+*/
+
+app.post(
+  "/api/admin/trailers",
+  requireAdmin,
+  trailerUpload.single("trailer"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Selecciona un video para el trÃ¡iler."
+        });
+      }
+
+      const extension =
+        trailerExtensionFromMimeType(
+          req.file.mimetype
+        );
+
+      const fileName =
+        `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+      const filePath =
+        `trailers/${fileName}`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from(SUPABASE_TRAILERS_BUCKET)
+          .upload(
+            filePath,
+            req.file.buffer,
+            {
+              contentType: req.file.mimetype,
+              cacheControl: "31536000",
+              upsert: false
+            }
+          );
+
+      if (uploadError) {
+        console.error(
+          "Error de Supabase subiendo trÃ¡iler:",
+          uploadError
+        );
+
+        return res.status(502).json({
+          error:
+            uploadError.message ||
+            "No se pudo subir el trÃ¡iler a Supabase Storage."
+        });
+      }
+
+      const { data: publicUrlData } =
+        supabase.storage
+          .from(SUPABASE_TRAILERS_BUCKET)
+          .getPublicUrl(filePath);
+
+      if (!publicUrlData?.publicUrl) {
+        return res.status(500).json({
+          error:
+            "El trÃ¡iler se subiÃ³, pero no se pudo obtener su URL pÃºblica."
+        });
+      }
+
+      res.status(201).json({
+        success: true,
+        trailerUrl:
+          publicUrlData.publicUrl,
+        path: filePath
+      });
+    } catch (error) {
+      console.error(
+        "Error subiendo trÃ¡iler:",
+        error
+      );
+
+      res.status(500).json({
+        error:
+          "No se pudo subir el trÃ¡iler."
+      });
+    }
+  }
+);
+
+/*
+==================================================
 RUTA NO ENCONTRADA
 ==================================================
 */
@@ -2435,9 +2560,13 @@ app.use((error, req, res, next) => {
 
   if (error instanceof multer.MulterError) {
     if (error.code === "LIMIT_FILE_SIZE") {
+      const isTrailer =
+        req.path.includes("/trailers");
+
       return res.status(413).json({
-        error:
-          "El afiche es demasiado grande. El mÃ¡ximo es 6 MB."
+        error: isTrailer
+          ? "El trÃ¡iler es demasiado grande. El mÃ¡ximo es 50 MB."
+          : "El afiche es demasiado grande. El mÃ¡ximo es 6 MB."
       });
     }
 
@@ -2448,7 +2577,9 @@ app.use((error, req, res, next) => {
 
   if (
     error?.message ===
-    "El afiche debe ser JPG, PNG o WEBP."
+      "El afiche debe ser JPG, PNG o WEBP." ||
+    error?.message ===
+      "El trÃ¡iler debe ser MP4, WEBM o MOV."
   ) {
     return res.status(400).json({
       error: error.message
