@@ -541,6 +541,7 @@ function formatMovie(row) {
     durationMinutes: row.duration_minutes,
     rating: row.rating,
     active: row.active,
+    comingSoon: Boolean(row.coming_soon),
     created: row.created_at
   };
 }
@@ -658,6 +659,7 @@ async function initializeDatabase() {
       duration_minutes INTEGER,
       rating TEXT,
       active BOOLEAN NOT NULL DEFAULT TRUE,
+      coming_soon BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL
         DEFAULT NOW()
     );
@@ -666,6 +668,11 @@ async function initializeDatabase() {
   await pool.query(`
     ALTER TABLE movies
     ADD COLUMN IF NOT EXISTS trailer_url TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE movies
+    ADD COLUMN IF NOT EXISTS coming_soon BOOLEAN NOT NULL DEFAULT FALSE;
   `);
 
   await pool.query(`
@@ -1950,7 +1957,8 @@ app.post(
         trailerUrl = "",
         durationMinutes = null,
         rating = "",
-        active = true
+        active = true,
+        comingSoon = false
       } = req.body;
 
       if (
@@ -1988,7 +1996,8 @@ app.post(
             trailer_url,
             duration_minutes,
             rating,
-            active
+            active,
+            coming_soon
           )
           VALUES (
             $1,
@@ -1998,7 +2007,8 @@ app.post(
             $5,
             $6,
             $7,
-            $8
+            $8,
+            $9
           )
           RETURNING *;
         `,
@@ -2012,7 +2022,8 @@ app.post(
             ? null
             : Number(durationMinutes),
           String(rating).trim(),
-          Boolean(active)
+          Boolean(active),
+          Boolean(comingSoon)
         ]
       );
 
@@ -2047,7 +2058,8 @@ app.put(
         trailerUrl = "",
         durationMinutes = null,
         rating = "",
-        active = true
+        active = true,
+        comingSoon = false
       } = req.body;
 
       if (
@@ -2085,8 +2097,9 @@ app.put(
             trailer_url = $4,
             duration_minutes = $5,
             rating = $6,
-            active = $7
-          WHERE id = $8
+            active = $7,
+            coming_soon = $8
+          WHERE id = $9
           RETURNING *;
         `,
         [
@@ -2099,6 +2112,7 @@ app.put(
             : Number(durationMinutes),
           String(rating).trim(),
           Boolean(active),
+          Boolean(comingSoon),
           id
         ]
       );
