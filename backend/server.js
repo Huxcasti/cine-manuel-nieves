@@ -302,10 +302,10 @@ function formatShowtime(row) {
     movieTitle: row.movie_title,
     showDate: row.show_date,
     showTime: row.show_time,
-    price: Number(row.adult_price ?? row.price),
-    adultPrice: Number(row.adult_price ?? row.price),
-    childPrice: Number(row.child_price ?? row.price),
-    seniorPrice: Number(row.senior_price ?? row.price),
+    price: Number(row.global_adult_price ?? row.adult_price ?? row.price),
+    adultPrice: Number(row.global_adult_price ?? row.adult_price ?? row.price),
+    childPrice: Number(row.global_child_price ?? row.child_price ?? row.price),
+    seniorPrice: Number(row.global_senior_price ?? row.senior_price ?? row.price),
     language,
     languageLabel: SHOWTIME_LANGUAGES[language],
     active: row.active,
@@ -470,6 +470,22 @@ async function initializeDatabase() {
     );
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ticket_prices (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      adult_price NUMERIC(10, 2) NOT NULL CHECK (adult_price >= 0),
+      child_price NUMERIC(10, 2) NOT NULL CHECK (child_price >= 0),
+      senior_price NUMERIC(10, 2) NOT NULL CHECK (senior_price >= 0),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    INSERT INTO ticket_prices (id, adult_price, child_price, senior_price)
+    VALUES (1, 8.25, 6.00, 6.00)
+    ON CONFLICT (id) DO NOTHING;
+  `);
+
   const adminResult = await pool.query(`
     SELECT id
     FROM admin_settings
@@ -609,9 +625,13 @@ app.get("/api/movies", async (req, res) => {
     const showtimeResult = await pool.query(`
       SELECT
         s.*,
-        m.title AS movie_title
+        m.title AS movie_title,
+        tp.adult_price AS global_adult_price,
+        tp.child_price AS global_child_price,
+        tp.senior_price AS global_senior_price
       FROM showtimes s
       JOIN movies m ON m.id = s.movie_id
+      CROSS JOIN ticket_prices tp
       WHERE
         s.active = TRUE
         AND m.active = TRUE
@@ -640,6 +660,92 @@ app.get("/api/movies", async (req, res) => {
     res.status(500).json({
       error: "No se pudo obtener la cartelera."
     });
+  }
+});
+
+/*
+==================================================
+PRECIOS GENERALES DE TAQUILLAS
+==================================================
+*/
+
+app.get("/api/ticket-prices", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT adult_price, child_price, senior_price
+      FROM ticket_prices
+      WHERE id = 1;
+    `);
+    const row = result.rows[0];
+    res.json({
+      adultPrice: Number(row.adult_price),
+      childPrice: Number(row.child_price),
+      seniorPrice: Number(row.senior_price)
+    });
+  } catch (error) {
+    console.error("Error obteniendo precios generales:", error);
+    res.status(500).json({ error: "No se pudieron obtener los precios." });
+  }
+});
+
+app.get("/api/admin/ticket-prices", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT adult_price, child_price, senior_price
+      FROM ticket_prices
+      WHERE id = 1;
+    `);
+    const row = result.rows[0];
+    res.json({
+      adultPrice: Number(row.adult_price),
+      childPrice: Number(row.child_price),
+      seniorPrice: Number(row.senior_price)
+    });
+  } catch (error) {
+    console.error("Error obteniendo precios para administrador:", error);
+    res.status(500).json({ error: "No se pudieron obtener los precios." });
+  }
+});
+
+app.put("/api/admin/ticket-prices", requireAdmin, async (req, res) => {
+  try {
+    const adultPrice = Number(req.body.adultPrice);
+    const childPrice = Number(req.body.childPrice);
+    const seniorPrice = Number(req.body.seniorPrice);
+
+    if (
+      !Number.isFinite(adultPrice) ||
+      !Number.isFinite(childPrice) ||
+      !Number.isFinite(seniorPrice) ||
+      adultPrice < 0 ||
+      childPrice < 0 ||
+      seniorPrice < 0
+    ) {
+      return res.status(400).json({
+        error: "Los precios de adulto, niÃ±o y senior deben ser vÃ¡lidos."
+      });
+    }
+
+    const result = await pool.query(
+      `
+        UPDATE ticket_prices
+        SET adult_price = $1, child_price = $2, senior_price = $3, updated_at = NOW()
+        WHERE id = 1
+        RETURNING adult_price, child_price, senior_price;
+      `,
+      [adultPrice, childPrice, seniorPrice]
+    );
+
+    const row = result.rows[0];
+    res.json({
+      success: true,
+      adultPrice: Number(row.adult_price),
+      childPrice: Number(row.child_price),
+      seniorPrice: Number(row.senior_price)
+    });
+  } catch (error) {
+    console.error("Error actualizando precios generales:", error);
+    res.status(500).json({ error: "No se pudieron actualizar los precios." });
   }
 });
 
@@ -1203,9 +1309,13 @@ app.get(
       const result = await pool.query(`
         SELECT
           s.*,
-          m.title AS movie_title
+          m.title AS movie_title,
+          tp.adult_price AS global_adult_price,
+          tp.child_price AS global_child_price,
+          tp.senior_price AS global_senior_price
         FROM showtimes s
         JOIN movies m ON m.id = s.movie_id
+        CROSS JOIN ticket_prices tp
         ORDER BY
           s.show_date ASC,
           s.show_time ASC;
@@ -1234,9 +1344,6 @@ app.post(
         movieId,
         showDate,
         showTime,
-        adultPrice,
-        childPrice,
-        seniorPrice,
         language = "spanish",
         active = true
       } = req.body;
@@ -1268,22 +1375,15 @@ app.post(
         });
       }
 
-      const numericAdultPrice = Number(adultPrice);
-      const numericChildPrice = Number(childPrice);
-      const numericSeniorPrice = Number(seniorPrice);
+      const priceResult = await pool.query(`
+        SELECT adult_price, child_price, senior_price
+        FROM ticket_prices
+        WHERE id = 1;
+      `);
 
-      if (
-        !Number.isFinite(numericAdultPrice) ||
-        !Number.isFinite(numericChildPrice) ||
-        !Number.isFinite(numericSeniorPrice) ||
-        numericAdultPrice < 0 ||
-        numericChildPrice < 0 ||
-        numericSeniorPrice < 0
-      ) {
-        return res.status(400).json({
-          error: "Los precios de adulto, niÃ±o y senior deben ser vÃ¡lidos."
-        });
-      }
+      const numericAdultPrice = Number(priceResult.rows[0].adult_price);
+      const numericChildPrice = Number(priceResult.rows[0].child_price);
+      const numericSeniorPrice = Number(priceResult.rows[0].senior_price);
 
       const normalizedLanguage = normalizeShowtimeLanguage(language);
 
@@ -1368,9 +1468,13 @@ app.post(
         `
           SELECT
             s.*,
-            m.title AS movie_title
+            m.title AS movie_title,
+            tp.adult_price AS global_adult_price,
+            tp.child_price AS global_child_price,
+            tp.senior_price AS global_senior_price
           FROM showtimes s
           JOIN movies m ON m.id = s.movie_id
+          CROSS JOIN ticket_prices tp
           WHERE s.id = $1;
         `,
         [result.rows[0].id]
@@ -1403,9 +1507,6 @@ app.put(
         movieId,
         showDate,
         showTime,
-        adultPrice,
-        childPrice,
-        seniorPrice,
         language = "spanish",
         active = true
       } = req.body;
@@ -1437,22 +1538,15 @@ app.put(
         });
       }
 
-      const numericAdultPrice = Number(adultPrice);
-      const numericChildPrice = Number(childPrice);
-      const numericSeniorPrice = Number(seniorPrice);
+      const priceResult = await pool.query(`
+        SELECT adult_price, child_price, senior_price
+        FROM ticket_prices
+        WHERE id = 1;
+      `);
 
-      if (
-        !Number.isFinite(numericAdultPrice) ||
-        !Number.isFinite(numericChildPrice) ||
-        !Number.isFinite(numericSeniorPrice) ||
-        numericAdultPrice < 0 ||
-        numericChildPrice < 0 ||
-        numericSeniorPrice < 0
-      ) {
-        return res.status(400).json({
-          error: "Los precios de adulto, niÃ±o y senior deben ser vÃ¡lidos."
-        });
-      }
+      const numericAdultPrice = Number(priceResult.rows[0].adult_price);
+      const numericChildPrice = Number(priceResult.rows[0].child_price);
+      const numericSeniorPrice = Number(priceResult.rows[0].senior_price);
 
       const normalizedLanguage = normalizeShowtimeLanguage(language);
 
@@ -1542,9 +1636,13 @@ app.put(
         `
           SELECT
             s.*,
-            m.title AS movie_title
+            m.title AS movie_title,
+            tp.adult_price AS global_adult_price,
+            tp.child_price AS global_child_price,
+            tp.senior_price AS global_senior_price
           FROM showtimes s
           JOIN movies m ON m.id = s.movie_id
+          CROSS JOIN ticket_prices tp
           WHERE s.id = $1;
         `,
         [id]
@@ -1821,16 +1919,17 @@ app.post("/api/reservations", async (req, res) => {
           s.show_date,
           s.show_time,
           s.price,
-          s.adult_price,
-          s.child_price,
-          s.senior_price,
+          tp.adult_price AS global_adult_price,
+          tp.child_price AS global_child_price,
+          tp.senior_price AS global_senior_price,
           s.active,
           m.title AS movie_title,
           m.active AS movie_active
         FROM showtimes s
         JOIN movies m ON m.id = s.movie_id
+        CROSS JOIN ticket_prices tp
         WHERE s.id = $1
-        FOR UPDATE;
+        FOR UPDATE OF s;
       `,
       [showtimeId]
     );
@@ -1895,9 +1994,9 @@ app.post("/api/reservations", async (req, res) => {
 
     const ticketId = crypto.randomUUID();
     const qrToken = crypto.randomBytes(32).toString("hex");
-    const adultPrice = Number(showtime.adult_price ?? showtime.price);
-    const childPrice = Number(showtime.child_price ?? showtime.price);
-    const seniorPrice = Number(showtime.senior_price ?? showtime.price);
+    const adultPrice = Number(showtime.global_adult_price);
+    const childPrice = Number(showtime.global_child_price);
+    const seniorPrice = Number(showtime.global_senior_price);
 
     const total =
       normalizedTicketTypes.adult * adultPrice +
