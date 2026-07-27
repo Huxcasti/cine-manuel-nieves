@@ -1081,6 +1081,88 @@
       }
     }
 
+
+    /* =========================================================
+       AJUSTE UNIFORME DE AFICHES Y TARJETAS
+       Evita que una sola película ocupe toda la pantalla.
+    ========================================================= */
+
+    .movie-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+      justify-content: center;
+      align-items: start;
+      gap: 24px;
+    }
+
+    .movie-card {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .movie-poster-wrapper {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      max-height: 540px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center, #1d2a42, #0b1220);
+    }
+
+    .movie-poster {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      background: #0b1220;
+    }
+
+    .poster-placeholder {
+      width: 100%;
+      height: 100%;
+    }
+
+    .movie-content {
+      min-height: 390px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .movie-description {
+      min-height: 72px;
+    }
+
+    .showtime-list,
+    .coming-soon-message {
+      margin-top: auto;
+    }
+
+    @media (min-width: 900px) {
+      .movie-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 360px));
+      }
+    }
+
+    @media (max-width: 600px) {
+      .movie-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .movie-card {
+        max-width: 100%;
+      }
+
+      .movie-poster-wrapper {
+        max-height: none;
+      }
+
+      .movie-content {
+        min-height: 0;
+      }
+    }
+
     @media print {
       body {
         background: white;
