@@ -1400,6 +1400,22 @@
       justify-content: flex-start;
     }
 
+
+    /* ENCABEZADO SUPERIOR ELIMINADO */
+    .site-header {
+      display: none !important;
+    }
+
+    .hero {
+      padding-top: 34px;
+    }
+
+    @media (max-width: 600px) {
+      .hero {
+        padding-top: 24px;
+      }
+    }
+
     @media print {
       body {
         background: white;
@@ -1455,23 +1471,7 @@
     aria-hidden="true"
   ></div>
 
-  <header class="site-header">
-    <div class="container header-content">
-      <div class="brand">
-        <img
-          class="brand-logo"
-          src="Logo.PNG"
-          alt="Logo Cine Teatro Manuel Nieves Quintero"
-        />
 
-        <div>
-          <h1>Cine Teatro Manuel Nieves Quintero</h1>
-          <p>Corozal, Puerto Rico</p>
-        </div>
-      </div>
-
-    </div>
-  </header>
 
   <main>
     <!-- CARTELERA -->
