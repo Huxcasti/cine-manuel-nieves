@@ -644,6 +644,24 @@
       background: #070b14;
     }
 
+
+    .trailer-form-preview {
+      display: none;
+      width: 100%;
+      max-height: 320px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #000000;
+    }
+
+    .trailer-status {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
     .poster-help {
       margin-top: 9px;
       color: var(--muted);
@@ -747,6 +765,188 @@
         flex: 1;
       }
     }
+
+
+    /* =========================================================
+       AJUSTE DE ANCHO DEL PANEL Y ÁREA DE EMPLEADOS
+       Hace que el encabezado, empleados e historial aprovechen
+       todo el ancho disponible sin dejar espacios vacíos.
+    ========================================================= */
+
+    body {
+      width: 100%;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #dashboard {
+      width: 100%;
+      max-width: none;
+    }
+
+    .dashboard-header {
+      width: 100%;
+      min-height: 122px;
+      padding: 24px;
+    }
+
+    .dashboard-brand {
+      flex: 1 1 auto;
+    }
+
+    .dashboard-logo {
+      width: 96px;
+      height: 78px;
+      flex-basis: 96px;
+      border-radius: 16px;
+    }
+
+    .dashboard-brand h1 {
+      font-size: clamp(27px, 3vw, 38px);
+    }
+
+    .dashboard-brand .subtitle {
+      max-width: 760px;
+      font-size: 16px;
+    }
+
+    .header-actions {
+      flex: 0 0 auto;
+      min-width: 350px;
+    }
+
+    .header-actions .btn {
+      flex: 1;
+      min-height: 52px;
+    }
+
+    .navigation {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .navigation button {
+      flex: 1 1 0;
+      text-align: center;
+    }
+
+    /* En empleados, las tarjetas ahora van una debajo de la otra
+       y ocupan el ancho completo. */
+    #employeesSection {
+      width: 100%;
+    }
+
+    #employeesSection > .grid-two {
+      display: grid;
+      grid-template-columns: 1fr;
+      width: 100%;
+      gap: 20px;
+    }
+
+    #employeesSection > .grid-two > .card,
+    #employeesSection > .card {
+      width: 100%;
+      max-width: none;
+    }
+
+    #employeesSection .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    #employeesSection table {
+      width: 100%;
+      min-width: 980px;
+      table-layout: auto;
+    }
+
+    #employeesSection th,
+    #employeesSection td {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    #employeesSection .section-header {
+      width: 100%;
+    }
+
+    @media (max-width: 850px) {
+      main,
+      #dashboard,
+      .dashboard-header,
+      #employeesSection,
+      #employeesSection > .grid-two,
+      #employeesSection > .grid-two > .card,
+      #employeesSection > .card {
+        width: 100%;
+        max-width: none;
+      }
+
+      .dashboard-header {
+        min-height: 0;
+        padding: 20px;
+      }
+
+      .header-actions {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .navigation {
+        justify-content: flex-start;
+      }
+
+      .navigation button {
+        flex: 0 0 auto;
+      }
+
+      #employeesSection table {
+        min-width: 900px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .dashboard-header {
+        padding: 18px;
+      }
+
+      .dashboard-logo {
+        width: 76px;
+        height: 62px;
+        flex-basis: 76px;
+      }
+
+      .dashboard-brand h1 {
+        font-size: 24px;
+      }
+
+      .dashboard-brand .subtitle {
+        font-size: 14px;
+      }
+
+      .header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .header-actions .btn {
+        width: 100%;
+      }
+
+      #employeesSection > .grid-two {
+        gap: 18px;
+      }
+
+      #employeesSection table {
+        min-width: 820px;
+      }
+    }
+
   </style>
 </head>
 
@@ -969,6 +1169,38 @@
 
             <input id="moviePosterUrl" type="hidden" />
 
+            <label for="movieTrailerFile">Tráiler de la película</label>
+            <div class="poster-uploader">
+              <input
+                id="movieTrailerFile"
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime"
+                onchange="previewSelectedTrailer()"
+              />
+
+              <button
+                id="uploadTrailerButton"
+                class="btn btn-secondary"
+                type="button"
+                onclick="uploadTrailer()"
+              >
+                🎥 Subir tráiler
+              </button>
+
+              <video
+                id="movieTrailerPreview"
+                class="trailer-form-preview"
+                controls
+                playsinline
+              ></video>
+
+              <p class="trailer-status" id="trailerStatus">
+                Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 250 MB.
+              </p>
+            </div>
+
+            <input id="movieTrailerUrl" type="hidden" />
+
             <label for="movieDuration">Duración en minutos</label>
             <input id="movieDuration" type="number" min="1" placeholder="120" />
 
@@ -1017,6 +1249,7 @@
                     <th>Afiche</th>
                     <th>Película</th>
                     <th>Duración</th>
+                    <th>Tráiler</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -1561,6 +1794,13 @@
             <span class="muted">${escapeHtml(movie.rating || "Sin clasificación")}</span>
           </td>
           <td>${movie.durationMinutes ? `${movie.durationMinutes} min` : "—"}</td>
+          <td>
+            ${
+              movie.trailerUrl
+                ? `<a href="${escapeHtml(movie.trailerUrl)}" target="_blank" rel="noopener" style="color:#79e4df;font-weight:800;">Ver tráiler</a>`
+                : `<span class="muted">Sin tráiler</span>`
+            }
+          </td>
           <td><span class="badge ${movie.active ? "success" : "danger"}">${movie.active ? "Activa" : "Inactiva"}</span></td>
           <td>
             <div class="table-actions">
@@ -1657,18 +1897,167 @@
       }
     }
 
+
+    function showTrailerPreview(url) {
+      const preview =
+        document.getElementById(
+          "movieTrailerPreview"
+        );
+
+      const status =
+        document.getElementById(
+          "trailerStatus"
+        );
+
+      if (!url) {
+        preview.pause();
+        preview.removeAttribute("src");
+        preview.style.display = "none";
+        status.textContent =
+          "Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 250 MB.";
+        return;
+      }
+
+      preview.src = url;
+      preview.style.display = "block";
+      preview.load();
+
+      status.textContent =
+        "Vista previa del tráiler seleccionado.";
+    }
+
+    function previewSelectedTrailer() {
+      const input =
+        document.getElementById(
+          "movieTrailerFile"
+        );
+
+      const file =
+        input.files?.[0];
+
+      if (!file) {
+        showTrailerPreview(
+          document.getElementById(
+            "movieTrailerUrl"
+          ).value
+        );
+        return;
+      }
+
+      showTrailerPreview(
+        URL.createObjectURL(file)
+      );
+    }
+
+    async function uploadTrailer() {
+      const input =
+        document.getElementById(
+          "movieTrailerFile"
+        );
+
+      const file =
+        input.files?.[0];
+
+      if (!file) {
+        setMessage(
+          "movieMessage",
+          "error",
+          "Selecciona un video primero."
+        );
+        return;
+      }
+
+      if (
+        file.size >
+        250 * 1024 * 1024
+      ) {
+        setMessage(
+          "movieMessage",
+          "error",
+          "El tráiler no puede superar 250 MB."
+        );
+        return;
+      }
+
+      const button =
+        document.getElementById(
+          "uploadTrailerButton"
+        );
+
+      button.disabled = true;
+      button.textContent =
+        "Subiendo tráiler…";
+
+      setMessage(
+        "movieMessage",
+        "info",
+        "Subiendo tráiler. No cierres esta página…"
+      );
+
+      try {
+        const formData =
+          new FormData();
+
+        formData.append(
+          "trailer",
+          file
+        );
+
+        const data =
+          await adminFetch(
+            "/api/admin/trailers",
+            {
+              method: "POST",
+              body: formData
+            }
+          );
+
+        document.getElementById(
+          "movieTrailerUrl"
+        ).value =
+          data.trailerUrl;
+
+        showTrailerPreview(
+          data.trailerUrl
+        );
+
+        setMessage(
+          "movieMessage",
+          "success",
+          "Tráiler subido correctamente. Ahora guarda la película."
+        );
+      } catch (error) {
+        setMessage(
+          "movieMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          "🎥 Subir tráiler";
+      }
+    }
+
     async function saveMovie() {
       const id = document.getElementById("movieId").value;
       const title = document.getElementById("movieTitle").value.trim();
       const description = document.getElementById("movieDescription").value.trim();
       const posterUrl = document.getElementById("moviePosterUrl").value.trim();
+      const trailerUrl = document.getElementById("movieTrailerUrl").value.trim();
       const selectedPosterFile = document.getElementById("moviePosterFile").files?.[0];
+      const selectedTrailerFile = document.getElementById("movieTrailerFile").files?.[0];
       const durationValue = document.getElementById("movieDuration").value;
       const rating = document.getElementById("movieRating").value.trim();
       const active = document.getElementById("movieActive").checked;
 
       if (selectedPosterFile && !posterUrl) {
         setMessage("movieMessage", "error", "Pulsa “Subir afiche” antes de guardar la película.");
+        return;
+      }
+
+      if (selectedTrailerFile && !trailerUrl) {
+        setMessage("movieMessage", "error", "Pulsa “Subir tráiler” antes de guardar la película.");
         return;
       }
 
@@ -1687,6 +2076,7 @@
           title,
           description,
           posterUrl,
+          trailerUrl,
           durationMinutes: durationValue === "" ? null : Number(durationValue),
           rating,
           active
@@ -1726,6 +2116,11 @@
       document.getElementById("moviePosterUrl").value = movie.posterUrl || "";
       document.getElementById("moviePosterFile").value = "";
       showPosterPreview(movie.posterUrl || "");
+
+      document.getElementById("movieTrailerUrl").value = movie.trailerUrl || "";
+      document.getElementById("movieTrailerFile").value = "";
+      showTrailerPreview(movie.trailerUrl || "");
+
       document.getElementById("movieDuration").value = movie.durationMinutes || "";
       document.getElementById("movieRating").value = movie.rating || "";
       document.getElementById("movieActive").checked = Boolean(movie.active);
@@ -1741,6 +2136,11 @@
       document.getElementById("moviePosterUrl").value = "";
       document.getElementById("moviePosterFile").value = "";
       showPosterPreview("");
+
+      document.getElementById("movieTrailerUrl").value = "";
+      document.getElementById("movieTrailerFile").value = "";
+      showTrailerPreview("");
+
       document.getElementById("movieDuration").value = "";
       document.getElementById("movieRating").value = "";
       document.getElementById("movieActive").checked = true;
