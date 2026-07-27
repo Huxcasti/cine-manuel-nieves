@@ -2,18 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   />
-
-  <meta
-    name="theme-color"
-    content="#070b14"
-  />
-
+  <meta name="theme-color" content="#070b14" />
   <title>Cine Teatro Manuel Nieves Quintero</title>
+  <link rel="icon" type="image/png" href="Logo.PNG" />
 
   <style>
     * {
@@ -27,16 +22,22 @@
       --background-soft: #0c1220;
       --panel: #121a2a;
       --panel-light: #192338;
+      --panel-dark: #0a101c;
       --border: #2b3955;
       --text: #ffffff;
       --muted: #aab6cd;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
+      --yellow: #ffc62a;
+      --yellow-dark: #e8a500;
+      --aqua: #49cbc5;
+      --aqua-dark: #249f9c;
       --success: #22c55e;
       --danger: #ef4444;
       --warning: #f59e0b;
       --selected: #2563eb;
       --occupied: #475569;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
     }
 
     html {
@@ -45,14 +46,12 @@
 
     body {
       min-height: 100vh;
+      overflow-x: hidden;
       font-family: Arial, Helvetica, sans-serif;
       background:
-        radial-gradient(
-          circle at top,
-          #172554 0,
-          #0b1220 34%,
-          var(--background) 70%
-        );
+        radial-gradient(circle at 10% 0%, rgba(73, 203, 197, 0.1), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(255, 198, 42, 0.09), transparent 26%),
+        linear-gradient(180deg, #0b1220, var(--background) 72%);
       color: var(--text);
     }
 
@@ -63,11 +62,17 @@
 
     button {
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active {
+      transform: scale(0.985);
     }
 
     button:disabled {
       cursor: not-allowed;
-      opacity: 0.6;
+      opacity: 0.58;
+      transform: none;
     }
 
     img {
@@ -79,42 +84,53 @@
       margin: 0 auto;
     }
 
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
     .site-header {
       position: sticky;
       top: 0;
       z-index: 50;
       border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-      background: rgba(7, 11, 20, 0.92);
-      backdrop-filter: blur(14px);
+      background: rgba(7, 11, 20, 0.91);
+      backdrop-filter: blur(16px);
     }
 
     .header-content {
       display: flex;
-      justify-content: space-between;
+      min-height: 78px;
       align-items: center;
+      justify-content: space-between;
       gap: 18px;
-      min-height: 76px;
     }
 
     .brand {
       display: flex;
+      min-width: 0;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-icon {
-      display: grid;
-      width: 46px;
-      height: 46px;
-      place-items: center;
-      border: 1px solid #38517d;
-      border-radius: 14px;
-      background: #14203a;
-      font-size: 24px;
+    .brand-logo {
+      width: 66px;
+      height: 52px;
+      flex: 0 0 66px;
+      border: 1px solid rgba(73, 203, 197, 0.28);
+      border-radius: 12px;
+      object-fit: cover;
+      background: #0c111d;
     }
 
     .brand h1 {
+      overflow: hidden;
       font-size: clamp(18px, 3vw, 25px);
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .brand p {
@@ -123,13 +139,18 @@
       font-size: 13px;
     }
 
-    .header-button {
+    .header-button,
+    .back-button,
+    .secondary-button,
+    .print-button,
+    .new-purchase-button,
+    .refresh-button {
       border: 1px solid #3a4d70;
-      border-radius: 10px;
-      padding: 10px 14px;
+      border-radius: 11px;
+      padding: 11px 15px;
       background: #182238;
       color: white;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .hero {
@@ -137,20 +158,30 @@
       text-align: center;
     }
 
+    .hero-logo {
+      display: block;
+      width: min(520px, 92%);
+      margin: 0 auto 30px;
+      border: 1px solid rgba(73, 203, 197, 0.26);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
     .hero-badge {
       display: inline-block;
       margin-bottom: 18px;
       padding: 7px 13px;
-      border: 1px solid #36528c;
+      border: 1px solid rgba(73, 203, 197, 0.35);
       border-radius: 999px;
-      background: rgba(37, 99, 235, 0.17);
-      color: #bfdbfe;
+      background: rgba(73, 203, 197, 0.11);
+      color: #9ff3ef;
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 900;
+      letter-spacing: 0.4px;
     }
 
     .hero h2 {
-      max-width: 800px;
+      max-width: 820px;
       margin: 0 auto 16px;
       font-size: clamp(34px, 7vw, 62px);
       line-height: 1.05;
@@ -170,8 +201,8 @@
 
     .section-heading {
       display: flex;
-      justify-content: space-between;
       align-items: flex-end;
+      justify-content: space-between;
       gap: 20px;
       margin-bottom: 24px;
     }
@@ -181,18 +212,16 @@
       font-size: 29px;
     }
 
-    .section-heading p {
+    .section-heading p,
+    .subtitle {
       color: var(--muted);
       line-height: 1.5;
     }
 
     .refresh-button {
       border: none;
-      border-radius: 10px;
-      padding: 11px 15px;
-      background: var(--primary);
-      color: white;
-      font-weight: bold;
+      background: linear-gradient(135deg, var(--aqua), var(--aqua-dark));
+      color: #041817;
     }
 
     .loading-card,
@@ -205,20 +234,19 @@
       text-align: center;
     }
 
-    .error-card {
-      border-color: #7f1d1d;
-      background: #2e1118;
-    }
-
     .loading-card,
     .empty-card {
       color: var(--muted);
     }
 
+    .error-card {
+      border-color: #7f1d1d;
+      background: #2e1118;
+    }
+
     .movie-grid {
       display: grid;
-      grid-template-columns:
-        repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 22px;
     }
 
@@ -234,20 +262,15 @@
     }
 
     .movie-card:hover {
-      transform: translateY(-4px);
       border-color: #45649a;
+      transform: translateY(-4px);
     }
 
     .movie-poster-wrapper {
       position: relative;
       aspect-ratio: 2 / 3;
       overflow: hidden;
-      background:
-        linear-gradient(
-          135deg,
-          #172554,
-          #111827
-        );
+      background: linear-gradient(135deg, #172554, #111827);
     }
 
     .movie-poster {
@@ -272,7 +295,7 @@
     .poster-placeholder p {
       margin-top: 12px;
       padding: 0 20px;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .movie-status {
@@ -284,7 +307,7 @@
       background: rgba(7, 11, 20, 0.88);
       color: #86efac;
       font-size: 12px;
-      font-weight: bold;
+      font-weight: 900;
     }
 
     .movie-content {
@@ -328,7 +351,7 @@
       margin-bottom: 9px;
       color: #dbeafe;
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .showtime-list {
@@ -344,24 +367,20 @@
       background: #17294d;
       color: white;
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .showtime-button:hover {
       background: var(--primary);
     }
 
-    .no-showtimes {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .page {
-      display: none;
-    }
-
-    .page.active {
-      display: block;
+    .card {
+      margin-bottom: 20px;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      background: rgba(18, 26, 42, 0.97);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
     }
 
     .purchase-layout {
@@ -372,22 +391,8 @@
       padding: 35px 0 70px;
     }
 
-    .card {
-      margin-bottom: 20px;
-      padding: 22px;
-      border: 1px solid var(--border);
-      border-radius: 19px;
-      background: var(--panel);
-    }
-
     .back-button {
       margin-bottom: 18px;
-      border: 1px solid #3a4d70;
-      border-radius: 10px;
-      padding: 10px 14px;
-      background: #182238;
-      color: white;
-      font-weight: bold;
     }
 
     .selected-movie {
@@ -424,7 +429,7 @@
     .selected-showtime {
       margin-top: 13px;
       color: #bfdbfe;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     .screen {
@@ -432,15 +437,11 @@
       margin: 0 auto 34px;
       padding: 9px;
       border-radius: 50% 50% 12px 12px;
-      background: linear-gradient(
-        to bottom,
-        #e2e8f0,
-        #64748b
-      );
+      background: linear-gradient(to bottom, #e2e8f0, #64748b);
       color: #07101e;
       text-align: center;
       font-size: 12px;
-      font-weight: bold;
+      font-weight: 900;
       letter-spacing: 4px;
       box-shadow: 0 15px 35px rgba(147, 197, 253, 0.2);
     }
@@ -489,8 +490,8 @@
 
     .seat-row {
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       gap: 7px;
       margin-bottom: 8px;
     }
@@ -499,7 +500,7 @@
       width: 24px;
       color: #93c5fd;
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 900;
       text-align: center;
     }
 
@@ -511,7 +512,7 @@
       background: #263653;
       color: white;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 900;
     }
 
     .seat:hover:not(:disabled) {
@@ -557,25 +558,26 @@
     .summary-total {
       margin: 18px 0;
       font-size: 24px;
-      font-weight: bold;
+      font-weight: 900;
     }
 
     .primary-button {
       width: 100%;
       border: none;
-      border-radius: 11px;
-      padding: 14px 18px;
-      background: var(--primary);
-      color: white;
-      font-weight: bold;
+      border-radius: 12px;
+      padding: 15px 18px;
+      background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
+      color: #1d1700;
+      font-weight: 900;
+      box-shadow: 0 14px 30px rgba(232, 165, 0, 0.2);
     }
 
     .primary-button:hover {
-      background: var(--primary-hover);
+      filter: brightness(1.05);
     }
 
     .customer-form {
-      max-width: 620px;
+      max-width: 650px;
       margin: 38px auto 70px;
     }
 
@@ -585,7 +587,6 @@
 
     .customer-form .subtitle {
       margin-bottom: 24px;
-      color: var(--muted);
     }
 
     label {
@@ -593,37 +594,38 @@
       margin-bottom: 7px;
       color: #dbeafe;
       font-size: 14px;
-      font-weight: bold;
+      font-weight: 800;
     }
 
     input {
       width: 100%;
       margin-bottom: 16px;
       padding: 14px;
-      border: 1px solid #3a4a69;
-      border-radius: 10px;
+      border: 1px solid #3a4d70;
+      border-radius: 11px;
       outline: none;
-      background: #0c1322;
+      background: #0c111d;
       color: white;
       font-size: 16px;
     }
 
     input:focus {
-      border-color: var(--primary);
+      border-color: var(--aqua);
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
     }
 
     .form-message {
       display: none;
-      margin: 15px 0;
+      margin: 14px 0;
       padding: 13px;
       border-radius: 10px;
-      line-height: 1.5;
+      line-height: 1.45;
     }
 
     .form-message.error {
       display: block;
       border: 1px solid var(--danger);
-      background: #351018;
+      background: #3b1118;
     }
 
     .form-message.success {
@@ -633,21 +635,22 @@
     }
 
     .processing-card {
-      max-width: 600px;
-      margin: 70px auto;
-      padding: 40px;
+      max-width: 560px;
+      margin: 90px auto;
+      padding: 48px 25px;
       border: 1px solid var(--border);
       border-radius: 20px;
       background: var(--panel);
       text-align: center;
+      box-shadow: var(--shadow);
     }
 
     .spinner {
-      width: 50px;
-      height: 50px;
+      width: 54px;
+      height: 54px;
       margin: 0 auto 22px;
-      border: 5px solid #263653;
-      border-top-color: var(--primary);
+      border: 5px solid #334155;
+      border-top-color: var(--aqua);
       border-radius: 50%;
       animation: spin 0.9s linear infinite;
     }
@@ -659,54 +662,60 @@
     }
 
     .ticket-page {
-      padding: 45px 0 80px;
+      padding: 42px 0 70px;
     }
 
     .ticket {
-      max-width: 720px;
+      max-width: 780px;
       margin: 0 auto;
       overflow: hidden;
-      border: 1px solid #36558e;
+      border: 1px solid rgba(73, 203, 197, 0.34);
       border-radius: 24px;
       background: var(--panel);
-      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.35);
+      box-shadow: var(--shadow);
     }
 
     .ticket-header {
       padding: 26px;
       background:
-        linear-gradient(
-          135deg,
-          #1d4ed8,
-          #172554
-        );
+        radial-gradient(circle at top right, rgba(73, 203, 197, 0.15), transparent 44%),
+        linear-gradient(135deg, #16243d, #0f1728);
       text-align: center;
+    }
+
+    .ticket-header-logo {
+      display: block;
+      width: min(310px, 80%);
+      margin: 0 auto 20px;
+      border-radius: 15px;
     }
 
     .ticket-header h2 {
       margin-bottom: 7px;
-      font-size: 27px;
+      font-size: 28px;
     }
 
     .ticket-header p {
-      color: #dbeafe;
+      color: var(--muted);
     }
 
     .ticket-content {
       display: grid;
-      grid-template-columns: 1fr 220px;
-      gap: 25px;
-      padding: 26px;
+      grid-template-columns: 1fr 250px;
+      gap: 24px;
+      padding: 25px;
     }
 
     .ticket-details {
       display: grid;
-      gap: 15px;
+      gap: 10px;
     }
 
     .ticket-detail {
-      padding-bottom: 13px;
-      border-bottom: 1px solid var(--border);
+      padding: 12px;
+      border: 1px solid rgba(174, 184, 204, 0.12);
+      border-radius: 12px;
+      background: #0c111d;
     }
 
     .ticket-detail span {
@@ -717,35 +726,88 @@
     }
 
     .ticket-detail strong {
-      font-size: 17px;
+      overflow-wrap: anywhere;
+      line-height: 1.4;
     }
 
     .qr-area {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 220px;
-      padding: 16px;
-      border-radius: 15px;
-      background: white;
-      color: #111827;
       text-align: center;
     }
 
     #qrCode {
-      margin-bottom: 10px;
+      display: grid;
+      width: 204px;
+      min-height: 204px;
+      margin: 0 auto 15px;
+      place-items: center;
+      border-radius: 14px;
+      background: white;
+    }
+
+    #qrCode img,
+    #qrCode canvas {
+      max-width: 174px;
+      border: 8px solid white;
+    }
+
+    .manual-code-box {
+      margin-top: 18px;
+      padding: 18px 12px;
+      border: 1px solid rgba(255, 198, 42, 0.55);
+      border-radius: 15px;
+      background:
+        linear-gradient(145deg, rgba(255, 198, 42, 0.16), rgba(232, 165, 0, 0.07));
+      box-shadow: 0 14px 30px rgba(232, 165, 0, 0.13);
+    }
+
+    .manual-code-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #fde68a;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+    }
+
+    .manual-code-number {
+      display: block;
+      color: #ffffff;
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: 9px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .manual-code-help {
+      margin-top: 10px;
+      color: #d7deeb;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .copy-code-button {
+      width: 100%;
+      margin-top: 12px;
+      border: none;
+      border-radius: 10px;
+      padding: 10px;
+      background: #f5b914;
+      color: #1d1700;
+      font-weight: 900;
     }
 
     .qr-token {
-      max-width: 180px;
+      margin-top: 12px;
+      color: #8290a8;
+      font-family: monospace;
+      font-size: 9px;
       overflow-wrap: anywhere;
-      color: #475569;
-      font-size: 10px;
     }
 
     .ticket-footer {
-      padding: 18px 26px 26px;
+      padding: 18px 25px;
+      border-top: 1px solid var(--border);
       color: var(--muted);
       text-align: center;
       line-height: 1.5;
@@ -756,35 +818,26 @@
       justify-content: center;
       gap: 12px;
       flex-wrap: wrap;
-      margin-top: 24px;
-    }
-
-    .ticket-actions button {
-      border: none;
-      border-radius: 10px;
-      padding: 12px 17px;
-      font-weight: bold;
-    }
-
-    .new-purchase-button {
-      background: var(--primary);
-      color: white;
+      margin: 22px auto 0;
     }
 
     .print-button {
-      background: var(--success);
-      color: #052e16;
+      background: var(--primary);
+    }
+
+    .new-purchase-button {
+      background: #334155;
     }
 
     .site-footer {
       padding: 28px 0;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
       color: var(--muted);
       text-align: center;
       line-height: 1.6;
     }
 
-    @media (max-width: 850px) {
+    @media (max-width: 860px) {
       .purchase-layout {
         grid-template-columns: 1fr;
       }
@@ -798,7 +851,7 @@
       }
 
       .qr-area {
-        width: 240px;
+        width: min(100%, 330px);
         margin: 0 auto;
       }
     }
@@ -808,13 +861,24 @@
         min-height: 68px;
       }
 
+      .brand-logo {
+        width: 55px;
+        height: 44px;
+        flex-basis: 55px;
+      }
+
       .brand p,
       .header-button {
         display: none;
       }
 
       .hero {
-        padding-top: 43px;
+        padding-top: 34px;
+      }
+
+      .hero-logo {
+        margin-bottom: 24px;
+        border-radius: 17px;
       }
 
       .section-heading {
@@ -853,17 +917,23 @@
       .ticket-content {
         padding: 18px;
       }
+
+      .manual-code-number {
+        font-size: 36px;
+        letter-spacing: 7px;
+      }
     }
 
     @media print {
       body {
         background: white;
+        color: black;
       }
 
       .site-header,
       .site-footer,
       .ticket-actions {
-        display: none;
+        display: none !important;
       }
 
       .ticket-page {
@@ -874,6 +944,31 @@
         border: 1px solid #333;
         box-shadow: none;
       }
+
+      .ticket-header,
+      .ticket,
+      .ticket-detail {
+        color: black;
+        background: white;
+      }
+
+      .ticket-header p,
+      .ticket-detail span,
+      .ticket-footer,
+      .manual-code-help {
+        color: #444;
+      }
+
+      .manual-code-box {
+        border: 2px solid #222;
+        background: white;
+        box-shadow: none;
+      }
+
+      .manual-code-label,
+      .manual-code-number {
+        color: black;
+      }
     }
   </style>
 </head>
@@ -882,7 +977,11 @@
   <header class="site-header">
     <div class="container header-content">
       <div class="brand">
-        <div class="brand-icon">🎬</div>
+        <img
+          class="brand-logo"
+          src="Logo.PNG"
+          alt="Logo Cine Teatro Manuel Nieves Quintero"
+        />
 
         <div>
           <h1>Cine Teatro Manuel Nieves Quintero</h1>
@@ -902,24 +1001,25 @@
 
   <main>
     <!-- CARTELERA -->
-
-    <section
-      class="page active"
-      id="catalogPage"
-    >
+    <section class="page active" id="catalogPage">
       <section class="hero">
         <div class="container">
+          <img
+            class="hero-logo"
+            src="Logo.PNG"
+            alt="Cine Teatro Manuel Nieves Quintero"
+          />
+
           <span class="hero-badge">
-            🎟 Boletos disponibles en línea
+            🎟 BOLETOS DISPONIBLES EN LÍNEA
           </span>
 
-          <h2>
-            Vive el cine en el corazón de Corozal
-          </h2>
+          <h2>Vive el cine en el corazón de Corozal</h2>
 
           <p>
-            Consulta la cartelera, selecciona tu tanda,
-            escoge tus asientos y recibe tu boleto digital.
+            Consulta la cartelera, selecciona tu tanda, escoge tus
+            asientos y recibe un boleto digital con QR y un código
+            manual de cinco dígitos.
           </p>
         </div>
       </section>
@@ -929,10 +1029,7 @@
           <div class="section-heading">
             <div>
               <h2>Cartelera</h2>
-
-              <p>
-                Películas y tandas disponibles próximamente.
-              </p>
+              <p>Películas y tandas disponibles próximamente.</p>
             </div>
 
             <button
@@ -944,10 +1041,7 @@
             </button>
           </div>
 
-          <div
-            class="loading-card"
-            id="catalogLoading"
-          >
+          <div class="loading-card" id="catalogLoading">
             Cargando cartelera…
           </div>
 
@@ -965,20 +1059,13 @@
             No hay películas disponibles en este momento.
           </div>
 
-          <div
-            class="movie-grid"
-            id="movieGrid"
-          ></div>
+          <div class="movie-grid" id="movieGrid"></div>
         </div>
       </section>
     </section>
 
     <!-- ASIENTOS -->
-
-    <section
-      class="page"
-      id="seatsPage"
-    >
+    <section class="page" id="seatsPage">
       <div class="container purchase-layout">
         <div>
           <button
@@ -999,19 +1086,11 @@
           <section class="card">
             <h2>Selecciona tus asientos</h2>
 
-            <p
-              style="
-                margin-bottom: 25px;
-                color: var(--muted);
-                line-height: 1.5;
-              "
-            >
+            <p class="subtitle" style="margin-bottom: 25px;">
               Los asientos grises ya están ocupados.
             </p>
 
-            <div class="screen">
-              PANTALLA
-            </div>
+            <div class="screen">PANTALLA</div>
 
             <div class="seat-legend">
               <div class="legend-item">
@@ -1031,10 +1110,7 @@
             </div>
 
             <div class="seat-map-wrapper">
-              <div
-                class="seat-map"
-                id="seatMap"
-              ></div>
+              <div class="seat-map" id="seatMap"></div>
             </div>
 
             <div
@@ -1086,11 +1162,7 @@
     </section>
 
     <!-- CLIENTE -->
-
-    <section
-      class="page"
-      id="customerPage"
-    >
+    <section class="page" id="customerPage">
       <div class="container">
         <section class="card customer-form">
           <button
@@ -1117,10 +1189,7 @@
           ></div>
 
           <form onsubmit="createReservation(event)">
-            <label for="customerName">
-              Nombre completo
-            </label>
-
+            <label for="customerName">Nombre completo</label>
             <input
               id="customerName"
               type="text"
@@ -1128,10 +1197,7 @@
               required
             />
 
-            <label for="customerEmail">
-              Correo electrónico
-            </label>
-
+            <label for="customerEmail">Correo electrónico</label>
             <input
               id="customerEmail"
               type="email"
@@ -1139,10 +1205,7 @@
               required
             />
 
-            <label for="customerPhone">
-              Número de teléfono
-            </label>
-
+            <label for="customerPhone">Número de teléfono</label>
             <input
               id="customerPhone"
               type="tel"
@@ -1168,24 +1231,12 @@
     </section>
 
     <!-- PROCESANDO -->
-
-    <section
-      class="page"
-      id="processingPage"
-    >
+    <section class="page" id="processingPage">
       <div class="container">
         <div class="processing-card">
           <div class="spinner"></div>
-
           <h2>Procesando tu reservación</h2>
-
-          <p
-            style="
-              margin-top: 12px;
-              color: var(--muted);
-              line-height: 1.5;
-            "
-          >
+          <p class="subtitle" style="margin-top: 12px;">
             No cierres esta página.
           </p>
         </div>
@@ -1193,19 +1244,17 @@
     </section>
 
     <!-- BOLETO -->
-
-    <section
-      class="page"
-      id="ticketPage"
-    >
+    <section class="page" id="ticketPage">
       <div class="container ticket-page">
         <article class="ticket">
           <header class="ticket-header">
+            <img
+              class="ticket-header-logo"
+              src="Logo.PNG"
+              alt="Cine Teatro Manuel Nieves Quintero"
+            />
             <h2>🎟 Boleto digital</h2>
-
-            <p>
-              Cine Teatro Manuel Nieves Quintero
-            </p>
+            <p>Cine Teatro Manuel Nieves Quintero</p>
           </header>
 
           <div class="ticket-content">
@@ -1218,8 +1267,34 @@
               <div id="qrCode"></div>
 
               <strong>
-                Presenta este código en la entrada
+                Presenta este QR en la entrada
               </strong>
+
+              <div class="manual-code-box">
+                <span class="manual-code-label">
+                  CÓDIGO MANUAL
+                </span>
+
+                <strong
+                  class="manual-code-number"
+                  id="manualCodeNumber"
+                >
+                  -----
+                </strong>
+
+                <p class="manual-code-help">
+                  Si el QR no puede escanearse, el empleado puede
+                  escribir estos cinco dígitos.
+                </p>
+
+                <button
+                  class="copy-code-button"
+                  type="button"
+                  onclick="copyManualCode()"
+                >
+                  Copiar código
+                </button>
+              </div>
 
               <div
                 class="qr-token"
@@ -1229,8 +1304,8 @@
           </div>
 
           <footer class="ticket-footer">
-            Conserva este boleto. El código solamente puede
-            utilizarse una vez.
+            Conserva este boleto. Tanto el QR como el código
+            manual solamente pueden utilizarse una vez.
           </footer>
         </article>
 
@@ -1257,12 +1332,8 @@
 
   <footer class="site-footer">
     <div class="container">
-      <strong>
-        Cine Teatro Manuel Nieves Quintero
-      </strong>
-
+      <strong>Cine Teatro Manuel Nieves Quintero</strong>
       <br />
-
       Corozal, Puerto Rico
     </div>
   </footer>
@@ -1334,16 +1405,24 @@
 
     async function loadMovies() {
       const loading =
-        document.getElementById("catalogLoading");
+        document.getElementById(
+          "catalogLoading"
+        );
 
       const errorBox =
-        document.getElementById("catalogError");
+        document.getElementById(
+          "catalogError"
+        );
 
       const empty =
-        document.getElementById("catalogEmpty");
+        document.getElementById(
+          "catalogEmpty"
+        );
 
       const grid =
-        document.getElementById("movieGrid");
+        document.getElementById(
+          "movieGrid"
+        );
 
       loading.style.display = "block";
       errorBox.style.display = "none";
@@ -1355,14 +1434,19 @@
           `${API_URL}/api/movies`
         );
 
-        const data = await readResponse(response);
+        const data =
+          await readResponse(response);
 
-        movies = Array.isArray(data) ? data : [];
+        movies =
+          Array.isArray(data)
+            ? data
+            : [];
 
         renderMovies();
       } catch (error) {
         errorBox.textContent =
-          `No se pudo cargar la cartelera: ${error.message}`;
+          `No se pudo cargar la cartelera: ` +
+          `${error.message}`;
 
         errorBox.style.display = "block";
       } finally {
@@ -1372,138 +1456,173 @@
 
     function renderMovies() {
       const grid =
-        document.getElementById("movieGrid");
+        document.getElementById(
+          "movieGrid"
+        );
 
       const empty =
-        document.getElementById("catalogEmpty");
+        document.getElementById(
+          "catalogEmpty"
+        );
 
       grid.innerHTML = "";
 
-      const availableMovies = movies.filter(
-        (movie) =>
-          Array.isArray(movie.showtimes) &&
-          movie.showtimes.length > 0
-      );
+      const availableMovies =
+        movies.filter(
+          (movie) =>
+            Array.isArray(
+              movie.showtimes
+            ) &&
+            movie.showtimes.length > 0
+        );
 
-      if (availableMovies.length === 0) {
+      if (
+        availableMovies.length === 0
+      ) {
         empty.style.display = "block";
         return;
       }
 
       empty.style.display = "none";
 
-      availableMovies.forEach((movie) => {
-        const card =
-          document.createElement("article");
+      availableMovies.forEach(
+        (movie) => {
+          const card =
+            document.createElement(
+              "article"
+            );
 
-        card.className = "movie-card";
+          card.className =
+            "movie-card";
 
-        const posterHtml = movie.posterUrl
-          ? `
-            <img
-              class="movie-poster"
-              src="${escapeHtml(movie.posterUrl)}"
-              alt="Afiche de ${escapeHtml(movie.title)}"
-              onerror="showPosterPlaceholder(this)"
-            />
-          `
-          : createPosterPlaceholder(movie.title);
+          const posterHtml =
+            movie.posterUrl
+              ? `
+                <img
+                  class="movie-poster"
+                  src="${escapeHtml(
+                    movie.posterUrl
+                  )}"
+                  alt="Afiche de ${escapeHtml(
+                    movie.title
+                  )}"
+                  onerror="showPosterPlaceholder(this)"
+                />
+              `
+              : createPosterPlaceholder(
+                  movie.title
+                );
 
-        const duration = movie.durationMinutes
-          ? `${movie.durationMinutes} min`
-          : "Duración no indicada";
+          const duration =
+            movie.durationMinutes
+              ? `${movie.durationMinutes} min`
+              : "Duración no indicada";
 
-        const rating =
-          movie.rating ||
-          "Sin clasificación";
+          const rating =
+            movie.rating ||
+            "Sin clasificación";
 
-        const buttons = movie.showtimes
-          .map((showtime) => {
-            const label =
-              `${formatDate(showtime.showDate)} · ` +
-              `${formatTime(showtime.showTime)} · ` +
-              `$${Number(showtime.price).toFixed(2)}`;
+          const buttons =
+            movie.showtimes
+              .map((showtime) => {
+                const label =
+                  `${formatDate(
+                    showtime.showDate
+                  )} · ` +
+                  `${formatTime(
+                    showtime.showTime
+                  )} · ` +
+                  `$${Number(
+                    showtime.price
+                  ).toFixed(2)}`;
 
-            return `
-              <button
-                class="showtime-button"
-                type="button"
-                onclick="selectShowtime(
-                  '${movie.id}',
-                  '${showtime.id}'
-                )"
-              >
-                ${escapeHtml(label)}
-              </button>
-            `;
-          })
-          .join("");
+                return `
+                  <button
+                    class="showtime-button"
+                    type="button"
+                    onclick="selectShowtime(
+                      '${movie.id}',
+                      '${showtime.id}'
+                    )"
+                  >
+                    ${escapeHtml(label)}
+                  </button>
+                `;
+              })
+              .join("");
 
-        card.innerHTML = `
-          <div class="movie-poster-wrapper">
-            ${posterHtml}
+          card.innerHTML = `
+            <div class="movie-poster-wrapper">
+              ${posterHtml}
 
-            <span class="movie-status">
-              Disponible
-            </span>
-          </div>
-
-          <div class="movie-content">
-            <h3 class="movie-title">
-              ${escapeHtml(movie.title)}
-            </h3>
-
-            <div class="movie-meta">
-              <span class="meta-badge">
-                ${escapeHtml(duration)}
-              </span>
-
-              <span class="meta-badge">
-                ${escapeHtml(rating)}
+              <span class="movie-status">
+                Disponible
               </span>
             </div>
 
-            <p class="movie-description">
-              ${escapeHtml(
-                movie.description ||
-                "Información próximamente."
-              )}
-            </p>
+            <div class="movie-content">
+              <h3 class="movie-title">
+                ${escapeHtml(movie.title)}
+              </h3>
 
-            <p class="showtime-label">
-              Selecciona una tanda:
-            </p>
+              <div class="movie-meta">
+                <span class="meta-badge">
+                  ${escapeHtml(duration)}
+                </span>
 
-            <div class="showtime-list">
-              ${buttons}
+                <span class="meta-badge">
+                  ${escapeHtml(rating)}
+                </span>
+              </div>
+
+              <p class="movie-description">
+                ${escapeHtml(
+                  movie.description ||
+                  "Información próximamente."
+                )}
+              </p>
+
+              <p class="showtime-label">
+                Selecciona una tanda:
+              </p>
+
+              <div class="showtime-list">
+                ${buttons}
+              </div>
             </div>
-          </div>
-        `;
+          `;
 
-        grid.appendChild(card);
-      });
+          grid.appendChild(card);
+        }
+      );
     }
 
-    function createPosterPlaceholder(title) {
+    function createPosterPlaceholder(
+      title
+    ) {
       return `
         <div class="poster-placeholder">
           <div>
             <span>🎬</span>
-
             <p>${escapeHtml(title)}</p>
           </div>
         </div>
       `;
     }
 
-    function showPosterPlaceholder(image) {
-      const wrapper = image.parentElement;
+    function showPosterPlaceholder(
+      image
+    ) {
+      const wrapper =
+        image.parentElement;
 
       image.remove();
 
       wrapper.insertAdjacentHTML(
         "afterbegin",
-        createPosterPlaceholder("Afiche no disponible")
+        createPosterPlaceholder(
+          "Afiche no disponible"
+        )
       );
     }
 
@@ -1511,9 +1630,11 @@
       movieId,
       showtimeId
     ) {
-      selectedMovie = movies.find(
-        (movie) => movie.id === movieId
-      );
+      selectedMovie =
+        movies.find(
+          (movie) =>
+            movie.id === movieId
+        );
 
       selectedShowtime =
         selectedMovie?.showtimes?.find(
@@ -1548,29 +1669,34 @@
           "selectedMovieDetails"
         );
 
-      const poster = selectedMovie.posterUrl
-        ? `
-          <img
-            src="${escapeHtml(selectedMovie.posterUrl)}"
-            alt="Afiche"
-            onerror="
-              this.outerHTML =
-              '<div class=&quot;selected-poster-placeholder&quot;>🎬</div>'
-            "
-          />
-        `
-        : `
-          <div class="selected-poster-placeholder">
-            🎬
-          </div>
-        `;
+      const poster =
+        selectedMovie.posterUrl
+          ? `
+            <img
+              src="${escapeHtml(
+                selectedMovie.posterUrl
+              )}"
+              alt="Afiche"
+              onerror="
+                this.outerHTML =
+                '<div class=&quot;selected-poster-placeholder&quot;>🎬</div>'
+              "
+            />
+          `
+          : `
+            <div class="selected-poster-placeholder">
+              🎬
+            </div>
+          `;
 
       container.innerHTML = `
         ${poster}
 
         <div>
           <h2>
-            ${escapeHtml(selectedMovie.title)}
+            ${escapeHtml(
+              selectedMovie.title
+            )}
           </h2>
 
           <p>
@@ -1582,11 +1708,15 @@
 
           <div class="selected-showtime">
             ${escapeHtml(
-              formatDate(selectedShowtime.showDate)
+              formatDate(
+                selectedShowtime.showDate
+              )
             )}
             ·
             ${escapeHtml(
-              formatTime(selectedShowtime.showTime)
+              formatTime(
+                selectedShowtime.showTime
+              )
             )}
             ·
             $${Number(
@@ -1602,17 +1732,22 @@
 
       try {
         const response = await fetch(
-          `${API_URL}/api/seats?showtimeId=` +
-          encodeURIComponent(selectedShowtime.id)
+          `${API_URL}/api/seats?` +
+          `showtimeId=` +
+          encodeURIComponent(
+            selectedShowtime.id
+          )
         );
 
-        const data = await readResponse(response);
+        const data =
+          await readResponse(response);
 
-        occupiedSeats = Array.isArray(
-          data.occupiedSeats
-        )
-          ? data.occupiedSeats
-          : [];
+        occupiedSeats =
+          Array.isArray(
+            data.occupiedSeats
+          )
+            ? data.occupiedSeats
+            : [];
 
         renderSeatMap();
       } catch (error) {
@@ -1620,87 +1755,130 @@
 
         showSeatMessage(
           "error",
-          `No se pudieron consultar los asientos: ${error.message}`
+          `No se pudieron consultar ` +
+          `los asientos: ${error.message}`
         );
       }
     }
 
     function renderSeatMap() {
       const seatMap =
-        document.getElementById("seatMap");
+        document.getElementById(
+          "seatMap"
+        );
 
       seatMap.innerHTML = "";
 
-      seatRows.forEach((rowName) => {
-        const row =
-          document.createElement("div");
+      seatRows.forEach(
+        (rowName) => {
+          const row =
+            document.createElement(
+              "div"
+            );
 
-        row.className = "seat-row";
+          row.className = "seat-row";
 
-        const firstLabel =
-          document.createElement("span");
+          const firstLabel =
+            document.createElement(
+              "span"
+            );
 
-        firstLabel.className = "row-label";
-        firstLabel.textContent = rowName;
-        row.appendChild(firstLabel);
+          firstLabel.className =
+            "row-label";
 
-        for (
-          let seatNumber = 1;
-          seatNumber <= seatsPerRow;
-          seatNumber += 1
-        ) {
-          if (seatNumber === 6) {
-            const aisle =
-              document.createElement("span");
+          firstLabel.textContent =
+            rowName;
 
-            aisle.className = "aisle";
-            row.appendChild(aisle);
-          }
-
-          const seatName =
-            `${rowName}${seatNumber}`;
-
-          const button =
-            document.createElement("button");
-
-          button.type = "button";
-          button.className = "seat";
-          button.textContent = seatNumber;
-          button.title = `Asiento ${seatName}`;
-
-          if (
-            occupiedSeats.includes(seatName)
-          ) {
-            button.classList.add("occupied");
-            button.disabled = true;
-          }
-
-          if (
-            selectedSeats.includes(seatName)
-          ) {
-            button.classList.add("selected");
-          }
-
-          button.addEventListener(
-            "click",
-            () => toggleSeat(
-              seatName,
-              button
-            )
+          row.appendChild(
+            firstLabel
           );
 
-          row.appendChild(button);
+          for (
+            let seatNumber = 1;
+            seatNumber <= seatsPerRow;
+            seatNumber += 1
+          ) {
+            if (
+              seatNumber === 6
+            ) {
+              const aisle =
+                document.createElement(
+                  "span"
+                );
+
+              aisle.className =
+                "aisle";
+
+              row.appendChild(
+                aisle
+              );
+            }
+
+            const seatName =
+              `${rowName}${seatNumber}`;
+
+            const button =
+              document.createElement(
+                "button"
+              );
+
+            button.type = "button";
+            button.className = "seat";
+            button.textContent =
+              seatNumber;
+
+            button.title =
+              `Asiento ${seatName}`;
+
+            if (
+              occupiedSeats.includes(
+                seatName
+              )
+            ) {
+              button.classList.add(
+                "occupied"
+              );
+
+              button.disabled = true;
+            }
+
+            if (
+              selectedSeats.includes(
+                seatName
+              )
+            ) {
+              button.classList.add(
+                "selected"
+              );
+            }
+
+            button.addEventListener(
+              "click",
+              () =>
+                toggleSeat(
+                  seatName,
+                  button
+                )
+            );
+
+            row.appendChild(button);
+          }
+
+          const lastLabel =
+            document.createElement(
+              "span"
+            );
+
+          lastLabel.className =
+            "row-label";
+
+          lastLabel.textContent =
+            rowName;
+
+          row.appendChild(lastLabel);
+          seatMap.appendChild(row);
         }
-
-        const lastLabel =
-          document.createElement("span");
-
-        lastLabel.className = "row-label";
-        lastLabel.textContent = rowName;
-        row.appendChild(lastLabel);
-
-        seatMap.appendChild(row);
-      });
+      );
     }
 
     function toggleSeat(
@@ -1708,14 +1886,27 @@
       button
     ) {
       const index =
-        selectedSeats.indexOf(seatName);
+        selectedSeats.indexOf(
+          seatName
+        );
 
       if (index === -1) {
-        selectedSeats.push(seatName);
-        button.classList.add("selected");
+        selectedSeats.push(
+          seatName
+        );
+
+        button.classList.add(
+          "selected"
+        );
       } else {
-        selectedSeats.splice(index, 1);
-        button.classList.remove("selected");
+        selectedSeats.splice(
+          index,
+          1
+        );
+
+        button.classList.remove(
+          "selected"
+        );
       }
 
       selectedSeats.sort(
@@ -1731,7 +1922,9 @@
           b.charAt(0)
         );
 
-      if (rowComparison !== 0) {
+      if (
+        rowComparison !== 0
+      ) {
         return rowComparison;
       }
 
@@ -1743,10 +1936,13 @@
 
     function updateSummary() {
       const price =
-        Number(selectedShowtime?.price || 0);
+        Number(
+          selectedShowtime?.price || 0
+        );
 
       const total =
-        selectedSeats.length * price;
+        selectedSeats.length *
+        price;
 
       document.getElementById(
         "summaryMovie"
@@ -1802,7 +1998,9 @@
 
       const total =
         selectedSeats.length *
-        Number(selectedShowtime.price);
+        Number(
+          selectedShowtime.price
+        );
 
       document.getElementById(
         "customerSummary"
@@ -1810,7 +2008,9 @@
         <div class="summary-row">
           <span>Película</span>
           <strong>
-            ${escapeHtml(selectedMovie.title)}
+            ${escapeHtml(
+              selectedMovie.title
+            )}
           </strong>
         </div>
 
@@ -1818,11 +2018,15 @@
           <span>Tanda</span>
           <strong>
             ${escapeHtml(
-              formatDate(selectedShowtime.showDate)
+              formatDate(
+                selectedShowtime.showDate
+              )
             )}
             ·
             ${escapeHtml(
-              formatTime(selectedShowtime.showTime)
+              formatTime(
+                selectedShowtime.showTime
+              )
             )}
           </strong>
         </div>
@@ -1830,7 +2034,9 @@
         <div class="summary-row">
           <span>Asientos</span>
           <strong>
-            ${escapeHtml(selectedSeats.join(", "))}
+            ${escapeHtml(
+              selectedSeats.join(", ")
+            )}
           </strong>
         </div>
 
@@ -1846,7 +2052,9 @@
       showPage("customerPage");
     }
 
-    async function createReservation(event) {
+    async function createReservation(
+      event
+    ) {
       event.preventDefault();
 
       const name =
@@ -1864,7 +2072,11 @@
           "customerPhone"
         ).value.trim();
 
-      if (!name || !email || !phone) {
+      if (
+        !name ||
+        !email ||
+        !phone
+      ) {
         showCustomerMessage(
           "error",
           "Completa todos los datos del cliente."
@@ -1898,7 +2110,8 @@
               body: JSON.stringify({
                 showtimeId:
                   selectedShowtime.id,
-                seats: selectedSeats,
+                seats:
+                  selectedSeats,
                 customer: {
                   name,
                   email,
@@ -1935,7 +2148,10 @@
         currentTicket =
           paymentData.reservation;
 
-        renderTicket(currentTicket);
+        renderTicket(
+          currentTicket
+        );
+
         showPage("ticketPage");
       } catch (error) {
         showPage("customerPage");
@@ -1971,37 +2187,62 @@
       const customerEmail =
         ticket.customer?.email || "—";
 
+      const customerPhone =
+        ticket.customer?.phone || "—";
+
       const seats =
         Array.isArray(ticket.seats)
           ? ticket.seats.join(", ")
           : "—";
 
+      const manualCode =
+        String(
+          ticket.manualCode || ""
+        ).padStart(5, "0");
+
       details.innerHTML = `
         <div class="ticket-detail">
           <span>Cliente</span>
           <strong>
-            ${escapeHtml(customerName)}
+            ${escapeHtml(
+              customerName
+            )}
           </strong>
         </div>
 
         <div class="ticket-detail">
           <span>Correo electrónico</span>
           <strong>
-            ${escapeHtml(customerEmail)}
+            ${escapeHtml(
+              customerEmail
+            )}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Teléfono</span>
+          <strong>
+            ${escapeHtml(
+              customerPhone
+            )}
           </strong>
         </div>
 
         <div class="ticket-detail">
           <span>Película</span>
           <strong>
-            ${escapeHtml(ticket.movie)}
+            ${escapeHtml(
+              ticket.movie
+            )}
           </strong>
         </div>
 
         <div class="ticket-detail">
           <span>Tanda</span>
           <strong>
-            ${escapeHtml(ticket.time)}
+            ${escapeHtml(
+              ticket.time
+            )}
           </strong>
         </div>
 
@@ -2024,7 +2265,9 @@
         <div class="ticket-detail">
           <span>Número de reservación</span>
           <strong>
-            ${escapeHtml(ticket.id)}
+            ${escapeHtml(
+              ticket.id
+            )}
           </strong>
         </div>
       `;
@@ -2035,7 +2278,13 @@
 
       document.getElementById(
         "qrToken"
-      ).textContent = ticket.qr;
+      ).textContent =
+        `QR seguro: ${ticket.qr}`;
+
+      document.getElementById(
+        "manualCodeNumber"
+      ).textContent =
+        manualCode || "-----";
 
       if (
         typeof QRCode !== "undefined"
@@ -2046,11 +2295,38 @@
           ),
           {
             text: ticket.qr,
-            width: 170,
-            height: 170,
+            width: 174,
+            height: 174,
             correctLevel:
               QRCode.CorrectLevel.H
           }
+        );
+      }
+    }
+
+    async function copyManualCode() {
+      const code =
+        document.getElementById(
+          "manualCodeNumber"
+        ).textContent.trim();
+
+      if (
+        !/^\d{5}$/.test(code)
+      ) {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(
+          code
+        );
+
+        alert(
+          `Código ${code} copiado.`
+        );
+      } catch (error) {
+        alert(
+          `Código manual: ${code}`
         );
       }
     }
@@ -2087,11 +2363,13 @@
           "seatMessage"
         );
 
-      box.className = message
-        ? `form-message ${type}`
-        : "form-message";
+      box.className =
+        message
+          ? `form-message ${type}`
+          : "form-message";
 
-      box.textContent = message || "";
+      box.textContent =
+        message || "";
     }
 
     function showCustomerMessage(
@@ -2103,11 +2381,13 @@
           "customerMessage"
         );
 
-      box.className = message
-        ? `form-message ${type}`
-        : "form-message";
+      box.className =
+        message
+          ? `form-message ${type}`
+          : "form-message";
 
-      box.textContent = message || "";
+      box.textContent =
+        message || "";
     }
 
     function normalizeDate(value) {
@@ -2115,7 +2395,10 @@
         return "";
       }
 
-      return String(value).slice(0, 10);
+      return String(value).slice(
+        0,
+        10
+      );
     }
 
     function formatDate(value) {
@@ -2134,7 +2417,8 @@
       }
 
       return (
-        `${parts[2]}/${parts[1]}/` +
+        `${parts[2]}/` +
+        `${parts[1]}/` +
         `${parts[0]}`
       );
     }
@@ -2145,7 +2429,10 @@
       }
 
       const normalized =
-        String(value).slice(0, 5);
+        String(value).slice(
+          0,
+          5
+        );
 
       const parts =
         normalized.split(":");
@@ -2165,13 +2452,16 @@
       }
 
       const suffix =
-        hour >= 12 ? "PM" : "AM";
+        hour >= 12
+          ? "PM"
+          : "AM";
 
       const displayHour =
         hour % 12 || 12;
 
       return (
-        `${displayHour}:${minute} ` +
+        `${displayHour}:` +
+        `${minute} ` +
         `${suffix}`
       );
     }
