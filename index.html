@@ -3410,10 +3410,13 @@
           ? ticket.seats.join(", ")
           : "—";
 
+      const rawManualCode =
+        String(ticket.manualCode || "").trim();
+
       const manualCode =
-        String(
-          ticket.manualCode || ""
-        ).padStart(5, "0");
+        /^\d{5}$/.test(rawManualCode)
+          ? rawManualCode
+          : "-----";
 
       details.innerHTML = `
         <div class="ticket-detail">
@@ -3525,7 +3528,7 @@
       document.getElementById(
         "manualCodeNumber"
       ).textContent =
-        manualCode || "-----";
+        manualCode;
 
       if (
         typeof QRCode !== "undefined"
