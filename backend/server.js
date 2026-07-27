@@ -284,6 +284,32 @@ FORMATEADORES
 ==================================================
 */
 
+async function generateUniqueManualCode(client) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const code = String(
+      crypto.randomInt(0, 100000)
+    ).padStart(5, "0");
+
+    const existing = await client.query(
+      `
+        SELECT 1
+        FROM tickets
+        WHERE manual_code = $1
+        LIMIT 1;
+      `,
+      [code]
+    );
+
+    if (existing.rowCount === 0) {
+      return code;
+    }
+  }
+
+  throw new Error(
+    "No se pudo generar un cÃ³digo manual Ãºnico."
+  );
+}
+
 function formatTicket(row) {
   return {
     id: row.id,
@@ -294,6 +320,7 @@ function formatTicket(row) {
     customer: row.customer,
     paymentStatus: row.payment_status,
     qr: row.qr,
+    manualCode: row.manual_code || "",
     used: row.used,
     created: row.created_at,
     checkin: row.checkin_at,
@@ -385,10 +412,22 @@ async function initializeDatabase() {
       customer JSONB NOT NULL,
       payment_status TEXT NOT NULL DEFAULT 'pending',
       qr TEXT UNIQUE NOT NULL,
+      manual_code VARCHAR(5) UNIQUE,
       used BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       checkin_at TIMESTAMPTZ
     );
+  `);
+
+  await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS manual_code VARCHAR(5);
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS tickets_manual_code_unique_idx
+    ON tickets (manual_code)
+    WHERE manual_code IS NOT NULL;
   `);
 
   await pool.query(`
@@ -2032,6 +2071,7 @@ app.post("/api/reservations", async (req, res) => {
 
     const ticketId = crypto.randomUUID();
     const qrToken = crypto.randomBytes(32).toString("hex");
+    const manualCode = await generateUniqueManualCode(client);
     const adultPrice = Number(showtime.global_adult_price);
     const childPrice = Number(showtime.global_child_price);
     const seniorPrice = Number(showtime.global_senior_price);
@@ -2060,6 +2100,7 @@ app.post("/api/reservations", async (req, res) => {
           customer,
           payment_status,
           qr,
+          manual_code,
           used,
           ticket_breakdown
         )
@@ -2072,8 +2113,9 @@ app.post("/api/reservations", async (req, res) => {
           $6,
           'pending',
           $7,
+          $8,
           FALSE,
-          $8
+          $9
         )
         RETURNING *;
       `,
@@ -2085,6 +2127,7 @@ app.post("/api/reservations", async (req, res) => {
         total,
         JSON.stringify(storedCustomer),
         qrToken,
+        manualCode,
         JSON.stringify(normalizedTicketTypes)
       ]
     );
@@ -2259,7 +2302,7 @@ app.get("/api/qr/:qr", async (req, res) => {
       `
         SELECT *
         FROM tickets
-        WHERE qr = $1;
+        WHERE qr = $1 OR manual_code = $1;
       `,
       [qr]
     );
@@ -2319,10 +2362,30 @@ CHECK-IN DEL EMPLEADO
 app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
   const client = await pool.connect();
   try {
-    const qr = String(req.body?.qr || "").trim();
-    if (!qr) return res.status(400).json({ error: "El cÃ³digo QR es obligatorio." });
+    const code = String(
+      req.body?.manualCode ||
+      req.body?.qr ||
+      req.body?.code ||
+      ""
+    ).trim();
+
+    if (!code) {
+      return res.status(400).json({
+        error: "El cÃ³digo del boleto es obligatorio."
+      });
+    }
+
     await client.query("BEGIN");
-    const ticketResult = await client.query(`SELECT * FROM tickets WHERE qr=$1 FOR UPDATE;`, [qr]);
+
+    const ticketResult = await client.query(
+      `
+        SELECT *
+        FROM tickets
+        WHERE qr = $1 OR manual_code = $1
+        FOR UPDATE;
+      `,
+      [code]
+    );
     if (ticketResult.rowCount === 0) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Boleto no encontrado." }); }
     const ticket = ticketResult.rows[0];
     if (!["paid","approved"].includes(ticket.payment_status)) { await client.query("ROLLBACK"); return res.status(400).json({ error: "El boleto no ha sido pagado.", ticket: formatTicket(ticket) }); }
@@ -2357,14 +2420,16 @@ app.post(
     const client = await pool.connect();
 
     try {
-      const { qr } = req.body;
+      const code = String(
+        req.body?.manualCode ||
+        req.body?.qr ||
+        req.body?.code ||
+        ""
+      ).trim();
 
-      if (
-        typeof qr !== "string" ||
-        !qr.trim()
-      ) {
+      if (!code) {
         return res.status(400).json({
-          error: "El cÃ³digo QR es obligatorio."
+          error: "El cÃ³digo del boleto es obligatorio."
         });
       }
 
