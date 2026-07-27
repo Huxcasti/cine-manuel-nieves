@@ -258,7 +258,12 @@ function formatTicket(row) {
     qr: row.qr,
     used: row.used,
     created: row.created_at,
-    checkin: row.checkin_at
+    checkin: row.checkin_at,
+    ticketTypes: row.ticket_breakdown || {
+      adult: Array.isArray(row.seats) ? row.seats.length : 0,
+      child: 0,
+      senior: 0
+    }
   };
 }
 
@@ -297,7 +302,10 @@ function formatShowtime(row) {
     movieTitle: row.movie_title,
     showDate: row.show_date,
     showTime: row.show_time,
-    price: Number(row.price),
+    price: Number(row.adult_price ?? row.price),
+    adultPrice: Number(row.adult_price ?? row.price),
+    childPrice: Number(row.child_price ?? row.price),
+    seniorPrice: Number(row.senior_price ?? row.price),
     language,
     languageLabel: SHOWTIME_LANGUAGES[language],
     active: row.active,
@@ -367,6 +375,9 @@ async function initializeDatabase() {
       show_date DATE NOT NULL,
       show_time TEXT NOT NULL,
       price NUMERIC(10, 2) NOT NULL,
+      adult_price NUMERIC(10, 2),
+      child_price NUMERIC(10, 2),
+      senior_price NUMERIC(10, 2),
       language TEXT NOT NULL DEFAULT 'spanish',
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -376,6 +387,26 @@ async function initializeDatabase() {
   await pool.query(`
     ALTER TABLE showtimes
     ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'spanish';
+  `);
+
+  await pool.query(`
+    ALTER TABLE showtimes
+      ADD COLUMN IF NOT EXISTS adult_price NUMERIC(10, 2),
+      ADD COLUMN IF NOT EXISTS child_price NUMERIC(10, 2),
+      ADD COLUMN IF NOT EXISTS senior_price NUMERIC(10, 2);
+  `);
+
+  await pool.query(`
+    UPDATE showtimes
+    SET
+      adult_price = COALESCE(adult_price, price),
+      child_price = COALESCE(child_price, price),
+      senior_price = COALESCE(senior_price, price);
+  `);
+
+  await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS ticket_breakdown JSONB;
   `);
 
   await pool.query(`
@@ -1203,7 +1234,9 @@ app.post(
         movieId,
         showDate,
         showTime,
-        price,
+        adultPrice,
+        childPrice,
+        seniorPrice,
         language = "spanish",
         active = true
       } = req.body;
@@ -1235,14 +1268,20 @@ app.post(
         });
       }
 
-      const numericPrice = Number(price);
+      const numericAdultPrice = Number(adultPrice);
+      const numericChildPrice = Number(childPrice);
+      const numericSeniorPrice = Number(seniorPrice);
 
       if (
-        !Number.isFinite(numericPrice) ||
-        numericPrice < 0
+        !Number.isFinite(numericAdultPrice) ||
+        !Number.isFinite(numericChildPrice) ||
+        !Number.isFinite(numericSeniorPrice) ||
+        numericAdultPrice < 0 ||
+        numericChildPrice < 0 ||
+        numericSeniorPrice < 0
       ) {
         return res.status(400).json({
-          error: "El precio de la tanda no es vÃ¡lido."
+          error: "Los precios de adulto, niÃ±o y senior deben ser vÃ¡lidos."
         });
       }
 
@@ -1302,10 +1341,13 @@ app.post(
             show_date,
             show_time,
             price,
+            adult_price,
+            child_price,
+            senior_price,
             language,
             active
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
           RETURNING *;
         `,
         [
@@ -1313,7 +1355,10 @@ app.post(
           movieId,
           showDate,
           showTime.trim(),
-          numericPrice,
+          numericAdultPrice,
+          numericAdultPrice,
+          numericChildPrice,
+          numericSeniorPrice,
           normalizedLanguage,
           Boolean(active)
         ]
@@ -1358,7 +1403,9 @@ app.put(
         movieId,
         showDate,
         showTime,
-        price,
+        adultPrice,
+        childPrice,
+        seniorPrice,
         language = "spanish",
         active = true
       } = req.body;
@@ -1390,14 +1437,20 @@ app.put(
         });
       }
 
-      const numericPrice = Number(price);
+      const numericAdultPrice = Number(adultPrice);
+      const numericChildPrice = Number(childPrice);
+      const numericSeniorPrice = Number(seniorPrice);
 
       if (
-        !Number.isFinite(numericPrice) ||
-        numericPrice < 0
+        !Number.isFinite(numericAdultPrice) ||
+        !Number.isFinite(numericChildPrice) ||
+        !Number.isFinite(numericSeniorPrice) ||
+        numericAdultPrice < 0 ||
+        numericChildPrice < 0 ||
+        numericSeniorPrice < 0
       ) {
         return res.status(400).json({
-          error: "El precio de la tanda no es vÃ¡lido."
+          error: "Los precios de adulto, niÃ±o y senior deben ser vÃ¡lidos."
         });
       }
 
@@ -1457,16 +1510,22 @@ app.put(
             show_date = $2,
             show_time = $3,
             price = $4,
-            language = $5,
-            active = $6
-          WHERE id = $7
+            adult_price = $5,
+            child_price = $6,
+            senior_price = $7,
+            language = $8,
+            active = $9
+          WHERE id = $10
           RETURNING *;
         `,
         [
           movieId,
           showDate,
           showTime.trim(),
-          numericPrice,
+          numericAdultPrice,
+          numericAdultPrice,
+          numericChildPrice,
+          numericSeniorPrice,
           normalizedLanguage,
           Boolean(active),
           id
@@ -1665,6 +1724,7 @@ app.post("/api/reservations", async (req, res) => {
     const {
       showtimeId,
       seats,
+      ticketTypes,
       customer
     } = req.body;
 
@@ -1701,6 +1761,24 @@ app.post("/api/reservations", async (req, res) => {
     if (normalizedSeats.length === 0) {
       return res.status(400).json({
         error: "Los asientos seleccionados no son vÃ¡lidos."
+      });
+    }
+
+    const normalizedTicketTypes = {
+      adult: Math.max(0, Number.parseInt(ticketTypes?.adult, 10) || 0),
+      child: Math.max(0, Number.parseInt(ticketTypes?.child, 10) || 0),
+      senior: Math.max(0, Number.parseInt(ticketTypes?.senior, 10) || 0)
+    };
+
+    const ticketTypeCount =
+      normalizedTicketTypes.adult +
+      normalizedTicketTypes.child +
+      normalizedTicketTypes.senior;
+
+    if (ticketTypeCount !== normalizedSeats.length) {
+      return res.status(400).json({
+        error:
+          "La cantidad de taquillas por categorÃ­a debe coincidir con los asientos seleccionados."
       });
     }
 
@@ -1743,6 +1821,9 @@ app.post("/api/reservations", async (req, res) => {
           s.show_date,
           s.show_time,
           s.price,
+          s.adult_price,
+          s.child_price,
+          s.senior_price,
           s.active,
           m.title AS movie_title,
           m.active AS movie_active
@@ -1814,9 +1895,14 @@ app.post("/api/reservations", async (req, res) => {
 
     const ticketId = crypto.randomUUID();
     const qrToken = crypto.randomBytes(32).toString("hex");
-    const ticketPrice = Number(showtime.price);
+    const adultPrice = Number(showtime.adult_price ?? showtime.price);
+    const childPrice = Number(showtime.child_price ?? showtime.price);
+    const seniorPrice = Number(showtime.senior_price ?? showtime.price);
+
     const total =
-      ticketPrice * normalizedSeats.length;
+      normalizedTicketTypes.adult * adultPrice +
+      normalizedTicketTypes.child * childPrice +
+      normalizedTicketTypes.senior * seniorPrice;
 
     const storedCustomer = {
       ...customer,
@@ -1837,7 +1923,8 @@ app.post("/api/reservations", async (req, res) => {
           customer,
           payment_status,
           qr,
-          used
+          used,
+          ticket_breakdown
         )
         VALUES (
           $1,
@@ -1848,7 +1935,8 @@ app.post("/api/reservations", async (req, res) => {
           $6,
           'pending',
           $7,
-          FALSE
+          FALSE,
+          $8
         )
         RETURNING *;
       `,
@@ -1859,7 +1947,8 @@ app.post("/api/reservations", async (req, res) => {
         normalizedSeats,
         total,
         JSON.stringify(storedCustomer),
-        qrToken
+        qrToken,
+        JSON.stringify(normalizedTicketTypes)
       ]
     );
 
