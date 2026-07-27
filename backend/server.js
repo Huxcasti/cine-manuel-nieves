@@ -1745,8 +1745,9 @@ app.post(
 /*
 ==================================================
 SUBIR TRÃILER
-Mantiene un solo trÃ¡iler almacenado.
-Antes de subir uno nuevo, elimina el anterior.
+Permite almacenar varios trÃ¡ilers.
+Cada video recibe un nombre Ãºnico y no reemplaza
+los trÃ¡ilers de las demÃ¡s pelÃ­culas.
 ==================================================
 */
 
@@ -1768,77 +1769,13 @@ app.post(
           req.file.mimetype
         );
 
-      const folderName = "current";
-
-      const {
-        data: existingFiles,
-        error: listError
-      } = await supabase.storage
-        .from(SUPABASE_TRAILERS_BUCKET)
-        .list(
-          folderName,
-          {
-            limit: 100,
-            offset: 0
-          }
-        );
-
-      if (listError) {
-        console.error(
-          "Error consultando trÃ¡ilers anteriores:",
-          listError
-        );
-
-        return res.status(502).json({
-          error:
-            "No se pudo revisar el almacenamiento de trÃ¡ilers. Verifica que el bucket trailers exista y sea pÃºblico."
-        });
-      }
-
-      if (
-        Array.isArray(existingFiles) &&
-        existingFiles.length > 0
-      ) {
-        const pathsToRemove =
-          existingFiles
-            .filter(
-              (file) =>
-                file?.name &&
-                file.name !== ".emptyFolderPlaceholder"
-            )
-            .map(
-              (file) =>
-                `${folderName}/${file.name}`
-            );
-
-        if (pathsToRemove.length > 0) {
-          const {
-            error: removeError
-          } = await supabase.storage
-            .from(SUPABASE_TRAILERS_BUCKET)
-            .remove(pathsToRemove);
-
-          if (removeError) {
-            console.error(
-              "Error eliminando el trÃ¡iler anterior:",
-              removeError
-            );
-
-            return res.status(502).json({
-              error:
-                "No se pudo eliminar el trÃ¡iler anterior."
-            });
-          }
-        }
-      }
-
       const fileName =
         `${Date.now()}-` +
         `${crypto.randomUUID()}.` +
         `${extension}`;
 
       const filePath =
-        `${folderName}/${fileName}`;
+        `movies/${fileName}`;
 
       const {
         error: uploadError
@@ -1850,7 +1787,7 @@ app.post(
           {
             contentType:
               req.file.mimetype,
-            cacheControl: "3600",
+            cacheControl: "31536000",
             upsert: false
           }
         );
@@ -1881,18 +1818,10 @@ app.post(
         });
       }
 
-      await pool.query(
-        `
-          UPDATE movies
-          SET trailer_url = NULL
-          WHERE trailer_url IS NOT NULL;
-        `
-      );
-
       res.status(201).json({
         success: true,
         message:
-          "TrÃ¡iler anterior eliminado y nuevo trÃ¡iler subido correctamente.",
+          "TrÃ¡iler subido correctamente sin reemplazar otros trÃ¡ilers.",
         trailerUrl:
           publicUrlData.publicUrl,
         path: filePath
