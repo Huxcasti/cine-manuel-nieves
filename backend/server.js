@@ -48,7 +48,7 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 
 /*
 ==================================================
-CONEXIÓN CON POSTGRESQL
+CONEXIÃN CON POSTGRESQL
 ==================================================
 */
 
@@ -120,7 +120,7 @@ function extensionFromMimeType(mimeType) {
 
 /*
 ==================================================
-CONTRASEÑA DEL ADMINISTRADOR
+CONTRASEÃA DEL ADMINISTRADOR
 ==================================================
 */
 
@@ -156,6 +156,14 @@ async function verifyPassword(password, storedSalt, storedHash) {
   }
 
   return crypto.timingSafeEqual(storedBuffer, derivedKey);
+}
+
+function hashSessionToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function normalizeUsername(username) {
+  return String(username || "").trim().toLowerCase();
 }
 
 async function getAdminCredentials() {
@@ -207,6 +215,31 @@ async function requireAdmin(req, res, next) {
   }
 }
 
+async function requireEmployee(req, res, next) {
+  try {
+    const token = req.headers["x-employee-token"];
+    if (!token || typeof token !== "string") {
+      return res.status(401).json({ error: "Debes iniciar sesiÃ³n como empleado." });
+    }
+    const tokenHash = hashSessionToken(token);
+    const result = await pool.query(`
+      SELECT e.id, e.name, e.username, e.active
+      FROM employee_sessions s
+      JOIN employees e ON e.id = s.employee_id
+      WHERE s.token_hash = $1 AND s.expires_at > NOW() AND e.active = TRUE;
+    `, [tokenHash]);
+    if (result.rowCount === 0) {
+      return res.status(401).json({ error: "La sesiÃ³n del empleado expirÃ³ o no es vÃ¡lida." });
+    }
+    req.employee = result.rows[0];
+    req.employeeTokenHash = tokenHash;
+    next();
+  } catch (error) {
+    console.error("Error verificando al empleado:", error);
+    res.status(500).json({ error: "No se pudo verificar la sesiÃ³n del empleado." });
+  }
+}
+
 /*
 ==================================================
 FORMATEADORES
@@ -255,9 +288,26 @@ function formatShowtime(row) {
   };
 }
 
+function formatEmployee(row) {
+  return {
+    id: row.id, name: row.name, username: row.username, active: row.active,
+    created: row.created_at, scans: Number(row.scans || 0),
+    ticketsScanned: Number(row.tickets_scanned || 0), lastScan: row.last_scan || null
+  };
+}
+
+function formatCheckin(row) {
+  return {
+    id: row.id, ticketId: row.ticket_id, employeeId: row.employee_id,
+    employeeName: row.employee_name, employeeUsername: row.employee_username,
+    seatsCount: Number(row.seats_count || 0), movie: row.movie,
+    showTime: row.show_time, seats: row.seats || [], scannedAt: row.scanned_at
+  };
+}
+
 /*
 ==================================================
-CREAR TABLAS AUTOMÁTICAMENTE
+CREAR TABLAS AUTOMÃTICAMENTE
 ==================================================
 */
 
@@ -306,6 +356,51 @@ async function initializeDatabase() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id UUID PRIMARY KEY,
+      name TEXT NOT NULL,
+      username TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS employees_username_lower_unique ON employees (LOWER(username));`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS employee_sessions (
+      id UUID PRIMARY KEY,
+      employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      token_hash TEXT UNIQUE NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS employee_sessions_expires_at_idx ON employee_sessions (expires_at);`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS checkins (
+      id UUID PRIMARY KEY,
+      ticket_id UUID UNIQUE NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+      employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+      employee_name TEXT NOT NULL,
+      employee_username TEXT NOT NULL,
+      seats_count INTEGER NOT NULL CHECK (seats_count > 0),
+      movie TEXT NOT NULL,
+      show_time TEXT NOT NULL,
+      seats TEXT[] NOT NULL,
+      scanned_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`CREATE INDEX IF NOT EXISTS checkins_employee_id_idx ON checkins (employee_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS checkins_scanned_at_idx ON checkins (scanned_at DESC);`);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS admin_settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       password_salt TEXT NOT NULL,
@@ -339,7 +434,7 @@ async function initializeDatabase() {
       ]
     );
 
-    console.log("Contraseña administrativa inicial creada.");
+    console.log("ContraseÃ±a administrativa inicial creada.");
   }
 
   console.log("Base de datos preparada correctamente.");
@@ -352,10 +447,12 @@ HORA DE PUERTO RICO
 ==================================================
 
 Solo elimina reservaciones y taquillas.
-No elimina películas, tandas ni contraseña.
+No elimina pelÃ­culas, tandas ni contraseÃ±a.
 */
 
 async function cleanupPreviousBusinessDay() {
+  await pool.query(`DELETE FROM employee_sessions WHERE expires_at <= NOW();`);
+
   const result = await pool.query(`
     DELETE FROM tickets
     WHERE created_at < (
@@ -435,7 +532,7 @@ app.get("/", async (req, res) => {
 
 /*
 ==================================================
-CARTELERA PÚBLICA
+CARTELERA PÃBLICA
 ==================================================
 */
 
@@ -487,7 +584,7 @@ app.get("/api/movies", async (req, res) => {
 
 /*
 ==================================================
-AUTENTICACIÓN DEL ADMINISTRADOR
+AUTENTICACIÃN DEL ADMINISTRADOR
 ==================================================
 */
 
@@ -499,7 +596,7 @@ app.post("/api/admin/login", async (req, res) => {
 
     if (!valid) {
       return res.status(401).json({
-        error: "Contraseña incorrecta."
+        error: "ContraseÃ±a incorrecta."
       });
     }
 
@@ -508,10 +605,10 @@ app.post("/api/admin/login", async (req, res) => {
       message: "Acceso autorizado."
     });
   } catch (error) {
-    console.error("Error iniciando sesión:", error);
+    console.error("Error iniciando sesiÃ³n:", error);
 
     res.status(500).json({
-      error: "No se pudo iniciar sesión."
+      error: "No se pudo iniciar sesiÃ³n."
     });
   }
 });
@@ -531,7 +628,7 @@ app.put(
 
       if (!currentPasswordValid) {
         return res.status(401).json({
-          error: "La contraseña actual es incorrecta."
+          error: "La contraseÃ±a actual es incorrecta."
         });
       }
 
@@ -541,14 +638,14 @@ app.put(
       ) {
         return res.status(400).json({
           error:
-            "La nueva contraseña debe tener al menos 8 caracteres."
+            "La nueva contraseÃ±a debe tener al menos 8 caracteres."
         });
       }
 
       if (newPassword === currentPassword) {
         return res.status(400).json({
           error:
-            "La nueva contraseña debe ser diferente a la actual."
+            "La nueva contraseÃ±a debe ser diferente a la actual."
         });
       }
 
@@ -571,21 +668,152 @@ app.put(
 
       res.json({
         success: true,
-        message: "Contraseña actualizada correctamente."
+        message: "ContraseÃ±a actualizada correctamente."
       });
     } catch (error) {
       console.error(
-        "Error cambiando la contraseña:",
+        "Error cambiando la contraseÃ±a:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudo cambiar la contraseña."
+        error: "No se pudo cambiar la contraseÃ±a."
       });
     }
   }
 );
 
+
+/*
+==================================================
+CUENTAS Y SESIONES DE EMPLEADOS
+==================================================
+*/
+
+app.post("/api/employee/login", async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    if (!username || typeof password !== "string") {
+      return res.status(400).json({ error: "Escribe el usuario y la contraseÃ±a." });
+    }
+    const result = await pool.query(`SELECT * FROM employees WHERE LOWER(username) = $1;`, [username]);
+    if (result.rowCount === 0) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    const employee = result.rows[0];
+    if (!employee.active) return res.status(403).json({ error: "Esta cuenta estÃ¡ desactivada." });
+    const valid = await verifyPassword(password, employee.password_salt, employee.password_hash);
+    if (!valid) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    const token = crypto.randomBytes(32).toString("hex");
+    await pool.query(`INSERT INTO employee_sessions (id, employee_id, token_hash, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '12 hours');`, [crypto.randomUUID(), employee.id, hashSessionToken(token)]);
+    res.json({ success: true, token, expiresInHours: 12, employee: { id: employee.id, name: employee.name, username: employee.username } });
+  } catch (error) {
+    console.error("Error iniciando sesiÃ³n de empleado:", error);
+    res.status(500).json({ error: "No se pudo iniciar la sesiÃ³n." });
+  }
+});
+
+app.get("/api/employee/me", requireEmployee, async (req, res) => {
+  res.json({ employee: { id: req.employee.id, name: req.employee.name, username: req.employee.username } });
+});
+
+app.post("/api/employee/logout", requireEmployee, async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM employee_sessions WHERE token_hash = $1;`, [req.employeeTokenHash]);
+    res.json({ success: true, message: "SesiÃ³n cerrada correctamente." });
+  } catch (error) {
+    console.error("Error cerrando sesiÃ³n de empleado:", error);
+    res.status(500).json({ error: "No se pudo cerrar la sesiÃ³n." });
+  }
+});
+
+/*
+==================================================
+ADMINISTRACIÃN DE EMPLEADOS
+==================================================
+*/
+
+app.get("/api/admin/employees", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT e.*, COUNT(c.id) AS scans, COALESCE(SUM(c.seats_count),0) AS tickets_scanned, MAX(c.scanned_at) AS last_scan
+      FROM employees e LEFT JOIN checkins c ON c.employee_id = e.id
+      GROUP BY e.id ORDER BY e.name ASC;
+    `);
+    res.json(result.rows.map(formatEmployee));
+  } catch (error) {
+    console.error("Error obteniendo empleados:", error);
+    res.status(500).json({ error: "No se pudieron obtener los empleados." });
+  }
+});
+
+app.post("/api/admin/employees", requireAdmin, async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    const active = req.body?.active !== false;
+    if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, nÃºmeros, punto, guion o guion bajo." });
+    if (typeof password !== "string" || password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+    const credentials = await hashPassword(password);
+    const result = await pool.query(`INSERT INTO employees (id,name,username,password_salt,password_hash,active) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`, [crypto.randomUUID(),name,username,credentials.salt,credentials.hash,Boolean(active)]);
+    res.status(201).json(formatEmployee(result.rows[0]));
+  } catch (error) {
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    console.error("Error creando empleado:", error);
+    res.status(500).json({ error: "No se pudo crear el empleado." });
+  }
+});
+
+app.put("/api/admin/employees/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const name = String(req.body?.name || "").trim();
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    const active = req.body?.active !== false;
+    if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El nombre de usuario no es vÃ¡lido." });
+    let result;
+    if (typeof password === "string" && password.length > 0) {
+      if (password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+      const credentials = await hashPassword(password);
+      result = await pool.query(`UPDATE employees SET name=$1,username=$2,password_salt=$3,password_hash=$4,active=$5,updated_at=NOW() WHERE id=$6 RETURNING *;`, [name,username,credentials.salt,credentials.hash,Boolean(active),id]);
+      await pool.query(`DELETE FROM employee_sessions WHERE employee_id = $1;`, [id]);
+    } else {
+      result = await pool.query(`UPDATE employees SET name=$1,username=$2,active=$3,updated_at=NOW() WHERE id=$4 RETURNING *;`, [name,username,Boolean(active),id]);
+      if (!active) await pool.query(`DELETE FROM employee_sessions WHERE employee_id = $1;`, [id]);
+    }
+    if (result.rowCount === 0) return res.status(404).json({ error: "Empleado no encontrado." });
+    res.json(formatEmployee(result.rows[0]));
+  } catch (error) {
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    console.error("Error actualizando empleado:", error);
+    res.status(500).json({ error: "No se pudo actualizar el empleado." });
+  }
+});
+
+app.delete("/api/admin/employees/:id", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`DELETE FROM employees WHERE id=$1 RETURNING id;`, [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "Empleado no encontrado." });
+    res.json({ success: true, message: "Empleado eliminado. Su historial de escaneos se conserva." });
+  } catch (error) {
+    console.error("Error eliminando empleado:", error);
+    res.status(500).json({ error: "No se pudo eliminar el empleado." });
+  }
+});
+
+app.get("/api/admin/checkins", requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit)||200,1),1000);
+    const result = await pool.query(`SELECT * FROM checkins ORDER BY scanned_at DESC LIMIT $1;`, [limit]);
+    res.json(result.rows.map(formatCheckin));
+  } catch (error) {
+    console.error("Error obteniendo historial de escaneos:", error);
+    res.status(500).json({ error: "No se pudo obtener el historial de escaneos." });
+  }
+});
 
 /*
 ==================================================
@@ -646,7 +874,7 @@ app.post(
       if (!publicUrlData?.publicUrl) {
         return res.status(500).json({
           error:
-            "El afiche se subió, pero no se pudo obtener su URL pública."
+            "El afiche se subiÃ³, pero no se pudo obtener su URL pÃºblica."
         });
       }
 
@@ -667,7 +895,7 @@ app.post(
 
 /*
 ==================================================
-ADMINISTRACIÓN DE PELÍCULAS
+ADMINISTRACIÃN DE PELÃCULAS
 ==================================================
 */
 
@@ -685,12 +913,12 @@ app.get(
       res.json(result.rows.map(formatMovie));
     } catch (error) {
       console.error(
-        "Error obteniendo películas:",
+        "Error obteniendo pelÃ­culas:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudieron obtener las películas."
+        error: "No se pudieron obtener las pelÃ­culas."
       });
     }
   }
@@ -715,7 +943,7 @@ app.post(
         !title.trim()
       ) {
         return res.status(400).json({
-          error: "El título de la película es obligatorio."
+          error: "El tÃ­tulo de la pelÃ­cula es obligatorio."
         });
       }
 
@@ -728,7 +956,7 @@ app.post(
       ) {
         return res.status(400).json({
           error:
-            "La duración debe ser un número entero mayor que cero."
+            "La duraciÃ³n debe ser un nÃºmero entero mayor que cero."
         });
       }
 
@@ -766,12 +994,12 @@ app.post(
       );
     } catch (error) {
       console.error(
-        "Error creando película:",
+        "Error creando pelÃ­cula:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudo crear la película."
+        error: "No se pudo crear la pelÃ­cula."
       });
     }
   }
@@ -798,7 +1026,7 @@ app.put(
         !title.trim()
       ) {
         return res.status(400).json({
-          error: "El título de la película es obligatorio."
+          error: "El tÃ­tulo de la pelÃ­cula es obligatorio."
         });
       }
 
@@ -811,7 +1039,7 @@ app.put(
       ) {
         return res.status(400).json({
           error:
-            "La duración debe ser un número entero mayor que cero."
+            "La duraciÃ³n debe ser un nÃºmero entero mayor que cero."
         });
       }
 
@@ -843,19 +1071,19 @@ app.put(
 
       if (result.rowCount === 0) {
         return res.status(404).json({
-          error: "Película no encontrada."
+          error: "PelÃ­cula no encontrada."
         });
       }
 
       res.json(formatMovie(result.rows[0]));
     } catch (error) {
       console.error(
-        "Error actualizando película:",
+        "Error actualizando pelÃ­cula:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudo actualizar la película."
+        error: "No se pudo actualizar la pelÃ­cula."
       });
     }
   }
@@ -879,22 +1107,22 @@ app.delete(
 
       if (result.rowCount === 0) {
         return res.status(404).json({
-          error: "Película no encontrada."
+          error: "PelÃ­cula no encontrada."
         });
       }
 
       res.json({
         success: true,
-        message: "Película eliminada correctamente."
+        message: "PelÃ­cula eliminada correctamente."
       });
     } catch (error) {
       console.error(
-        "Error eliminando película:",
+        "Error eliminando pelÃ­cula:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudo eliminar la película."
+        error: "No se pudo eliminar la pelÃ­cula."
       });
     }
   }
@@ -902,7 +1130,7 @@ app.delete(
 
 /*
 ==================================================
-ADMINISTRACIÓN DE TANDAS
+ADMINISTRACIÃN DE TANDAS
 ==================================================
 */
 
@@ -954,7 +1182,7 @@ app.post(
         !movieId.trim()
       ) {
         return res.status(400).json({
-          error: "Debes seleccionar una película."
+          error: "Debes seleccionar una pelÃ­cula."
         });
       }
 
@@ -963,7 +1191,7 @@ app.post(
         !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
       ) {
         return res.status(400).json({
-          error: "La fecha de la tanda no es válida."
+          error: "La fecha de la tanda no es vÃ¡lida."
         });
       }
 
@@ -983,7 +1211,7 @@ app.post(
         numericPrice < 0
       ) {
         return res.status(400).json({
-          error: "El precio de la tanda no es válido."
+          error: "El precio de la tanda no es vÃ¡lido."
         });
       }
 
@@ -998,7 +1226,7 @@ app.post(
 
       if (movieResult.rowCount === 0) {
         return res.status(404).json({
-          error: "La película seleccionada no existe."
+          error: "La pelÃ­cula seleccionada no existe."
         });
       }
 
@@ -1021,7 +1249,7 @@ app.post(
       if (duplicateResult.rowCount > 0) {
         return res.status(409).json({
           error:
-            "Esta película ya tiene una tanda en esa fecha y hora."
+            "Esta pelÃ­cula ya tiene una tanda en esa fecha y hora."
         });
       }
 
@@ -1098,7 +1326,7 @@ app.put(
         !movieId.trim()
       ) {
         return res.status(400).json({
-          error: "Debes seleccionar una película."
+          error: "Debes seleccionar una pelÃ­cula."
         });
       }
 
@@ -1107,7 +1335,7 @@ app.put(
         !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
       ) {
         return res.status(400).json({
-          error: "La fecha de la tanda no es válida."
+          error: "La fecha de la tanda no es vÃ¡lida."
         });
       }
 
@@ -1127,7 +1355,7 @@ app.put(
         numericPrice < 0
       ) {
         return res.status(400).json({
-          error: "El precio de la tanda no es válido."
+          error: "El precio de la tanda no es vÃ¡lido."
         });
       }
 
@@ -1142,7 +1370,7 @@ app.put(
 
       if (movieResult.rowCount === 0) {
         return res.status(404).json({
-          error: "La película seleccionada no existe."
+          error: "La pelÃ­cula seleccionada no existe."
         });
       }
 
@@ -1167,7 +1395,7 @@ app.put(
       if (duplicateResult.rowCount > 0) {
         return res.status(409).json({
           error:
-            "Ya existe otra tanda para esa película en esa fecha y hora."
+            "Ya existe otra tanda para esa pelÃ­cula en esa fecha y hora."
         });
       }
 
@@ -1374,7 +1602,7 @@ app.get("/api/seats", async (req, res) => {
 
 /*
 ==================================================
-CREAR RESERVACIÓN
+CREAR RESERVACIÃN
 ==================================================
 */
 
@@ -1420,7 +1648,7 @@ app.post("/api/reservations", async (req, res) => {
 
     if (normalizedSeats.length === 0) {
       return res.status(400).json({
-        error: "Los asientos seleccionados no son válidos."
+        error: "Los asientos seleccionados no son vÃ¡lidos."
       });
     }
 
@@ -1491,7 +1719,7 @@ app.post("/api/reservations", async (req, res) => {
       await client.query("ROLLBACK");
 
       return res.status(400).json({
-        error: "Esta tanda no está disponible."
+        error: "Esta tanda no estÃ¡ disponible."
       });
     }
 
@@ -1527,7 +1755,7 @@ app.post("/api/reservations", async (req, res) => {
 
       return res.status(409).json({
         error:
-          "Uno o más asientos ya fueron reservados.",
+          "Uno o mÃ¡s asientos ya fueron reservados.",
         unavailableSeats
       });
     }
@@ -1593,12 +1821,12 @@ app.post("/api/reservations", async (req, res) => {
     await client.query("ROLLBACK");
 
     console.error(
-      "Error creando la reservación:",
+      "Error creando la reservaciÃ³n:",
       error
     );
 
     res.status(500).json({
-      error: "No se pudo crear la reservación."
+      error: "No se pudo crear la reservaciÃ³n."
     });
   } finally {
     client.release();
@@ -1641,13 +1869,13 @@ app.post(
 
         if (existingResult.rowCount === 0) {
           return res.status(404).json({
-            error: "Reservación no encontrada."
+            error: "ReservaciÃ³n no encontrada."
           });
         }
 
         return res.status(400).json({
           error:
-            "La reservación ya fue pagada o no puede procesarse."
+            "La reservaciÃ³n ya fue pagada o no puede procesarse."
         });
       }
 
@@ -1741,7 +1969,7 @@ app.get(
 
 /*
 ==================================================
-VALIDAR CÓDIGO QR
+VALIDAR CÃDIGO QR
 ==================================================
 */
 
@@ -1788,12 +2016,12 @@ app.get("/api/qr/:qr", async (req, res) => {
 
     res.json({
       valid: true,
-      message: "Boleto válido.",
+      message: "Boleto vÃ¡lido.",
       ticket
     });
   } catch (error) {
     console.error(
-      "Error validando el código QR:",
+      "Error validando el cÃ³digo QR:",
       error
     );
 
@@ -1802,6 +2030,40 @@ app.get("/api/qr/:qr", async (req, res) => {
       error: "No se pudo validar el boleto."
     });
   }
+});
+
+/*
+==================================================
+CHECK-IN DEL EMPLEADO
+==================================================
+*/
+
+app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const qr = String(req.body?.qr || "").trim();
+    if (!qr) return res.status(400).json({ error: "El cÃ³digo QR es obligatorio." });
+    await client.query("BEGIN");
+    const ticketResult = await client.query(`SELECT * FROM tickets WHERE qr=$1 FOR UPDATE;`, [qr]);
+    if (ticketResult.rowCount === 0) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Boleto no encontrado." }); }
+    const ticket = ticketResult.rows[0];
+    if (!["paid","approved"].includes(ticket.payment_status)) { await client.query("ROLLBACK"); return res.status(400).json({ error: "El boleto no ha sido pagado.", ticket: formatTicket(ticket) }); }
+    if (ticket.used) {
+      await client.query("ROLLBACK");
+      const existing = await pool.query(`SELECT employee_name, scanned_at FROM checkins WHERE ticket_id=$1;`, [ticket.id]);
+      return res.status(409).json({ error: "Este boleto ya fue utilizado.", ticket: formatTicket(ticket), checkin: existing.rows[0] || null });
+    }
+    const seatsCount = Array.isArray(ticket.seats) ? ticket.seats.length : 0;
+    if (seatsCount <= 0) { await client.query("ROLLBACK"); return res.status(400).json({ error: "El boleto no contiene asientos vÃ¡lidos." }); }
+    const updateResult = await client.query(`UPDATE tickets SET used=TRUE,checkin_at=NOW() WHERE id=$1 RETURNING *;`, [ticket.id]);
+    await client.query(`INSERT INTO checkins (id,ticket_id,employee_id,employee_name,employee_username,seats_count,movie,show_time,seats) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);`, [crypto.randomUUID(),ticket.id,req.employee.id,req.employee.name,req.employee.username,seatsCount,ticket.movie,ticket.show_time,ticket.seats]);
+    await client.query("COMMIT");
+    res.json({ success: true, message: `Entrada registrada por ${req.employee.name}. ${seatsCount} taquilla${seatsCount===1?"":"s"} contabilizada${seatsCount===1?"":"s"}.`, employee: { id:req.employee.id,name:req.employee.name,username:req.employee.username }, seatsCount, ticket: formatTicket(updateResult.rows[0]) });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error registrando check-in de empleado:", error);
+    res.status(500).json({ error: "No se pudo registrar la entrada." });
+  } finally { client.release(); }
 });
 
 /*
@@ -1824,7 +2086,7 @@ app.post(
         !qr.trim()
       ) {
         return res.status(400).json({
-          error: "El código QR es obligatorio."
+          error: "El cÃ³digo QR es obligatorio."
         });
       }
 
@@ -1935,7 +2197,7 @@ app.use((error, req, res, next) => {
     if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(413).json({
         error:
-          "El afiche es demasiado grande. El máximo es 6 MB."
+          "El afiche es demasiado grande. El mÃ¡ximo es 6 MB."
       });
     }
 
@@ -1954,7 +2216,7 @@ app.use((error, req, res, next) => {
   }
 
   res.status(500).json({
-    error: "Ocurrió un error inesperado."
+    error: "OcurriÃ³ un error inesperado."
   });
 });
 
