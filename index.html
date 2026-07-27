@@ -1343,6 +1343,58 @@
       }
     }
 
+
+    /* =========================================================
+       SEGUNDO LOGO DECORATIVO FIJO EN EL LADO IZQUIERDO
+       Usa Cineteatroizquierdo.png
+    ========================================================= */
+
+    .background-logo {
+      position: fixed;
+      z-index: -1;
+      top: 50%;
+      width: clamp(280px, 31vw, 540px);
+      aspect-ratio: 1 / 1;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      pointer-events: none;
+      opacity: 0.15;
+      filter:
+        saturate(1.04)
+        contrast(1.04);
+    }
+
+    .background-logo-left {
+      left: clamp(24px, 5vw, 90px);
+      background-image: url("Cineteatroizquierdo.png");
+      transform: translateY(-42%);
+    }
+
+    @media (max-width: 1100px) {
+      .background-logo-left {
+        left: 24px;
+        width: min(34vw, 390px);
+        opacity: 0.10;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .background-logo-left {
+        top: 72%;
+        left: 50%;
+        width: min(72vw, 480px);
+        opacity: 0.055;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .background-logo-left {
+        display: none;
+      }
+    }
+
     @media print {
       body {
         background: white;
@@ -1393,6 +1445,11 @@
 </head>
 
 <body>
+  <div
+    class="background-logo background-logo-left"
+    aria-hidden="true"
+  ></div>
+
   <header class="site-header">
     <div class="container header-content">
       <div class="brand">
