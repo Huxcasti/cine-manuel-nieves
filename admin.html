@@ -947,6 +947,77 @@
       }
     }
 
+
+    /* =========================================================
+       AFICHES ADAPTABLES EN PELÍCULAS REGISTRADAS
+       Muestra completa cualquier imagen horizontal, vertical
+       o cuadrada sin cortarla ni deformarla.
+    ========================================================= */
+
+    .poster-preview {
+      display: block;
+      width: 112px;
+      height: 112px;
+      max-width: 112px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      object-fit: contain !important;
+      object-position: center;
+      background:
+        radial-gradient(circle at center, #1d2a42, #0b1220);
+    }
+
+    .poster-preview.poster-landscape {
+      width: 150px;
+      max-width: 150px;
+      height: 90px;
+    }
+
+    .poster-preview.poster-portrait {
+      width: 88px;
+      max-width: 88px;
+      height: 132px;
+    }
+
+    .poster-preview.poster-square {
+      width: 108px;
+      max-width: 108px;
+      height: 108px;
+    }
+
+    #movieRows td:first-child {
+      width: 170px;
+      min-width: 170px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 850px) {
+      .poster-preview.poster-landscape {
+        width: 132px;
+        max-width: 132px;
+        height: 80px;
+      }
+
+      .poster-preview.poster-portrait {
+        width: 78px;
+        max-width: 78px;
+        height: 117px;
+      }
+
+      .poster-preview.poster-square {
+        width: 94px;
+        max-width: 94px;
+        height: 94px;
+      }
+
+      #movieRows td:first-child {
+        width: 150px;
+        min-width: 150px;
+      }
+    }
+
   </style>
 </head>
 
@@ -1781,6 +1852,44 @@
       }
     }
 
+    function adaptAdminPoster(image) {
+      image.classList.remove(
+        "poster-landscape",
+        "poster-portrait",
+        "poster-square"
+      );
+
+      const width =
+        Number(image.naturalWidth || 0);
+
+      const height =
+        Number(image.naturalHeight || 0);
+
+      if (!width || !height) {
+        image.classList.add(
+          "poster-square"
+        );
+        return;
+      }
+
+      const ratio =
+        width / height;
+
+      if (ratio >= 1.2) {
+        image.classList.add(
+          "poster-landscape"
+        );
+      } else if (ratio <= 0.85) {
+        image.classList.add(
+          "poster-portrait"
+        );
+      } else {
+        image.classList.add(
+          "poster-square"
+        );
+      }
+    }
+
     function renderMovies(movies) {
       const rows = document.getElementById("movieRows");
       const emptyMessage = document.getElementById("movieEmptyMessage");
@@ -1796,7 +1905,13 @@
       movies.forEach((movie) => {
         const row = document.createElement("tr");
         const poster = movie.posterUrl
-          ? `<img class="poster-preview" src="${escapeHtml(movie.posterUrl)}" alt="Afiche" onerror="this.style.display='none'" />`
+          ? `<img
+              class="poster-preview"
+              src="${escapeHtml(movie.posterUrl)}"
+              alt="Afiche"
+              onload="adaptAdminPoster(this)"
+              onerror="this.style.display='none'"
+            />`
           : `<span class="muted">Sin afiche</span>`;
 
         row.innerHTML = `
