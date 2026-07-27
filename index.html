@@ -1029,10 +1029,12 @@
     }
 
     .social-links {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
       justify-content: center;
       gap: 12px;
-      flex-wrap: wrap;
+      width: min(720px, 100%);
+      margin: 0 auto;
     }
 
     .social-link {
@@ -1073,7 +1075,7 @@
     @media (max-width: 520px) {
       .social-links {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
       }
 
       .social-link {
@@ -1809,6 +1811,21 @@
               alt="Instagram"
             />
             Instagram
+          </a>
+
+          <a
+            class="social-link"
+            href="https://wa.me/17873935852"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp del Cine Teatro Manuel Nieves Quintero"
+          >
+            <img
+              class="social-icon"
+              src="Whatsapp_icon.png"
+              alt="WhatsApp"
+            />
+            WhatsApp
           </a>
         </div>
       </div>
