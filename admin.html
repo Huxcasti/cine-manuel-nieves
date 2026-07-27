@@ -2414,10 +2414,11 @@
       const labels = {
         spanish: "Español",
         english: "Inglés",
-        english_subtitled: "Inglés con subtítulos en español"
+        english_subtitled: "Inglés con subtítulos en español",
+        english_sub_es: "Inglés con subtítulos en español"
       };
 
-      return showtime?.languageLabel || labels[showtime?.language] || "Español";
+      return labels[showtime?.language] || "Español";
     }
 
     function renderShowtimes(showtimes) {
