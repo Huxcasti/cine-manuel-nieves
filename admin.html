@@ -1350,6 +1350,40 @@
 
       <!-- TANDAS -->
       <section id="showtimesSection" class="page-section">
+        <section class="card" style="margin-bottom: 22px;">
+          <div class="section-header">
+            <div>
+              <h2>Precios generales de taquillas</h2>
+              <p class="subtitle">
+                Estos precios se aplican automáticamente a todas las tandas.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-three" style="gap: 14px;">
+            <div>
+              <label for="globalAdultPrice">Adulto</label>
+              <input id="globalAdultPrice" type="number" min="0" step="0.01" placeholder="8.25" />
+            </div>
+            <div>
+              <label for="globalChildPrice">Niño</label>
+              <input id="globalChildPrice" type="number" min="0" step="0.01" placeholder="6.00" />
+            </div>
+            <div>
+              <label for="globalSeniorPrice">Senior</label>
+              <input id="globalSeniorPrice" type="number" min="0" step="0.01" placeholder="6.00" />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="saveGlobalPricesButton" class="btn btn-primary" type="button" onclick="saveGlobalPrices()">
+              Guardar precios
+            </button>
+          </div>
+
+          <div class="message" id="globalPricesMessage"></div>
+        </section>
+
         <div class="grid-two">
           <section class="card">
             <h2 id="showtimeFormTitle">Añadir tanda</h2>
@@ -1366,20 +1400,9 @@
             <label for="showtimeTime">Hora</label>
             <input id="showtimeTime" type="time" />
 
-            <div class="grid-two" style="gap: 12px;">
-              <div>
-                <label for="showtimeAdultPrice">Precio adulto</label>
-                <input id="showtimeAdultPrice" type="number" min="0" step="0.01" placeholder="8.25" />
-              </div>
-
-              <div>
-                <label for="showtimeChildPrice">Precio niño</label>
-                <input id="showtimeChildPrice" type="number" min="0" step="0.01" placeholder="6.00" />
-              </div>
+            <div class="notice" style="margin-top: 16px;">
+              Esta tanda utilizará automáticamente los precios generales del cine.
             </div>
-
-            <label for="showtimeSeniorPrice">Precio senior</label>
-            <input id="showtimeSeniorPrice" type="number" min="0" step="0.01" placeholder="6.00" />
 
             <label for="showtimeLanguage">Idioma de la tanda</label>
             <select id="showtimeLanguage">
@@ -1436,9 +1459,6 @@
                     <th>Fecha</th>
                     <th>Hora</th>
                     <th>Idioma</th>
-                    <th>Adulto</th>
-                    <th>Niño</th>
-                    <th>Senior</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -1752,6 +1772,7 @@
       if (sectionName === "movies") loadMovies();
       if (sectionName === "showtimes") {
         loadMoviesForSelect();
+        loadGlobalPrices();
         loadShowtimes();
       }
       if (sectionName === "employees") {
@@ -1765,6 +1786,7 @@
       if (currentSection === "movies") await loadMovies();
       if (currentSection === "showtimes") {
         await loadMoviesForSelect();
+        await loadGlobalPrices();
         await loadShowtimes();
       }
       if (currentSection === "employees") {
@@ -2325,6 +2347,55 @@
       }
     }
 
+    async function loadGlobalPrices() {
+      try {
+        const prices = await adminFetch("/api/admin/ticket-prices");
+        document.getElementById("globalAdultPrice").value = Number(prices.adultPrice || 0).toFixed(2);
+        document.getElementById("globalChildPrice").value = Number(prices.childPrice || 0).toFixed(2);
+        document.getElementById("globalSeniorPrice").value = Number(prices.seniorPrice || 0).toFixed(2);
+        setMessage("globalPricesMessage", "", "");
+      } catch (error) {
+        setMessage("globalPricesMessage", "error", error.message);
+      }
+    }
+
+    async function saveGlobalPrices() {
+      const adultPrice = Number(document.getElementById("globalAdultPrice").value);
+      const childPrice = Number(document.getElementById("globalChildPrice").value);
+      const seniorPrice = Number(document.getElementById("globalSeniorPrice").value);
+
+      if (
+        !Number.isFinite(adultPrice) ||
+        !Number.isFinite(childPrice) ||
+        !Number.isFinite(seniorPrice) ||
+        adultPrice < 0 ||
+        childPrice < 0 ||
+        seniorPrice < 0
+      ) {
+        setMessage("globalPricesMessage", "error", "Escribe precios válidos para adulto, niño y senior.");
+        return;
+      }
+
+      const button = document.getElementById("saveGlobalPricesButton");
+      button.disabled = true;
+      button.textContent = "Guardando…";
+      setMessage("globalPricesMessage", "", "");
+
+      try {
+        await adminFetch("/api/admin/ticket-prices", {
+          method: "PUT",
+          body: JSON.stringify({ adultPrice, childPrice, seniorPrice })
+        });
+        setMessage("globalPricesMessage", "success", "Precios generales actualizados correctamente.");
+        await loadShowtimes();
+      } catch (error) {
+        setMessage("globalPricesMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = "Guardar precios";
+      }
+    }
+
     async function loadShowtimes() {
       setLoading(true);
 
@@ -2369,9 +2440,6 @@
           <td>${escapeHtml(formatDate(showtime.showDate))}</td>
           <td>${escapeHtml(formatTime(showtime.showTime))}</td>
           <td><span class="badge info">${escapeHtml(getShowtimeLanguageLabel(showtime))}</span></td>
-          <td>$${Number(showtime.adultPrice ?? showtime.price ?? 0).toFixed(2)}</td>
-          <td>$${Number(showtime.childPrice ?? showtime.price ?? 0).toFixed(2)}</td>
-          <td>$${Number(showtime.seniorPrice ?? showtime.price ?? 0).toFixed(2)}</td>
           <td><span class="badge ${showtime.active ? "success" : "danger"}">${showtime.active ? "Activa" : "Inactiva"}</span></td>
           <td>
             <div class="table-actions">
@@ -2390,21 +2458,11 @@
       const movieId = document.getElementById("showtimeMovie").value;
       const showDate = document.getElementById("showtimeDate").value;
       const showTime = document.getElementById("showtimeTime").value;
-      const adultPrice = document.getElementById("showtimeAdultPrice").value;
-      const childPrice = document.getElementById("showtimeChildPrice").value;
-      const seniorPrice = document.getElementById("showtimeSeniorPrice").value;
       const language = document.getElementById("showtimeLanguage").value;
       const active = document.getElementById("showtimeActive").checked;
 
-      if (
-        !movieId ||
-        !showDate ||
-        !showTime ||
-        adultPrice === "" ||
-        childPrice === "" ||
-        seniorPrice === ""
-      ) {
-        setMessage("showtimeMessage", "error", "Completa los tres precios de la tanda.");
+      if (!movieId || !showDate || !showTime) {
+        setMessage("showtimeMessage", "error", "Completa los datos de la tanda.");
         return;
       }
 
@@ -2418,9 +2476,6 @@
           movieId,
           showDate,
           showTime,
-          adultPrice: Number(adultPrice),
-          childPrice: Number(childPrice),
-          seniorPrice: Number(seniorPrice),
           language,
           active
         };
@@ -2457,12 +2512,6 @@
       document.getElementById("showtimeMovie").value = showtime.movieId;
       document.getElementById("showtimeDate").value = normalizeDate(showtime.showDate);
       document.getElementById("showtimeTime").value = normalizeTime(showtime.showTime);
-      document.getElementById("showtimeAdultPrice").value =
-        Number(showtime.adultPrice ?? showtime.price ?? 0).toFixed(2);
-      document.getElementById("showtimeChildPrice").value =
-        Number(showtime.childPrice ?? showtime.price ?? 0).toFixed(2);
-      document.getElementById("showtimeSeniorPrice").value =
-        Number(showtime.seniorPrice ?? showtime.price ?? 0).toFixed(2);
       document.getElementById("showtimeLanguage").value = showtime.language || "spanish";
       document.getElementById("showtimeActive").checked = Boolean(showtime.active);
       document.getElementById("showtimeFormTitle").textContent = "Editar tanda";
@@ -2475,9 +2524,6 @@
       document.getElementById("showtimeMovie").value = "";
       document.getElementById("showtimeDate").value = "";
       document.getElementById("showtimeTime").value = "";
-      document.getElementById("showtimeAdultPrice").value = "";
-      document.getElementById("showtimeChildPrice").value = "";
-      document.getElementById("showtimeSeniorPrice").value = "";
       document.getElementById("showtimeLanguage").value = "spanish";
       document.getElementById("showtimeActive").checked = true;
       document.getElementById("showtimeFormTitle").textContent = "Añadir tanda";
