@@ -1366,8 +1366,20 @@
             <label for="showtimeTime">Hora</label>
             <input id="showtimeTime" type="time" />
 
-            <label for="showtimePrice">Precio por taquilla</label>
-            <input id="showtimePrice" type="number" min="0" step="0.01" placeholder="8.00" />
+            <div class="grid-two" style="gap: 12px;">
+              <div>
+                <label for="showtimeAdultPrice">Precio adulto</label>
+                <input id="showtimeAdultPrice" type="number" min="0" step="0.01" placeholder="8.25" />
+              </div>
+
+              <div>
+                <label for="showtimeChildPrice">Precio niño</label>
+                <input id="showtimeChildPrice" type="number" min="0" step="0.01" placeholder="6.00" />
+              </div>
+            </div>
+
+            <label for="showtimeSeniorPrice">Precio senior</label>
+            <input id="showtimeSeniorPrice" type="number" min="0" step="0.01" placeholder="6.00" />
 
             <label for="showtimeLanguage">Idioma de la tanda</label>
             <select id="showtimeLanguage">
@@ -1424,7 +1436,9 @@
                     <th>Fecha</th>
                     <th>Hora</th>
                     <th>Idioma</th>
-                    <th>Precio</th>
+                    <th>Adulto</th>
+                    <th>Niño</th>
+                    <th>Senior</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -2355,7 +2369,9 @@
           <td>${escapeHtml(formatDate(showtime.showDate))}</td>
           <td>${escapeHtml(formatTime(showtime.showTime))}</td>
           <td><span class="badge info">${escapeHtml(getShowtimeLanguageLabel(showtime))}</span></td>
-          <td>$${Number(showtime.price || 0).toFixed(2)}</td>
+          <td>$${Number(showtime.adultPrice ?? showtime.price ?? 0).toFixed(2)}</td>
+          <td>$${Number(showtime.childPrice ?? showtime.price ?? 0).toFixed(2)}</td>
+          <td>$${Number(showtime.seniorPrice ?? showtime.price ?? 0).toFixed(2)}</td>
           <td><span class="badge ${showtime.active ? "success" : "danger"}">${showtime.active ? "Activa" : "Inactiva"}</span></td>
           <td>
             <div class="table-actions">
@@ -2374,12 +2390,21 @@
       const movieId = document.getElementById("showtimeMovie").value;
       const showDate = document.getElementById("showtimeDate").value;
       const showTime = document.getElementById("showtimeTime").value;
-      const price = document.getElementById("showtimePrice").value;
+      const adultPrice = document.getElementById("showtimeAdultPrice").value;
+      const childPrice = document.getElementById("showtimeChildPrice").value;
+      const seniorPrice = document.getElementById("showtimeSeniorPrice").value;
       const language = document.getElementById("showtimeLanguage").value;
       const active = document.getElementById("showtimeActive").checked;
 
-      if (!movieId || !showDate || !showTime || price === "") {
-        setMessage("showtimeMessage", "error", "Completa todos los datos de la tanda.");
+      if (
+        !movieId ||
+        !showDate ||
+        !showTime ||
+        adultPrice === "" ||
+        childPrice === "" ||
+        seniorPrice === ""
+      ) {
+        setMessage("showtimeMessage", "error", "Completa los tres precios de la tanda.");
         return;
       }
 
@@ -2393,7 +2418,9 @@
           movieId,
           showDate,
           showTime,
-          price: Number(price),
+          adultPrice: Number(adultPrice),
+          childPrice: Number(childPrice),
+          seniorPrice: Number(seniorPrice),
           language,
           active
         };
@@ -2430,7 +2457,12 @@
       document.getElementById("showtimeMovie").value = showtime.movieId;
       document.getElementById("showtimeDate").value = normalizeDate(showtime.showDate);
       document.getElementById("showtimeTime").value = normalizeTime(showtime.showTime);
-      document.getElementById("showtimePrice").value = Number(showtime.price || 0).toFixed(2);
+      document.getElementById("showtimeAdultPrice").value =
+        Number(showtime.adultPrice ?? showtime.price ?? 0).toFixed(2);
+      document.getElementById("showtimeChildPrice").value =
+        Number(showtime.childPrice ?? showtime.price ?? 0).toFixed(2);
+      document.getElementById("showtimeSeniorPrice").value =
+        Number(showtime.seniorPrice ?? showtime.price ?? 0).toFixed(2);
       document.getElementById("showtimeLanguage").value = showtime.language || "spanish";
       document.getElementById("showtimeActive").checked = Boolean(showtime.active);
       document.getElementById("showtimeFormTitle").textContent = "Editar tanda";
@@ -2443,7 +2475,9 @@
       document.getElementById("showtimeMovie").value = "";
       document.getElementById("showtimeDate").value = "";
       document.getElementById("showtimeTime").value = "";
-      document.getElementById("showtimePrice").value = "";
+      document.getElementById("showtimeAdultPrice").value = "";
+      document.getElementById("showtimeChildPrice").value = "";
+      document.getElementById("showtimeSeniorPrice").value = "";
       document.getElementById("showtimeLanguage").value = "spanish";
       document.getElementById("showtimeActive").checked = true;
       document.getElementById("showtimeFormTitle").textContent = "Añadir tanda";
