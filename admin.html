@@ -1195,7 +1195,8 @@
               ></video>
 
               <p class="trailer-status" id="trailerStatus">
-                Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 250 MB.
+                Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 50 MB.
+                Al subir uno nuevo, el tráiler anterior se elimina automáticamente.
               </p>
             </div>
 
@@ -1914,7 +1915,7 @@
         preview.removeAttribute("src");
         preview.style.display = "none";
         status.textContent =
-          "Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 250 MB.";
+          "Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 50 MB.";
         return;
       }
 
@@ -1969,12 +1970,12 @@
 
       if (
         file.size >
-        250 * 1024 * 1024
+        50 * 1024 * 1024
       ) {
         setMessage(
           "movieMessage",
           "error",
-          "El tráiler no puede superar 250 MB."
+          "El tráiler no puede superar 50 MB."
         );
         return;
       }
@@ -1991,7 +1992,7 @@
       setMessage(
         "movieMessage",
         "info",
-        "Subiendo tráiler. No cierres esta página…"
+        "Subiendo tráiler y eliminando el anterior. No cierres esta página…"
       );
 
       try {
@@ -2024,7 +2025,7 @@
         setMessage(
           "movieMessage",
           "success",
-          "Tráiler subido correctamente. Ahora guarda la película."
+          "Tráiler anterior eliminado y nuevo tráiler subido. Ahora guarda la película."
         );
       } catch (error) {
         setMessage(
