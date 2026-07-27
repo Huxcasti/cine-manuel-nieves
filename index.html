@@ -401,6 +401,28 @@
       background: var(--primary);
     }
 
+    .showtime-language {
+      display: block;
+      margin-top: 6px;
+      color: #9ff3ef;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .language-inline-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 4px 8px;
+      border: 1px solid rgba(73, 203, 197, 0.38);
+      border-radius: 999px;
+      background: rgba(73, 203, 197, 0.10);
+      color: #9ff3ef;
+      font-size: 12px;
+      font-weight: 900;
+      vertical-align: middle;
+    }
+
     .showtime-button.showtime-expired,
     .showtime-button:disabled {
       border-color: #374151;
@@ -1627,6 +1649,11 @@
           </div>
 
           <div class="summary-row">
+            <span>Idioma</span>
+            <strong id="summaryLanguage">—</strong>
+          </div>
+
+          <div class="summary-row">
             <span>Asientos</span>
             <strong id="summarySeats">Ninguno</strong>
           </div>
@@ -2159,6 +2186,26 @@
       return nowKey >= showtimeKey;
     }
 
+    function getShowtimeLanguageLabel(showtime) {
+      const labels = {
+        spanish: "Español",
+        english: "Inglés",
+        english_subtitled: "Inglés con subtítulos en español"
+      };
+
+      return (
+        showtime?.languageLabel ||
+        labels[showtime?.language] ||
+        "Español"
+      );
+    }
+
+    function getSelectedLanguageLabel() {
+      return selectedShowtime
+        ? getShowtimeLanguageLabel(selectedShowtime)
+        : "—";
+    }
+
     function renderMovies() {
       const grid =
         document.getElementById(
@@ -2271,11 +2318,16 @@
                         : "Seleccionar esta tanda"
                     }"
                   >
-                    ${
-                      expired
-                        ? `${escapeHtml(label)} · CERRADA`
-                        : escapeHtml(label)
-                    }
+                    <span>
+                      ${
+                        expired
+                          ? `${escapeHtml(label)} · CERRADA`
+                          : escapeHtml(label)
+                      }
+                    </span>
+                    <span class="showtime-language">
+                      ${escapeHtml(getShowtimeLanguageLabel(showtime))}
+                    </span>
                   </button>
                 `;
               })
@@ -2613,6 +2665,9 @@
             $${Number(
               selectedShowtime.price
             ).toFixed(2)}
+            <span class="language-inline-badge">
+              ${escapeHtml(getSelectedLanguageLabel())}
+            </span>
           </div>
         </div>
       `;
@@ -2852,6 +2907,13 @@
           : "—";
 
       document.getElementById(
+        "summaryLanguage"
+      ).textContent =
+        selectedShowtime
+          ? getSelectedLanguageLabel()
+          : "—";
+
+      document.getElementById(
         "summarySeats"
       ).textContent =
         selectedSeats.length
@@ -2919,6 +2981,13 @@
                 selectedShowtime.showTime
               )
             )}
+          </strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Idioma</span>
+          <strong>
+            ${escapeHtml(getSelectedLanguageLabel())}
           </strong>
         </div>
 
@@ -3134,6 +3203,13 @@
             ${escapeHtml(
               ticket.time
             )}
+          </strong>
+        </div>
+
+        <div class="ticket-detail">
+          <span>Idioma</span>
+          <strong>
+            ${escapeHtml(getSelectedLanguageLabel())}
           </strong>
         </div>
 
