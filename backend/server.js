@@ -2672,6 +2672,43 @@ app.post(
       const showtime =
         showtimeResult.rows[0];
 
+      const showtimeAvailabilityResult =
+        await client.query(
+          `
+            SELECT (
+              (
+                $1::date +
+                $2::time
+              )
+              >
+              (
+                NOW()
+                AT TIME ZONE
+                'America/Puerto_Rico'
+              )
+            ) AS is_future;
+          `,
+          [
+            showtime.show_date,
+            showtime.show_time
+          ]
+        );
+
+      const isFutureShowtime =
+        Boolean(
+          showtimeAvailabilityResult
+            .rows[0]?.is_future
+        );
+
+      if (!isFutureShowtime) {
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "Esta tanda ya comenzÃ³ o pasÃ³ de hora y no estÃ¡ disponible."
+        });
+      }
+
       if (
         !showtime.active ||
         !showtime.movie_active
