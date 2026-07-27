@@ -21,11 +21,8 @@ const SUPABASE_SERVICE_ROLE_KEY =
 const SUPABASE_POSTERS_BUCKET =
   process.env.SUPABASE_POSTERS_BUCKET || "posters";
 
-const SUPABASE_TRAILERS_BUCKET =
-  process.env.SUPABASE_TRAILERS_BUCKET || "trailers";
-
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json());
 
 if (!process.env.DATABASE_URL) {
   console.error("Falta la variable DATABASE_URL.");
@@ -43,7 +40,9 @@ if (!SUPABASE_URL) {
 }
 
 if (!SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Falta la variable SUPABASE_SERVICE_ROLE_KEY.");
+  console.error(
+    "Falta la variable SUPABASE_SERVICE_ROLE_KEY."
+  );
   process.exit(1);
 }
 
@@ -98,30 +97,9 @@ const posterUpload = multer({
 
     if (!allowedTypes.has(file.mimetype)) {
       callback(
-        new Error("El afiche debe ser JPG, PNG o WEBP.")
-      );
-      return;
-    }
-
-    callback(null, true);
-  }
-});
-
-const trailerUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 50 * 1024 * 1024
-  },
-  fileFilter: (req, file, callback) => {
-    const allowedTypes = new Set([
-      "video/mp4",
-      "video/webm",
-      "video/quicktime"
-    ]);
-
-    if (!allowedTypes.has(file.mimetype)) {
-      callback(
-        new Error("El trÃ¡iler debe ser MP4, WEBM o MOV.")
+        new Error(
+          "El afiche debe ser JPG, PNG o WEBP."
+        )
       );
       return;
     }
@@ -134,36 +112,28 @@ function extensionFromMimeType(mimeType) {
   const extensions = {
     "image/jpeg": "jpg",
     "image/png": "png",
-    "image/webp": "webp",
-    "video/mp4": "mp4",
-    "video/webm": "webm",
-    "video/quicktime": "mov"
+    "image/webp": "webp"
   };
 
-  return extensions[mimeType] || "bin";
+  return extensions[mimeType] || "jpg";
 }
 
 /*
 ==================================================
-SEGURIDAD Y CONTRASEÃAS
+CONTRASEÃA DEL ADMINISTRADOR
 ==================================================
 */
 
 function scryptAsync(password, salt) {
   return new Promise((resolve, reject) => {
-    crypto.scrypt(
-      password,
-      salt,
-      64,
-      (error, derivedKey) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve(derivedKey);
+    crypto.scrypt(password, salt, 64, (error, derivedKey) => {
+      if (error) {
+        reject(error);
+        return;
       }
-    );
+
+      resolve(derivedKey);
+    });
   });
 }
 
@@ -177,42 +147,23 @@ async function hashPassword(password) {
   };
 }
 
-async function verifyPassword(
-  password,
-  storedSalt,
-  storedHash
-) {
-  const derivedKey = await scryptAsync(
-    password,
-    storedSalt
-  );
-
-  const storedBuffer = Buffer.from(
-    storedHash,
-    "hex"
-  );
+async function verifyPassword(password, storedSalt, storedHash) {
+  const derivedKey = await scryptAsync(password, storedSalt);
+  const storedBuffer = Buffer.from(storedHash, "hex");
 
   if (storedBuffer.length !== derivedKey.length) {
     return false;
   }
 
-  return crypto.timingSafeEqual(
-    storedBuffer,
-    derivedKey
-  );
+  return crypto.timingSafeEqual(storedBuffer, derivedKey);
 }
 
 function hashSessionToken(token) {
-  return crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 function normalizeUsername(username) {
-  return String(username || "")
-    .trim()
-    .toLowerCase();
+  return String(username || "").trim().toLowerCase();
 }
 
 async function getAdminCredentials() {
@@ -245,12 +196,8 @@ async function isValidAdminPassword(password) {
 
 async function requireAdmin(req, res, next) {
   try {
-    const providedPassword =
-      req.headers["x-admin-key"];
-
-    const valid = await isValidAdminPassword(
-      providedPassword
-    );
+    const providedPassword = req.headers["x-admin-key"];
+    const valid = await isValidAdminPassword(providedPassword);
 
     if (!valid) {
       return res.status(401).json({
@@ -260,252 +207,37 @@ async function requireAdmin(req, res, next) {
 
     next();
   } catch (error) {
-    console.error(
-      "Error verificando acceso administrativo:",
-      error
-    );
+    console.error("Error verificando acceso administrativo:", error);
 
     res.status(500).json({
-      error:
-        "No se pudo verificar el acceso administrativo."
+      error: "No se pudo verificar el acceso administrativo."
     });
   }
 }
 
 async function requireEmployee(req, res, next) {
   try {
-    const token =
-      req.headers["x-employee-token"];
-
+    const token = req.headers["x-employee-token"];
     if (!token || typeof token !== "string") {
-      return res.status(401).json({
-        error:
-          "Debes iniciar sesiÃ³n como empleado."
-      });
+      return res.status(401).json({ error: "Debes iniciar sesiÃ³n como empleado." });
     }
-
     const tokenHash = hashSessionToken(token);
-
-    const result = await pool.query(
-      `
-        SELECT
-          e.id,
-          e.name,
-          e.username,
-          e.active
-        FROM employee_sessions s
-        JOIN employees e
-          ON e.id = s.employee_id
-        WHERE
-          s.token_hash = $1
-          AND s.expires_at > NOW()
-          AND e.active = TRUE;
-      `,
-      [tokenHash]
-    );
-
+    const result = await pool.query(`
+      SELECT e.id, e.name, e.username, e.active
+      FROM employee_sessions s
+      JOIN employees e ON e.id = s.employee_id
+      WHERE s.token_hash = $1 AND s.expires_at > NOW() AND e.active = TRUE;
+    `, [tokenHash]);
     if (result.rowCount === 0) {
-      return res.status(401).json({
-        error:
-          "La sesiÃ³n del empleado expirÃ³ o no es vÃ¡lida."
-      });
+      return res.status(401).json({ error: "La sesiÃ³n del empleado expirÃ³ o no es vÃ¡lida." });
     }
-
     req.employee = result.rows[0];
     req.employeeTokenHash = tokenHash;
-
     next();
   } catch (error) {
-    console.error(
-      "Error verificando al empleado:",
-      error
-    );
-
-    res.status(500).json({
-      error:
-        "No se pudo verificar la sesiÃ³n del empleado."
-    });
+    console.error("Error verificando al empleado:", error);
+    res.status(500).json({ error: "No se pudo verificar la sesiÃ³n del empleado." });
   }
-}
-
-/*
-==================================================
-CÃDIGO MANUAL DE CINCO DÃGITOS
-==================================================
-*/
-
-const BLOCKED_MANUAL_CODES = new Set([
-  "11111",
-  "22222",
-  "33333",
-  "44444",
-  "55555",
-  "66666",
-  "77777",
-  "88888",
-  "99999",
-  "12345",
-  "23456",
-  "34567",
-  "45678",
-  "56789",
-  "98765",
-  "87654",
-  "76543",
-  "65432",
-  "54321"
-]);
-
-function isObviousManualCode(code) {
-  const normalized = String(code || "").trim();
-
-  if (!/^\d{5}$/.test(normalized)) {
-    return true;
-  }
-
-  if (BLOCKED_MANUAL_CODES.has(normalized)) {
-    return true;
-  }
-
-  const digits = normalized.split("").map(Number);
-
-  const allEqual = digits.every(
-    (digit) => digit === digits[0]
-  );
-
-  if (allEqual) {
-    return true;
-  }
-
-  const ascending = digits.every(
-    (digit, index) =>
-      index === 0 ||
-      digit === digits[index - 1] + 1
-  );
-
-  if (ascending) {
-    return true;
-  }
-
-  const descending = digits.every(
-    (digit, index) =>
-      index === 0 ||
-      digit === digits[index - 1] - 1
-  );
-
-  if (descending) {
-    return true;
-  }
-
-  return false;
-}
-
-function generateFiveDigitCode() {
-  for (let attempt = 0; attempt < 500; attempt += 1) {
-    const code = String(
-      crypto.randomInt(10000, 100000)
-    );
-
-    if (!isObviousManualCode(code)) {
-      return code;
-    }
-  }
-
-  throw new Error(
-    "No se pudo generar un cÃ³digo manual seguro."
-  );
-}
-
-function normalizeTicketLookup(value) {
-  let text = String(value || "").trim();
-
-  if (!text) {
-    return "";
-  }
-
-  try {
-    const url = new URL(text);
-
-    const valueFromQuery =
-      url.searchParams.get("code") ||
-      url.searchParams.get("qr") ||
-      url.searchParams.get("manualCode") ||
-      url.searchParams.get("ticket") ||
-      url.searchParams.get("token");
-
-    if (valueFromQuery) {
-      text = valueFromQuery.trim();
-    } else {
-      const pathParts = url.pathname
-        .split("/")
-        .filter(Boolean);
-
-      if (pathParts.length > 0) {
-        const lastPart =
-          pathParts[pathParts.length - 1];
-
-        if (
-          /^[a-f0-9]{32,}$/i.test(lastPart) ||
-          /^\d{5}$/.test(lastPart)
-        ) {
-          text = decodeURIComponent(lastPart);
-        }
-      }
-    }
-  } catch (error) {
-    // No era una URL. Se usa el valor original.
-  }
-
-  return text.trim();
-}
-
-async function assignManualCodeToExistingTicket(
-  ticketId
-) {
-  for (let attempt = 0; attempt < 250; attempt += 1) {
-    const manualCode = generateFiveDigitCode();
-
-    const result = await pool.query(
-      `
-        UPDATE tickets
-        SET manual_code = $1
-        WHERE
-          id = $2
-          AND manual_code IS NULL
-          AND NOT EXISTS (
-            SELECT 1
-            FROM tickets
-            WHERE manual_code = $1
-          )
-        RETURNING manual_code;
-      `,
-      [manualCode, ticketId]
-    );
-
-    if (result.rowCount > 0) {
-      return result.rows[0].manual_code;
-    }
-
-    const currentResult = await pool.query(
-      `
-        SELECT manual_code
-        FROM tickets
-        WHERE id = $1;
-      `,
-      [ticketId]
-    );
-
-    const existingCode =
-      currentResult.rows[0]?.manual_code;
-
-    if (existingCode) {
-      return existingCode;
-    }
-  }
-
-  throw new Error(
-    "No se pudo generar el cÃ³digo manual del boleto."
-  );
 }
 
 /*
@@ -524,7 +256,6 @@ function formatTicket(row) {
     customer: row.customer,
     paymentStatus: row.payment_status,
     qr: row.qr,
-    manualCode: row.manual_code || null,
     used: row.used,
     created: row.created_at,
     checkin: row.checkin_at
@@ -537,16 +268,29 @@ function formatMovie(row) {
     title: row.title,
     description: row.description,
     posterUrl: row.poster_url,
-    trailerUrl: row.trailer_url || "",
     durationMinutes: row.duration_minutes,
     rating: row.rating,
     active: row.active,
-    comingSoon: Boolean(row.coming_soon),
     created: row.created_at
   };
 }
 
+const SHOWTIME_LANGUAGES = {
+  spanish: "EspaÃ±ol",
+  english: "InglÃ©s",
+  english_subtitled: "InglÃ©s con subtÃ­tulos en espaÃ±ol"
+};
+
+function normalizeShowtimeLanguage(value) {
+  const language = String(value || "spanish").trim();
+  return Object.prototype.hasOwnProperty.call(SHOWTIME_LANGUAGES, language)
+    ? language
+    : null;
+}
+
 function formatShowtime(row) {
+  const language = normalizeShowtimeLanguage(row.language) || "spanish";
+
   return {
     id: row.id,
     movieId: row.movie_id,
@@ -554,6 +298,8 @@ function formatShowtime(row) {
     showDate: row.show_date,
     showTime: row.show_time,
     price: Number(row.price),
+    language,
+    languageLabel: SHOWTIME_LANGUAGES[language],
     active: row.active,
     created: row.created_at
   };
@@ -561,37 +307,24 @@ function formatShowtime(row) {
 
 function formatEmployee(row) {
   return {
-    id: row.id,
-    name: row.name,
-    username: row.username,
-    active: row.active,
-    created: row.created_at,
-    scans: Number(row.scans || 0),
-    ticketsScanned: Number(
-      row.tickets_scanned || 0
-    ),
-    lastScan: row.last_scan || null
+    id: row.id, name: row.name, username: row.username, active: row.active,
+    created: row.created_at, scans: Number(row.scans || 0),
+    ticketsScanned: Number(row.tickets_scanned || 0), lastScan: row.last_scan || null
   };
 }
 
 function formatCheckin(row) {
   return {
-    id: row.id,
-    ticketId: row.ticket_id,
-    employeeId: row.employee_id,
-    employeeName: row.employee_name,
-    employeeUsername: row.employee_username,
-    seatsCount: Number(row.seats_count || 0),
-    movie: row.movie,
-    showTime: row.show_time,
-    seats: row.seats || [],
-    scannedAt: row.scanned_at
+    id: row.id, ticketId: row.ticket_id, employeeId: row.employee_id,
+    employeeName: row.employee_name, employeeUsername: row.employee_username,
+    seatsCount: Number(row.seats_count || 0), movie: row.movie,
+    showTime: row.show_time, seats: row.seats || [], scannedAt: row.scanned_at
   };
 }
 
 /*
 ==================================================
-CREAR Y ACTUALIZAR TABLAS
+CREAR TABLAS AUTOMÃTICAMENTE
 ==================================================
 */
 
@@ -604,49 +337,12 @@ async function initializeDatabase() {
       seats TEXT[] NOT NULL,
       total NUMERIC(10, 2) NOT NULL,
       customer JSONB NOT NULL,
-      payment_status TEXT NOT NULL
-        DEFAULT 'pending',
+      payment_status TEXT NOT NULL DEFAULT 'pending',
       qr TEXT UNIQUE NOT NULL,
-      manual_code VARCHAR(5),
       used BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW(),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       checkin_at TIMESTAMPTZ
     );
-  `);
-
-  await pool.query(`
-    ALTER TABLE tickets
-    ADD COLUMN IF NOT EXISTS manual_code VARCHAR(5);
-  `);
-
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS
-      tickets_manual_code_unique
-    ON tickets (manual_code)
-    WHERE manual_code IS NOT NULL;
-  `);
-
-  await pool.query(`
-    ALTER TABLE tickets
-    DROP CONSTRAINT IF EXISTS
-      tickets_manual_code_format_check;
-  `);
-
-  await pool.query(`
-    ALTER TABLE tickets
-    ADD CONSTRAINT
-      tickets_manual_code_format_check
-    CHECK (
-      manual_code IS NULL
-      OR manual_code ~ '^[1-9][0-9]{4}$'
-    );
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS
-      tickets_created_at_idx
-    ON tickets (created_at DESC);
   `);
 
   await pool.query(`
@@ -655,24 +351,11 @@ async function initializeDatabase() {
       title TEXT NOT NULL,
       description TEXT,
       poster_url TEXT,
-      trailer_url TEXT,
       duration_minutes INTEGER,
       rating TEXT,
       active BOOLEAN NOT NULL DEFAULT TRUE,
-      coming_soon BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-  `);
-
-  await pool.query(`
-    ALTER TABLE movies
-    ADD COLUMN IF NOT EXISTS trailer_url TEXT;
-  `);
-
-  await pool.query(`
-    ALTER TABLE movies
-    ADD COLUMN IF NOT EXISTS coming_soon BOOLEAN NOT NULL DEFAULT FALSE;
   `);
 
   await pool.query(`
@@ -684,20 +367,22 @@ async function initializeDatabase() {
       show_date DATE NOT NULL,
       show_time TEXT NOT NULL,
       price NUMERIC(10, 2) NOT NULL,
+      language TEXT NOT NULL DEFAULT 'spanish',
       active BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
   await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS
-      showtimes_movie_date_time_unique
-    ON showtimes (
-      movie_id,
-      show_date,
-      show_time
-    );
+    ALTER TABLE showtimes
+    ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'spanish';
+  `);
+
+  await pool.query(`
+    UPDATE showtimes
+    SET language = 'spanish'
+    WHERE language IS NULL
+       OR language NOT IN ('spanish', 'english', 'english_subtitled');
   `);
 
   await pool.query(`
@@ -708,78 +393,49 @@ async function initializeDatabase() {
       password_salt TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       active BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  await pool.query(`
-    CREATE UNIQUE INDEX IF NOT EXISTS
-      employees_username_lower_unique
-    ON employees (LOWER(username));
-  `);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS employees_username_lower_unique ON employees (LOWER(username));`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS employee_sessions (
       id UUID PRIMARY KEY,
-      employee_id UUID NOT NULL
-        REFERENCES employees(id)
-        ON DELETE CASCADE,
+      employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
       token_hash TEXT UNIQUE NOT NULL,
       expires_at TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS
-      employee_sessions_expires_at_idx
-    ON employee_sessions (expires_at);
-  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS employee_sessions_expires_at_idx ON employee_sessions (expires_at);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS checkins (
       id UUID PRIMARY KEY,
-      ticket_id UUID UNIQUE NOT NULL
-        REFERENCES tickets(id)
-        ON DELETE CASCADE,
-      employee_id UUID
-        REFERENCES employees(id)
-        ON DELETE SET NULL,
+      ticket_id UUID UNIQUE NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+      employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,
       employee_name TEXT NOT NULL,
       employee_username TEXT NOT NULL,
-      seats_count INTEGER NOT NULL
-        CHECK (seats_count > 0),
+      seats_count INTEGER NOT NULL CHECK (seats_count > 0),
       movie TEXT NOT NULL,
       show_time TEXT NOT NULL,
       seats TEXT[] NOT NULL,
-      scanned_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW()
+      scanned_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS
-      checkins_employee_id_idx
-    ON checkins (employee_id);
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS
-      checkins_scanned_at_idx
-    ON checkins (scanned_at DESC);
-  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS checkins_employee_id_idx ON checkins (employee_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS checkins_scanned_at_idx ON checkins (scanned_at DESC);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS admin_settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       password_salt TEXT NOT NULL,
       password_hash TEXT NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL
-        DEFAULT NOW()
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
@@ -791,9 +447,7 @@ async function initializeDatabase() {
 
   if (adminResult.rowCount === 0) {
     const initialCredentials =
-      await hashPassword(
-        INITIAL_ADMIN_PASSWORD
-      );
+      await hashPassword(INITIAL_ADMIN_PASSWORD);
 
     await pool.query(
       `
@@ -810,34 +464,10 @@ async function initializeDatabase() {
       ]
     );
 
-    console.log(
-      "ContraseÃ±a administrativa inicial creada."
-    );
+    console.log("ContraseÃ±a administrativa inicial creada.");
   }
 
-  await pool.query(`
-    UPDATE tickets
-    SET manual_code = NULL
-    WHERE
-      manual_code = '00000'
-      OR manual_code !~ '^[0-9]{5}$';
-  `);
-
-  const ticketsWithoutCode = await pool.query(`
-    SELECT id
-    FROM tickets
-    WHERE manual_code IS NULL;
-  `);
-
-  for (const ticket of ticketsWithoutCode.rows) {
-    await assignManualCodeToExistingTicket(
-      ticket.id
-    );
-  }
-
-  console.log(
-    "Base de datos preparada correctamente."
-  );
+  console.log("Base de datos preparada correctamente.");
 }
 
 /*
@@ -845,13 +475,13 @@ async function initializeDatabase() {
 REINICIO DIARIO A LAS 3:00 A. M.
 HORA DE PUERTO RICO
 ==================================================
+
+Solo elimina reservaciones y taquillas.
+No elimina pelÃ­culas, tandas ni contraseÃ±a.
 */
 
 async function cleanupPreviousBusinessDay() {
-  await pool.query(`
-    DELETE FROM employee_sessions
-    WHERE expires_at <= NOW();
-  `);
+  await pool.query(`DELETE FROM employee_sessions WHERE expires_at <= NOW();`);
 
   const result = await pool.query(`
     DELETE FROM tickets
@@ -859,21 +489,17 @@ async function cleanupPreviousBusinessDay() {
       (
         CASE
           WHEN
-            (
-              NOW()
-              AT TIME ZONE 'America/Puerto_Rico'
-            )::time >= TIME '03:00:00'
+            (NOW() AT TIME ZONE 'America/Puerto_Rico')::time
+            >= TIME '03:00:00'
           THEN
             DATE_TRUNC(
               'day',
-              NOW()
-              AT TIME ZONE 'America/Puerto_Rico'
+              NOW() AT TIME ZONE 'America/Puerto_Rico'
             ) + INTERVAL '3 hours'
           ELSE
             DATE_TRUNC(
               'day',
-              NOW()
-              AT TIME ZONE 'America/Puerto_Rico'
+              NOW() AT TIME ZONE 'America/Puerto_Rico'
             ) - INTERVAL '21 hours'
         END
       ) AT TIME ZONE 'America/Puerto_Rico'
@@ -882,8 +508,7 @@ async function cleanupPreviousBusinessDay() {
 
   if (result.rowCount > 0) {
     console.log(
-      `Reinicio diario completado: ` +
-      `${result.rowCount} reservaciones eliminadas.`
+      `Reinicio diario completado: ${result.rowCount} reservaciones eliminadas.`
     );
   }
 }
@@ -902,10 +527,7 @@ app.use(async (req, res, next) => {
   try {
     await cleanupPreviousBusinessDay();
   } catch (error) {
-    console.error(
-      "Error realizando el reinicio diario:",
-      error
-    );
+    console.error("Error realizando el reinicio diario:", error);
   }
 
   next();
@@ -924,18 +546,12 @@ app.get("/", async (req, res) => {
     res.json({
       status: "online",
       database: "connected",
-      dailyReset:
-        "3:00 AM America/Puerto_Rico",
-      app:
-        "Cine Teatro Manuel Nieves Quintero",
-      version: "6.0",
-      manualTicketCode: "5 digits"
+      dailyReset: "3:00 AM America/Puerto_Rico",
+      app: "Cine Teatro Manuel Nieves Quintero",
+      version: "5.0"
     });
   } catch (error) {
-    console.error(
-      "Error verificando la base de datos:",
-      error
-    );
+    console.error("Error verificando la base de datos:", error);
 
     res.status(500).json({
       status: "error",
@@ -964,49 +580,34 @@ app.get("/api/movies", async (req, res) => {
         s.*,
         m.title AS movie_title
       FROM showtimes s
-      JOIN movies m
-        ON m.id = s.movie_id
+      JOIN movies m ON m.id = s.movie_id
       WHERE
         s.active = TRUE
         AND m.active = TRUE
-        AND s.show_date >= (
-          NOW()
-          AT TIME ZONE 'America/Puerto_Rico'
-        )::date
-      ORDER BY
-        s.show_date ASC,
-        s.show_time ASC;
+        AND s.show_date >=
+          (NOW() AT TIME ZONE 'America/Puerto_Rico')::date
+      ORDER BY s.show_date ASC, s.show_time ASC;
     `);
 
-    const showtimes =
-      showtimeResult.rows.map(
-        formatShowtime
-      );
+    const showtimes = showtimeResult.rows.map(formatShowtime);
 
-    const movies = movieResult.rows.map(
-      (row) => {
-        const movie = formatMovie(row);
+    const movies = movieResult.rows.map((row) => {
+      const movie = formatMovie(row);
 
-        return {
-          ...movie,
-          showtimes: showtimes.filter(
-            (showtime) =>
-              showtime.movieId === movie.id
-          )
-        };
-      }
-    );
+      return {
+        ...movie,
+        showtimes: showtimes.filter(
+          (showtime) => showtime.movieId === movie.id
+        )
+      };
+    });
 
     res.json(movies);
   } catch (error) {
-    console.error(
-      "Error obteniendo la cartelera:",
-      error
-    );
+    console.error("Error obteniendo la cartelera:", error);
 
     res.status(500).json({
-      error:
-        "No se pudo obtener la cartelera."
+      error: "No se pudo obtener la cartelera."
     });
   }
 });
@@ -1021,8 +622,7 @@ app.post("/api/admin/login", async (req, res) => {
   try {
     const { password } = req.body;
 
-    const valid =
-      await isValidAdminPassword(password);
+    const valid = await isValidAdminPassword(password);
 
     if (!valid) {
       return res.status(401).json({
@@ -1035,10 +635,7 @@ app.post("/api/admin/login", async (req, res) => {
       message: "Acceso autorizado."
     });
   } catch (error) {
-    console.error(
-      "Error iniciando sesiÃ³n:",
-      error
-    );
+    console.error("Error iniciando sesiÃ³n:", error);
 
     res.status(500).json({
       error: "No se pudo iniciar sesiÃ³n."
@@ -1057,14 +654,11 @@ app.put(
       } = req.body;
 
       const currentPasswordValid =
-        await isValidAdminPassword(
-          currentPassword
-        );
+        await isValidAdminPassword(currentPassword);
 
       if (!currentPasswordValid) {
         return res.status(401).json({
-          error:
-            "La contraseÃ±a actual es incorrecta."
+          error: "La contraseÃ±a actual es incorrecta."
         });
       }
 
@@ -1085,8 +679,7 @@ app.put(
         });
       }
 
-      const credentials =
-        await hashPassword(newPassword);
+      const credentials = await hashPassword(newPassword);
 
       await pool.query(
         `
@@ -1105,8 +698,7 @@ app.put(
 
       res.json({
         success: true,
-        message:
-          "ContraseÃ±a actualizada correctamente."
+        message: "ContraseÃ±a actualizada correctamente."
       });
     } catch (error) {
       console.error(
@@ -1115,12 +707,12 @@ app.put(
       );
 
       res.status(500).json({
-        error:
-          "No se pudo cambiar la contraseÃ±a."
+        error: "No se pudo cambiar la contraseÃ±a."
       });
     }
   }
 );
+
 
 /*
 ==================================================
@@ -1128,158 +720,41 @@ CUENTAS Y SESIONES DE EMPLEADOS
 ==================================================
 */
 
-app.post(
-  "/api/employee/login",
-  async (req, res) => {
-    try {
-      const username = normalizeUsername(
-        req.body?.username
-      );
-
-      const password = req.body?.password;
-
-      if (
-        !username ||
-        typeof password !== "string"
-      ) {
-        return res.status(400).json({
-          error:
-            "Escribe el usuario y la contraseÃ±a."
-        });
-      }
-
-      const result = await pool.query(
-        `
-          SELECT *
-          FROM employees
-          WHERE LOWER(username) = $1;
-        `,
-        [username]
-      );
-
-      if (result.rowCount === 0) {
-        return res.status(401).json({
-          error:
-            "Usuario o contraseÃ±a incorrectos."
-        });
-      }
-
-      const employee = result.rows[0];
-
-      if (!employee.active) {
-        return res.status(403).json({
-          error:
-            "Esta cuenta estÃ¡ desactivada."
-        });
-      }
-
-      const valid = await verifyPassword(
-        password,
-        employee.password_salt,
-        employee.password_hash
-      );
-
-      if (!valid) {
-        return res.status(401).json({
-          error:
-            "Usuario o contraseÃ±a incorrectos."
-        });
-      }
-
-      const token =
-        crypto.randomBytes(32).toString("hex");
-
-      await pool.query(
-        `
-          INSERT INTO employee_sessions (
-            id,
-            employee_id,
-            token_hash,
-            expires_at
-          )
-          VALUES (
-            $1,
-            $2,
-            $3,
-            NOW() + INTERVAL '12 hours'
-          );
-        `,
-        [
-          crypto.randomUUID(),
-          employee.id,
-          hashSessionToken(token)
-        ]
-      );
-
-      res.json({
-        success: true,
-        token,
-        expiresInHours: 12,
-        employee: {
-          id: employee.id,
-          name: employee.name,
-          username: employee.username
-        }
-      });
-    } catch (error) {
-      console.error(
-        "Error iniciando sesiÃ³n de empleado:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo iniciar la sesiÃ³n."
-      });
+app.post("/api/employee/login", async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    if (!username || typeof password !== "string") {
+      return res.status(400).json({ error: "Escribe el usuario y la contraseÃ±a." });
     }
+    const result = await pool.query(`SELECT * FROM employees WHERE LOWER(username) = $1;`, [username]);
+    if (result.rowCount === 0) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    const employee = result.rows[0];
+    if (!employee.active) return res.status(403).json({ error: "Esta cuenta estÃ¡ desactivada." });
+    const valid = await verifyPassword(password, employee.password_salt, employee.password_hash);
+    if (!valid) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    const token = crypto.randomBytes(32).toString("hex");
+    await pool.query(`INSERT INTO employee_sessions (id, employee_id, token_hash, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '12 hours');`, [crypto.randomUUID(), employee.id, hashSessionToken(token)]);
+    res.json({ success: true, token, expiresInHours: 12, employee: { id: employee.id, name: employee.name, username: employee.username } });
+  } catch (error) {
+    console.error("Error iniciando sesiÃ³n de empleado:", error);
+    res.status(500).json({ error: "No se pudo iniciar la sesiÃ³n." });
   }
-);
+});
 
-app.get(
-  "/api/employee/me",
-  requireEmployee,
-  async (req, res) => {
-    res.json({
-      employee: {
-        id: req.employee.id,
-        name: req.employee.name,
-        username: req.employee.username
-      }
-    });
+app.get("/api/employee/me", requireEmployee, async (req, res) => {
+  res.json({ employee: { id: req.employee.id, name: req.employee.name, username: req.employee.username } });
+});
+
+app.post("/api/employee/logout", requireEmployee, async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM employee_sessions WHERE token_hash = $1;`, [req.employeeTokenHash]);
+    res.json({ success: true, message: "SesiÃ³n cerrada correctamente." });
+  } catch (error) {
+    console.error("Error cerrando sesiÃ³n de empleado:", error);
+    res.status(500).json({ error: "No se pudo cerrar la sesiÃ³n." });
   }
-);
-
-app.post(
-  "/api/employee/logout",
-  requireEmployee,
-  async (req, res) => {
-    try {
-      await pool.query(
-        `
-          DELETE FROM employee_sessions
-          WHERE token_hash = $1;
-        `,
-        [req.employeeTokenHash]
-      );
-
-      res.json({
-        success: true,
-        message:
-          "SesiÃ³n cerrada correctamente."
-      });
-    } catch (error) {
-      console.error(
-        "Error cerrando sesiÃ³n de empleado:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo cerrar la sesiÃ³n."
-      });
-    }
-  }
-);
+});
 
 /*
 ==================================================
@@ -1287,374 +762,92 @@ ADMINISTRACIÃN DE EMPLEADOS
 ==================================================
 */
 
-app.get(
-  "/api/admin/employees",
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const result = await pool.query(`
-        SELECT
-          e.*,
-          COUNT(c.id) AS scans,
-          COALESCE(
-            SUM(c.seats_count),
-            0
-          ) AS tickets_scanned,
-          MAX(c.scanned_at) AS last_scan
-        FROM employees e
-        LEFT JOIN checkins c
-          ON c.employee_id = e.id
-        GROUP BY e.id
-        ORDER BY e.name ASC;
-      `);
-
-      res.json(
-        result.rows.map(formatEmployee)
-      );
-    } catch (error) {
-      console.error(
-        "Error obteniendo empleados:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudieron obtener los empleados."
-      });
-    }
+app.get("/api/admin/employees", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT e.*, COUNT(c.id) AS scans, COALESCE(SUM(c.seats_count),0) AS tickets_scanned, MAX(c.scanned_at) AS last_scan
+      FROM employees e LEFT JOIN checkins c ON c.employee_id = e.id
+      GROUP BY e.id ORDER BY e.name ASC;
+    `);
+    res.json(result.rows.map(formatEmployee));
+  } catch (error) {
+    console.error("Error obteniendo empleados:", error);
+    res.status(500).json({ error: "No se pudieron obtener los empleados." });
   }
-);
+});
 
-app.post(
-  "/api/admin/employees",
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const name = String(
-        req.body?.name || ""
-      ).trim();
-
-      const username = normalizeUsername(
-        req.body?.username
-      );
-
-      const password = req.body?.password;
-      const active =
-        req.body?.active !== false;
-
-      if (!name) {
-        return res.status(400).json({
-          error:
-            "El nombre del empleado es obligatorio."
-        });
-      }
-
-      if (
-        !/^[a-z0-9._-]{3,30}$/.test(
-          username
-        )
-      ) {
-        return res.status(400).json({
-          error:
-            "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, nÃºmeros, punto, guion o guion bajo."
-        });
-      }
-
-      if (
-        typeof password !== "string" ||
-        password.length < 8
-      ) {
-        return res.status(400).json({
-          error:
-            "La contraseÃ±a debe tener al menos 8 caracteres."
-        });
-      }
-
-      const credentials =
-        await hashPassword(password);
-
-      const result = await pool.query(
-        `
-          INSERT INTO employees (
-            id,
-            name,
-            username,
-            password_salt,
-            password_hash,
-            active
-          )
-          VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6
-          )
-          RETURNING *;
-        `,
-        [
-          crypto.randomUUID(),
-          name,
-          username,
-          credentials.salt,
-          credentials.hash,
-          Boolean(active)
-        ]
-      );
-
-      res.status(201).json(
-        formatEmployee(result.rows[0])
-      );
-    } catch (error) {
-      if (error?.code === "23505") {
-        return res.status(409).json({
-          error:
-            "Ese nombre de usuario ya estÃ¡ registrado."
-        });
-      }
-
-      console.error(
-        "Error creando empleado:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo crear el empleado."
-      });
-    }
+app.post("/api/admin/employees", requireAdmin, async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    const active = req.body?.active !== false;
+    if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, nÃºmeros, punto, guion o guion bajo." });
+    if (typeof password !== "string" || password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+    const credentials = await hashPassword(password);
+    const result = await pool.query(`INSERT INTO employees (id,name,username,password_salt,password_hash,active) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`, [crypto.randomUUID(),name,username,credentials.salt,credentials.hash,Boolean(active)]);
+    res.status(201).json(formatEmployee(result.rows[0]));
+  } catch (error) {
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    console.error("Error creando empleado:", error);
+    res.status(500).json({ error: "No se pudo crear el empleado." });
   }
-);
+});
 
-app.put(
-  "/api/admin/employees/:id",
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      const name = String(
-        req.body?.name || ""
-      ).trim();
-
-      const username = normalizeUsername(
-        req.body?.username
-      );
-
-      const password = req.body?.password;
-      const active =
-        req.body?.active !== false;
-
-      if (!name) {
-        return res.status(400).json({
-          error:
-            "El nombre del empleado es obligatorio."
-        });
-      }
-
-      if (
-        !/^[a-z0-9._-]{3,30}$/.test(
-          username
-        )
-      ) {
-        return res.status(400).json({
-          error:
-            "El nombre de usuario no es vÃ¡lido."
-        });
-      }
-
-      let result;
-
-      if (
-        typeof password === "string" &&
-        password.length > 0
-      ) {
-        if (password.length < 8) {
-          return res.status(400).json({
-            error:
-              "La contraseÃ±a debe tener al menos 8 caracteres."
-          });
-        }
-
-        const credentials =
-          await hashPassword(password);
-
-        result = await pool.query(
-          `
-            UPDATE employees
-            SET
-              name = $1,
-              username = $2,
-              password_salt = $3,
-              password_hash = $4,
-              active = $5,
-              updated_at = NOW()
-            WHERE id = $6
-            RETURNING *;
-          `,
-          [
-            name,
-            username,
-            credentials.salt,
-            credentials.hash,
-            Boolean(active),
-            id
-          ]
-        );
-
-        await pool.query(
-          `
-            DELETE FROM employee_sessions
-            WHERE employee_id = $1;
-          `,
-          [id]
-        );
-      } else {
-        result = await pool.query(
-          `
-            UPDATE employees
-            SET
-              name = $1,
-              username = $2,
-              active = $3,
-              updated_at = NOW()
-            WHERE id = $4
-            RETURNING *;
-          `,
-          [
-            name,
-            username,
-            Boolean(active),
-            id
-          ]
-        );
-
-        if (!active) {
-          await pool.query(
-            `
-              DELETE FROM employee_sessions
-              WHERE employee_id = $1;
-            `,
-            [id]
-          );
-        }
-      }
-
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          error:
-            "Empleado no encontrado."
-        });
-      }
-
-      res.json(
-        formatEmployee(result.rows[0])
-      );
-    } catch (error) {
-      if (error?.code === "23505") {
-        return res.status(409).json({
-          error:
-            "Ese nombre de usuario ya estÃ¡ registrado."
-        });
-      }
-
-      console.error(
-        "Error actualizando empleado:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo actualizar el empleado."
-      });
+app.put("/api/admin/employees/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const name = String(req.body?.name || "").trim();
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    const active = req.body?.active !== false;
+    if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El nombre de usuario no es vÃ¡lido." });
+    let result;
+    if (typeof password === "string" && password.length > 0) {
+      if (password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+      const credentials = await hashPassword(password);
+      result = await pool.query(`UPDATE employees SET name=$1,username=$2,password_salt=$3,password_hash=$4,active=$5,updated_at=NOW() WHERE id=$6 RETURNING *;`, [name,username,credentials.salt,credentials.hash,Boolean(active),id]);
+      await pool.query(`DELETE FROM employee_sessions WHERE employee_id = $1;`, [id]);
+    } else {
+      result = await pool.query(`UPDATE employees SET name=$1,username=$2,active=$3,updated_at=NOW() WHERE id=$4 RETURNING *;`, [name,username,Boolean(active),id]);
+      if (!active) await pool.query(`DELETE FROM employee_sessions WHERE employee_id = $1;`, [id]);
     }
+    if (result.rowCount === 0) return res.status(404).json({ error: "Empleado no encontrado." });
+    res.json(formatEmployee(result.rows[0]));
+  } catch (error) {
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    console.error("Error actualizando empleado:", error);
+    res.status(500).json({ error: "No se pudo actualizar el empleado." });
   }
-);
+});
 
-app.delete(
-  "/api/admin/employees/:id",
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const result = await pool.query(
-        `
-          DELETE FROM employees
-          WHERE id = $1
-          RETURNING id;
-        `,
-        [req.params.id]
-      );
-
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          error:
-            "Empleado no encontrado."
-        });
-      }
-
-      res.json({
-        success: true,
-        message:
-          "Empleado eliminado. Su historial de escaneos se conserva."
-      });
-    } catch (error) {
-      console.error(
-        "Error eliminando empleado:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo eliminar el empleado."
-      });
-    }
+app.delete("/api/admin/employees/:id", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`DELETE FROM employees WHERE id=$1 RETURNING id;`, [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "Empleado no encontrado." });
+    res.json({ success: true, message: "Empleado eliminado. Su historial de escaneos se conserva." });
+  } catch (error) {
+    console.error("Error eliminando empleado:", error);
+    res.status(500).json({ error: "No se pudo eliminar el empleado." });
   }
-);
+});
 
-app.get(
-  "/api/admin/checkins",
-  requireAdmin,
-  async (req, res) => {
-    try {
-      const limit = Math.min(
-        Math.max(
-          Number(req.query.limit) || 200,
-          1
-        ),
-        1000
-      );
-
-      const result = await pool.query(
-        `
-          SELECT *
-          FROM checkins
-          ORDER BY scanned_at DESC
-          LIMIT $1;
-        `,
-        [limit]
-      );
-
-      res.json(
-        result.rows.map(formatCheckin)
-      );
-    } catch (error) {
-      console.error(
-        "Error obteniendo historial de escaneos:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo obtener el historial de escaneos."
-      });
-    }
+app.get("/api/admin/checkins", requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit)||200,1),1000);
+    const result = await pool.query(`SELECT * FROM checkins ORDER BY scanned_at DESC LIMIT $1;`, [limit]);
+    res.json(result.rows.map(formatCheckin));
+  } catch (error) {
+    console.error("Error obteniendo historial de escaneos:", error);
+    res.status(500).json({ error: "No se pudo obtener el historial de escaneos." });
   }
-);
+});
 
 /*
 ==================================================
-SUBIR AFICHE
+SUBIR AFICHE A SUPABASE STORAGE
 ==================================================
 */
 
@@ -1666,23 +859,17 @@ app.post(
     try {
       if (!req.file) {
         return res.status(400).json({
-          error:
-            "Selecciona una imagen para el afiche."
+          error: "Selecciona una imagen para el afiche."
         });
       }
 
       const extension =
-        extensionFromMimeType(
-          req.file.mimetype
-        );
+        extensionFromMimeType(req.file.mimetype);
 
       const fileName =
-        `${Date.now()}-` +
-        `${crypto.randomUUID()}.` +
-        `${extension}`;
+        `${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
-      const filePath =
-        `movies/${fileName}`;
+      const filePath = `movies/${fileName}`;
 
       const { error: uploadError } =
         await supabase.storage
@@ -1691,8 +878,7 @@ app.post(
             filePath,
             req.file.buffer,
             {
-              contentType:
-                req.file.mimetype,
+              contentType: req.file.mimetype,
               cacheControl: "31536000",
               upsert: false
             }
@@ -1724,117 +910,14 @@ app.post(
 
       res.status(201).json({
         success: true,
-        posterUrl:
-          publicUrlData.publicUrl,
+        posterUrl: publicUrlData.publicUrl,
         path: filePath
       });
     } catch (error) {
-      console.error(
-        "Error subiendo afiche:",
-        error
-      );
+      console.error("Error subiendo afiche:", error);
 
       res.status(500).json({
-        error:
-          "No se pudo subir el afiche."
-      });
-    }
-  }
-);
-
-/*
-==================================================
-SUBIR TRÃILER
-Permite almacenar varios trÃ¡ilers.
-Cada video recibe un nombre Ãºnico y no reemplaza
-los trÃ¡ilers de las demÃ¡s pelÃ­culas.
-==================================================
-*/
-
-app.post(
-  "/api/admin/trailers",
-  requireAdmin,
-  trailerUpload.single("trailer"),
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({
-          error:
-            "Selecciona un video para el trÃ¡iler."
-        });
-      }
-
-      const extension =
-        extensionFromMimeType(
-          req.file.mimetype
-        );
-
-      const fileName =
-        `${Date.now()}-` +
-        `${crypto.randomUUID()}.` +
-        `${extension}`;
-
-      const filePath =
-        `movies/${fileName}`;
-
-      const {
-        error: uploadError
-      } = await supabase.storage
-        .from(SUPABASE_TRAILERS_BUCKET)
-        .upload(
-          filePath,
-          req.file.buffer,
-          {
-            contentType:
-              req.file.mimetype,
-            cacheControl: "31536000",
-            upsert: false
-          }
-        );
-
-      if (uploadError) {
-        console.error(
-          "Error de Supabase subiendo trÃ¡iler:",
-          uploadError
-        );
-
-        return res.status(502).json({
-          error:
-            uploadError.message ||
-            "No se pudo subir el trÃ¡iler a Supabase Storage."
-        });
-      }
-
-      const {
-        data: publicUrlData
-      } = supabase.storage
-        .from(SUPABASE_TRAILERS_BUCKET)
-        .getPublicUrl(filePath);
-
-      if (!publicUrlData?.publicUrl) {
-        return res.status(500).json({
-          error:
-            "El trÃ¡iler se subiÃ³, pero no se pudo obtener su URL pÃºblica."
-        });
-      }
-
-      res.status(201).json({
-        success: true,
-        message:
-          "TrÃ¡iler subido correctamente sin reemplazar otros trÃ¡ilers.",
-        trailerUrl:
-          publicUrlData.publicUrl,
-        path: filePath
-      });
-    } catch (error) {
-      console.error(
-        "Error subiendo trÃ¡iler:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo subir el trÃ¡iler."
+        error: "No se pudo subir el afiche."
       });
     }
   }
@@ -1857,9 +940,7 @@ app.get(
         ORDER BY created_at DESC;
       `);
 
-      res.json(
-        result.rows.map(formatMovie)
-      );
+      res.json(result.rows.map(formatMovie));
     } catch (error) {
       console.error(
         "Error obteniendo pelÃ­culas:",
@@ -1867,8 +948,7 @@ app.get(
       );
 
       res.status(500).json({
-        error:
-          "No se pudieron obtener las pelÃ­culas."
+        error: "No se pudieron obtener las pelÃ­culas."
       });
     }
   }
@@ -1883,11 +963,9 @@ app.post(
         title,
         description = "",
         posterUrl = "",
-        trailerUrl = "",
         durationMinutes = null,
         rating = "",
-        active = true,
-        comingSoon = false
+        active = true
       } = req.body;
 
       if (
@@ -1895,17 +973,14 @@ app.post(
         !title.trim()
       ) {
         return res.status(400).json({
-          error:
-            "El tÃ­tulo de la pelÃ­cula es obligatorio."
+          error: "El tÃ­tulo de la pelÃ­cula es obligatorio."
         });
       }
 
       if (
         durationMinutes !== null &&
         (
-          !Number.isInteger(
-            Number(durationMinutes)
-          ) ||
+          !Number.isInteger(Number(durationMinutes)) ||
           Number(durationMinutes) <= 0
         )
       ) {
@@ -1915,6 +990,8 @@ app.post(
         });
       }
 
+      const id = crypto.randomUUID();
+
       const result = await pool.query(
         `
           INSERT INTO movies (
@@ -1922,37 +999,23 @@ app.post(
             title,
             description,
             poster_url,
-            trailer_url,
             duration_minutes,
             rating,
-            active,
-            coming_soon
+            active
           )
-          VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6,
-            $7,
-            $8,
-            $9
-          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *;
         `,
         [
-          crypto.randomUUID(),
+          id,
           title.trim(),
-          String(description).trim(),
-          String(posterUrl).trim(),
-          String(trailerUrl).trim(),
+          description.trim(),
+          posterUrl.trim(),
           durationMinutes === null
             ? null
             : Number(durationMinutes),
-          String(rating).trim(),
-          Boolean(active),
-          Boolean(comingSoon)
+          rating.trim(),
+          Boolean(active)
         ]
       );
 
@@ -1966,8 +1029,7 @@ app.post(
       );
 
       res.status(500).json({
-        error:
-          "No se pudo crear la pelÃ­cula."
+        error: "No se pudo crear la pelÃ­cula."
       });
     }
   }
@@ -1984,11 +1046,9 @@ app.put(
         title,
         description = "",
         posterUrl = "",
-        trailerUrl = "",
         durationMinutes = null,
         rating = "",
-        active = true,
-        comingSoon = false
+        active = true
       } = req.body;
 
       if (
@@ -1996,17 +1056,14 @@ app.put(
         !title.trim()
       ) {
         return res.status(400).json({
-          error:
-            "El tÃ­tulo de la pelÃ­cula es obligatorio."
+          error: "El tÃ­tulo de la pelÃ­cula es obligatorio."
         });
       }
 
       if (
         durationMinutes !== null &&
         (
-          !Number.isInteger(
-            Number(durationMinutes)
-          ) ||
+          !Number.isInteger(Number(durationMinutes)) ||
           Number(durationMinutes) <= 0
         )
       ) {
@@ -2023,39 +1080,32 @@ app.put(
             title = $1,
             description = $2,
             poster_url = $3,
-            trailer_url = $4,
-            duration_minutes = $5,
-            rating = $6,
-            active = $7,
-            coming_soon = $8
-          WHERE id = $9
+            duration_minutes = $4,
+            rating = $5,
+            active = $6
+          WHERE id = $7
           RETURNING *;
         `,
         [
           title.trim(),
-          String(description).trim(),
-          String(posterUrl).trim(),
-          String(trailerUrl).trim(),
+          description.trim(),
+          posterUrl.trim(),
           durationMinutes === null
             ? null
             : Number(durationMinutes),
-          String(rating).trim(),
+          rating.trim(),
           Boolean(active),
-          Boolean(comingSoon),
           id
         ]
       );
 
       if (result.rowCount === 0) {
         return res.status(404).json({
-          error:
-            "PelÃ­cula no encontrada."
+          error: "PelÃ­cula no encontrada."
         });
       }
 
-      res.json(
-        formatMovie(result.rows[0])
-      );
+      res.json(formatMovie(result.rows[0]));
     } catch (error) {
       console.error(
         "Error actualizando pelÃ­cula:",
@@ -2063,8 +1113,7 @@ app.put(
       );
 
       res.status(500).json({
-        error:
-          "No se pudo actualizar la pelÃ­cula."
+        error: "No se pudo actualizar la pelÃ­cula."
       });
     }
   }
@@ -2075,26 +1124,26 @@ app.delete(
   requireAdmin,
   async (req, res) => {
     try {
+      const { id } = req.params;
+
       const result = await pool.query(
         `
           DELETE FROM movies
           WHERE id = $1
           RETURNING id;
         `,
-        [req.params.id]
+        [id]
       );
 
       if (result.rowCount === 0) {
         return res.status(404).json({
-          error:
-            "PelÃ­cula no encontrada."
+          error: "PelÃ­cula no encontrada."
         });
       }
 
       res.json({
         success: true,
-        message:
-          "PelÃ­cula eliminada correctamente."
+        message: "PelÃ­cula eliminada correctamente."
       });
     } catch (error) {
       console.error(
@@ -2103,8 +1152,7 @@ app.delete(
       );
 
       res.status(500).json({
-        error:
-          "No se pudo eliminar la pelÃ­cula."
+        error: "No se pudo eliminar la pelÃ­cula."
       });
     }
   }
@@ -2116,69 +1164,6 @@ ADMINISTRACIÃN DE TANDAS
 ==================================================
 */
 
-function validateShowtimeData(body) {
-  const movieId = String(
-    body?.movieId || ""
-  ).trim();
-
-  const showDate = String(
-    body?.showDate || ""
-  ).trim();
-
-  const showTime = String(
-    body?.showTime || ""
-  ).trim();
-
-  const numericPrice = Number(body?.price);
-
-  if (!movieId) {
-    return {
-      error:
-        "Debes seleccionar una pelÃ­cula."
-    };
-  }
-
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(
-      showDate
-    )
-  ) {
-    return {
-      error:
-        "La fecha de la tanda no es vÃ¡lida."
-    };
-  }
-
-  if (
-    !/^\d{2}:\d{2}(:\d{2})?$/.test(
-      showTime
-    )
-  ) {
-    return {
-      error:
-        "La hora de la tanda no es vÃ¡lida."
-    };
-  }
-
-  if (
-    !Number.isFinite(numericPrice) ||
-    numericPrice < 0
-  ) {
-    return {
-      error:
-        "El precio de la tanda no es vÃ¡lido."
-    };
-  }
-
-  return {
-    movieId,
-    showDate,
-    showTime: showTime.slice(0, 5),
-    numericPrice,
-    active: body?.active !== false
-  };
-}
-
 app.get(
   "/api/admin/showtimes",
   requireAdmin,
@@ -2189,16 +1174,13 @@ app.get(
           s.*,
           m.title AS movie_title
         FROM showtimes s
-        JOIN movies m
-          ON m.id = s.movie_id
+        JOIN movies m ON m.id = s.movie_id
         ORDER BY
           s.show_date ASC,
           s.show_time ASC;
       `);
 
-      res.json(
-        result.rows.map(formatShowtime)
-      );
+      res.json(result.rows.map(formatShowtime));
     } catch (error) {
       console.error(
         "Error obteniendo tandas:",
@@ -2206,8 +1188,7 @@ app.get(
       );
 
       res.status(500).json({
-        error:
-          "No se pudieron obtener las tandas."
+        error: "No se pudieron obtener las tandas."
       });
     }
   }
@@ -2218,12 +1199,58 @@ app.post(
   requireAdmin,
   async (req, res) => {
     try {
-      const validated =
-        validateShowtimeData(req.body);
+      const {
+        movieId,
+        showDate,
+        showTime,
+        price,
+        language = "spanish",
+        active = true
+      } = req.body;
 
-      if (validated.error) {
+      if (
+        typeof movieId !== "string" ||
+        !movieId.trim()
+      ) {
         return res.status(400).json({
-          error: validated.error
+          error: "Debes seleccionar una pelÃ­cula."
+        });
+      }
+
+      if (
+        typeof showDate !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
+      ) {
+        return res.status(400).json({
+          error: "La fecha de la tanda no es vÃ¡lida."
+        });
+      }
+
+      if (
+        typeof showTime !== "string" ||
+        !showTime.trim()
+      ) {
+        return res.status(400).json({
+          error: "La hora de la tanda es obligatoria."
+        });
+      }
+
+      const numericPrice = Number(price);
+
+      if (
+        !Number.isFinite(numericPrice) ||
+        numericPrice < 0
+      ) {
+        return res.status(400).json({
+          error: "El precio de la tanda no es vÃ¡lido."
+        });
+      }
+
+      const normalizedLanguage = normalizeShowtimeLanguage(language);
+
+      if (!normalizedLanguage) {
+        return res.status(400).json({
+          error: "El idioma de la tanda no es vÃ¡lido."
         });
       }
 
@@ -2233,15 +1260,39 @@ app.post(
           FROM movies
           WHERE id = $1;
         `,
-        [validated.movieId]
+        [movieId]
       );
 
       if (movieResult.rowCount === 0) {
         return res.status(404).json({
-          error:
-            "La pelÃ­cula seleccionada no existe."
+          error: "La pelÃ­cula seleccionada no existe."
         });
       }
+
+      const duplicateResult = await pool.query(
+        `
+          SELECT id
+          FROM showtimes
+          WHERE
+            movie_id = $1
+            AND show_date = $2
+            AND show_time = $3;
+        `,
+        [
+          movieId,
+          showDate,
+          showTime.trim()
+        ]
+      );
+
+      if (duplicateResult.rowCount > 0) {
+        return res.status(409).json({
+          error:
+            "Esta pelÃ­cula ya tiene una tanda en esa fecha y hora."
+        });
+      }
+
+      const id = crypto.randomUUID();
 
       const result = await pool.query(
         `
@@ -2251,25 +1302,20 @@ app.post(
             show_date,
             show_time,
             price,
+            language,
             active
           )
-          VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6
-          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *;
         `,
         [
-          crypto.randomUUID(),
-          validated.movieId,
-          validated.showDate,
-          validated.showTime,
-          validated.numericPrice,
-          Boolean(validated.active)
+          id,
+          movieId,
+          showDate,
+          showTime.trim(),
+          numericPrice,
+          normalizedLanguage,
+          Boolean(active)
         ]
       );
 
@@ -2279,34 +1325,23 @@ app.post(
             s.*,
             m.title AS movie_title
           FROM showtimes s
-          JOIN movies m
-            ON m.id = s.movie_id
+          JOIN movies m ON m.id = s.movie_id
           WHERE s.id = $1;
         `,
         [result.rows[0].id]
       );
 
       res.status(201).json(
-        formatShowtime(
-          completeResult.rows[0]
-        )
+        formatShowtime(completeResult.rows[0])
       );
     } catch (error) {
-      if (error?.code === "23505") {
-        return res.status(409).json({
-          error:
-            "Esta pelÃ­cula ya tiene una tanda en esa fecha y hora."
-        });
-      }
-
       console.error(
         "Error creando tanda:",
         error
       );
 
       res.status(500).json({
-        error:
-          "No se pudo crear la tanda."
+        error: "No se pudo crear la tanda."
       });
     }
   }
@@ -2317,12 +1352,100 @@ app.put(
   requireAdmin,
   async (req, res) => {
     try {
-      const validated =
-        validateShowtimeData(req.body);
+      const { id } = req.params;
 
-      if (validated.error) {
+      const {
+        movieId,
+        showDate,
+        showTime,
+        price,
+        language = "spanish",
+        active = true
+      } = req.body;
+
+      if (
+        typeof movieId !== "string" ||
+        !movieId.trim()
+      ) {
         return res.status(400).json({
-          error: validated.error
+          error: "Debes seleccionar una pelÃ­cula."
+        });
+      }
+
+      if (
+        typeof showDate !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
+      ) {
+        return res.status(400).json({
+          error: "La fecha de la tanda no es vÃ¡lida."
+        });
+      }
+
+      if (
+        typeof showTime !== "string" ||
+        !showTime.trim()
+      ) {
+        return res.status(400).json({
+          error: "La hora de la tanda es obligatoria."
+        });
+      }
+
+      const numericPrice = Number(price);
+
+      if (
+        !Number.isFinite(numericPrice) ||
+        numericPrice < 0
+      ) {
+        return res.status(400).json({
+          error: "El precio de la tanda no es vÃ¡lido."
+        });
+      }
+
+      const normalizedLanguage = normalizeShowtimeLanguage(language);
+
+      if (!normalizedLanguage) {
+        return res.status(400).json({
+          error: "El idioma de la tanda no es vÃ¡lido."
+        });
+      }
+
+      const movieResult = await pool.query(
+        `
+          SELECT id
+          FROM movies
+          WHERE id = $1;
+        `,
+        [movieId]
+      );
+
+      if (movieResult.rowCount === 0) {
+        return res.status(404).json({
+          error: "La pelÃ­cula seleccionada no existe."
+        });
+      }
+
+      const duplicateResult = await pool.query(
+        `
+          SELECT id
+          FROM showtimes
+          WHERE
+            movie_id = $1
+            AND show_date = $2
+            AND show_time = $3
+            AND id <> $4;
+        `,
+        [
+          movieId,
+          showDate,
+          showTime.trim(),
+          id
+        ]
+      );
+
+      if (duplicateResult.rowCount > 0) {
+        return res.status(409).json({
+          error:
+            "Ya existe otra tanda para esa pelÃ­cula en esa fecha y hora."
         });
       }
 
@@ -2334,24 +1457,25 @@ app.put(
             show_date = $2,
             show_time = $3,
             price = $4,
-            active = $5
-          WHERE id = $6
+            language = $5,
+            active = $6
+          WHERE id = $7
           RETURNING *;
         `,
         [
-          validated.movieId,
-          validated.showDate,
-          validated.showTime,
-          validated.numericPrice,
-          Boolean(validated.active),
-          req.params.id
+          movieId,
+          showDate,
+          showTime.trim(),
+          numericPrice,
+          normalizedLanguage,
+          Boolean(active),
+          id
         ]
       );
 
       if (result.rowCount === 0) {
         return res.status(404).json({
-          error:
-            "Tanda no encontrada."
+          error: "Tanda no encontrada."
         });
       }
 
@@ -2361,34 +1485,23 @@ app.put(
             s.*,
             m.title AS movie_title
           FROM showtimes s
-          JOIN movies m
-            ON m.id = s.movie_id
+          JOIN movies m ON m.id = s.movie_id
           WHERE s.id = $1;
         `,
-        [req.params.id]
+        [id]
       );
 
       res.json(
-        formatShowtime(
-          completeResult.rows[0]
-        )
+        formatShowtime(completeResult.rows[0])
       );
     } catch (error) {
-      if (error?.code === "23505") {
-        return res.status(409).json({
-          error:
-            "Ya existe otra tanda para esa pelÃ­cula en esa fecha y hora."
-        });
-      }
-
       console.error(
         "Error actualizando tanda:",
         error
       );
 
       res.status(500).json({
-        error:
-          "No se pudo actualizar la tanda."
+        error: "No se pudo actualizar la tanda."
       });
     }
   }
@@ -2406,8 +1519,7 @@ app.delete(
       res.json({
         success: true,
         deleted: result.rowCount,
-        message:
-          `Se eliminaron ${result.rowCount} tandas.`
+        message: `Se eliminaron ${result.rowCount} tandas.`
       });
     } catch (error) {
       console.error(
@@ -2416,8 +1528,7 @@ app.delete(
       );
 
       res.status(500).json({
-        error:
-          "No se pudieron eliminar todas las tandas."
+        error: "No se pudieron eliminar todas las tandas."
       });
     }
   }
@@ -2428,26 +1539,26 @@ app.delete(
   requireAdmin,
   async (req, res) => {
     try {
+      const { id } = req.params;
+
       const result = await pool.query(
         `
           DELETE FROM showtimes
           WHERE id = $1
           RETURNING id;
         `,
-        [req.params.id]
+        [id]
       );
 
       if (result.rowCount === 0) {
         return res.status(404).json({
-          error:
-            "Tanda no encontrada."
+          error: "Tanda no encontrada."
         });
       }
 
       res.json({
         success: true,
-        message:
-          "Tanda eliminada correctamente."
+        message: "Tanda eliminada correctamente."
       });
     } catch (error) {
       console.error(
@@ -2456,8 +1567,7 @@ app.delete(
       );
 
       res.status(500).json({
-        error:
-          "No se pudo eliminar la tanda."
+        error: "No se pudo eliminar la tanda."
       });
     }
   }
@@ -2471,14 +1581,14 @@ ASIENTOS OCUPADOS
 
 app.get("/api/seats", async (req, res) => {
   try {
-    const showtimeId = String(
-      req.query?.showtimeId || ""
-    ).trim();
+    const { showtimeId } = req.query;
 
-    if (!showtimeId) {
+    if (
+      typeof showtimeId !== "string" ||
+      !showtimeId.trim()
+    ) {
       return res.status(400).json({
-        error:
-          "Debes indicar la tanda."
+        error: "Debes indicar la tanda."
       });
     }
 
@@ -2490,8 +1600,7 @@ app.get("/api/seats", async (req, res) => {
           s.show_time,
           m.title AS movie_title
         FROM showtimes s
-        JOIN movies m
-          ON m.id = s.movie_id
+        JOIN movies m ON m.id = s.movie_id
         WHERE s.id = $1;
       `,
       [showtimeId]
@@ -2499,8 +1608,7 @@ app.get("/api/seats", async (req, res) => {
 
     if (showtimeResult.rowCount === 0) {
       return res.status(404).json({
-        error:
-          "Tanda no encontrada."
+        error: "Tanda no encontrada."
       });
     }
 
@@ -2550,340 +1658,232 @@ CREAR RESERVACIÃN
 ==================================================
 */
 
-app.post(
-  "/api/reservations",
-  async (req, res) => {
-    const client = await pool.connect();
+app.post("/api/reservations", async (req, res) => {
+  const client = await pool.connect();
 
-    try {
-      const {
-        showtimeId,
-        seats,
-        customer
-      } = req.body;
+  try {
+    const {
+      showtimeId,
+      seats,
+      customer
+    } = req.body;
 
-      if (
-        typeof showtimeId !== "string" ||
-        !showtimeId.trim()
-      ) {
-        return res.status(400).json({
-          error:
-            "Debes seleccionar una tanda."
-        });
-      }
-
-      if (
-        !Array.isArray(seats) ||
-        seats.length === 0
-      ) {
-        return res.status(400).json({
-          error:
-            "Debes seleccionar al menos un asiento."
-        });
-      }
-
-      const normalizedSeats = [
-        ...new Set(
-          seats
-            .filter(
-              (seat) =>
-                typeof seat === "string" &&
-                seat.trim()
-            )
-            .map(
-              (seat) =>
-                seat.trim().toUpperCase()
-            )
-        )
-      ];
-
-      if (normalizedSeats.length === 0) {
-        return res.status(400).json({
-          error:
-            "Los asientos seleccionados no son vÃ¡lidos."
-        });
-      }
-
-      if (
-        !customer ||
-        typeof customer !== "object"
-      ) {
-        return res.status(400).json({
-          error:
-            "Faltan los datos del cliente."
-        });
-      }
-
-      const customerName =
-        typeof customer.name === "string"
-          ? customer.name.trim()
-          : "";
-
-      const customerEmail =
-        typeof customer.email === "string"
-          ? customer.email.trim()
-          : "";
-
-      const customerPhone =
-        typeof customer.phone === "string"
-          ? customer.phone.trim()
-          : "";
-
-      if (!customerName) {
-        return res.status(400).json({
-          error:
-            "El nombre del cliente es obligatorio."
-        });
-      }
-
-      await client.query("BEGIN");
-
-      const showtimeResult =
-        await client.query(
-          `
-            SELECT
-              s.id,
-              s.show_date,
-              s.show_time,
-              s.price,
-              s.active,
-              m.title AS movie_title,
-              m.active AS movie_active
-            FROM showtimes s
-            JOIN movies m
-              ON m.id = s.movie_id
-            WHERE s.id = $1
-            FOR UPDATE;
-          `,
-          [showtimeId]
-        );
-
-      if (
-        showtimeResult.rowCount === 0
-      ) {
-        await client.query("ROLLBACK");
-
-        return res.status(404).json({
-          error:
-            "La tanda seleccionada no existe."
-        });
-      }
-
-      const showtime =
-        showtimeResult.rows[0];
-
-      const showtimeAvailabilityResult =
-        await client.query(
-          `
-            SELECT (
-              (
-                $1::date +
-                $2::time
-              )
-              >
-              (
-                NOW()
-                AT TIME ZONE
-                'America/Puerto_Rico'
-              )
-            ) AS is_future;
-          `,
-          [
-            showtime.show_date,
-            showtime.show_time
-          ]
-        );
-
-      const isFutureShowtime =
-        Boolean(
-          showtimeAvailabilityResult
-            .rows[0]?.is_future
-        );
-
-      if (!isFutureShowtime) {
-        await client.query("ROLLBACK");
-
-        return res.status(409).json({
-          error:
-            "Esta tanda ya comenzÃ³ o pasÃ³ de hora y no estÃ¡ disponible."
-        });
-      }
-
-      if (
-        !showtime.active ||
-        !showtime.movie_active
-      ) {
-        await client.query("ROLLBACK");
-
-        return res.status(400).json({
-          error:
-            "Esta tanda no estÃ¡ disponible."
-        });
-      }
-
-      const occupiedResult =
-        await client.query(
-          `
-            SELECT seats
-            FROM tickets
-            WHERE
-              customer->>'showtimeId' = $1
-              AND payment_status IN (
-                'pending',
-                'paid',
-                'approved'
-              )
-            FOR UPDATE;
-          `,
-          [showtimeId]
-        );
-
-      const occupiedSeats = new Set(
-        occupiedResult.rows.flatMap(
-          (ticket) => ticket.seats || []
-        )
-      );
-
-      const unavailableSeats =
-        normalizedSeats.filter(
-          (seat) =>
-            occupiedSeats.has(seat)
-        );
-
-      if (
-        unavailableSeats.length > 0
-      ) {
-        await client.query("ROLLBACK");
-
-        return res.status(409).json({
-          error:
-            "Uno o mÃ¡s asientos ya fueron reservados.",
-          unavailableSeats
-        });
-      }
-
-      const ticketId =
-        crypto.randomUUID();
-
-      const qrToken =
-        crypto
-          .randomBytes(32)
-          .toString("hex");
-
-      const ticketPrice =
-        Number(showtime.price);
-
-      const total =
-        ticketPrice *
-        normalizedSeats.length;
-
-      const storedCustomer = {
-        ...customer,
-        name: customerName,
-        email: customerEmail,
-        phone: customerPhone,
-        showtimeId
-      };
-
-      let insertedTicket = null;
-
-      for (
-        let attempt = 0;
-        attempt < 250;
-        attempt += 1
-      ) {
-        const manualCode =
-          generateFiveDigitCode();
-
-        const result =
-          await client.query(
-            `
-              INSERT INTO tickets (
-                id,
-                movie,
-                show_time,
-                seats,
-                total,
-                customer,
-                payment_status,
-                qr,
-                manual_code,
-                used
-              )
-              VALUES (
-                $1,
-                $2,
-                $3,
-                $4,
-                $5,
-                $6,
-                'pending',
-                $7,
-                $8,
-                FALSE
-              )
-              ON CONFLICT DO NOTHING
-              RETURNING *;
-            `,
-            [
-              ticketId,
-              showtime.movie_title,
-              `${showtime.show_date} ` +
-                `${showtime.show_time}`,
-              normalizedSeats,
-              total,
-              JSON.stringify(
-                storedCustomer
-              ),
-              qrToken,
-              manualCode
-            ]
-          );
-
-        if (result.rowCount > 0) {
-          insertedTicket =
-            result.rows[0];
-          break;
-        }
-      }
-
-      if (!insertedTicket) {
-        throw new Error(
-          "No se pudo generar un cÃ³digo manual Ãºnico y seguro."
-        );
-      }
-
-      await client.query("COMMIT");
-
-      res.status(201).json({
-        success: true,
-        reservation:
-          formatTicket(insertedTicket)
+    if (
+      typeof showtimeId !== "string" ||
+      !showtimeId.trim()
+    ) {
+      return res.status(400).json({
+        error: "Debes seleccionar una tanda."
       });
-    } catch (error) {
-      try {
-        await client.query("ROLLBACK");
-      } catch (rollbackError) {
-        console.error(
-          "Error haciendo rollback:",
-          rollbackError
-        );
-      }
-
-      console.error(
-        "Error creando la reservaciÃ³n:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo crear la reservaciÃ³n."
-      });
-    } finally {
-      client.release();
     }
+
+    if (
+      !Array.isArray(seats) ||
+      seats.length === 0
+    ) {
+      return res.status(400).json({
+        error: "Debes seleccionar al menos un asiento."
+      });
+    }
+
+    const normalizedSeats = [
+      ...new Set(
+        seats
+          .filter(
+            (seat) =>
+              typeof seat === "string" &&
+              seat.trim()
+          )
+          .map((seat) => seat.trim().toUpperCase())
+      )
+    ];
+
+    if (normalizedSeats.length === 0) {
+      return res.status(400).json({
+        error: "Los asientos seleccionados no son vÃ¡lidos."
+      });
+    }
+
+    if (
+      !customer ||
+      typeof customer !== "object"
+    ) {
+      return res.status(400).json({
+        error: "Faltan los datos del cliente."
+      });
+    }
+
+    const customerName =
+      typeof customer.name === "string"
+        ? customer.name.trim()
+        : "";
+
+    const customerEmail =
+      typeof customer.email === "string"
+        ? customer.email.trim()
+        : "";
+
+    const customerPhone =
+      typeof customer.phone === "string"
+        ? customer.phone.trim()
+        : "";
+
+    if (!customerName) {
+      return res.status(400).json({
+        error: "El nombre del cliente es obligatorio."
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const showtimeResult = await client.query(
+      `
+        SELECT
+          s.id,
+          s.show_date,
+          s.show_time,
+          s.price,
+          s.active,
+          m.title AS movie_title,
+          m.active AS movie_active
+        FROM showtimes s
+        JOIN movies m ON m.id = s.movie_id
+        WHERE s.id = $1
+        FOR UPDATE;
+      `,
+      [showtimeId]
+    );
+
+    if (showtimeResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(404).json({
+        error: "La tanda seleccionada no existe."
+      });
+    }
+
+    const showtime = showtimeResult.rows[0];
+
+    if (
+      !showtime.active ||
+      !showtime.movie_active
+    ) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error: "Esta tanda no estÃ¡ disponible."
+      });
+    }
+
+    const occupiedResult = await client.query(
+      `
+        SELECT seats
+        FROM tickets
+        WHERE
+          customer->>'showtimeId' = $1
+          AND payment_status IN (
+            'pending',
+            'paid',
+            'approved'
+          )
+        FOR UPDATE;
+      `,
+      [showtimeId]
+    );
+
+    const occupiedSeats = new Set(
+      occupiedResult.rows.flatMap(
+        (ticket) => ticket.seats || []
+      )
+    );
+
+    const unavailableSeats =
+      normalizedSeats.filter(
+        (seat) => occupiedSeats.has(seat)
+      );
+
+    if (unavailableSeats.length > 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(409).json({
+        error:
+          "Uno o mÃ¡s asientos ya fueron reservados.",
+        unavailableSeats
+      });
+    }
+
+    const ticketId = crypto.randomUUID();
+    const qrToken = crypto.randomBytes(32).toString("hex");
+    const ticketPrice = Number(showtime.price);
+    const total =
+      ticketPrice * normalizedSeats.length;
+
+    const storedCustomer = {
+      ...customer,
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone,
+      showtimeId
+    };
+
+    const result = await client.query(
+      `
+        INSERT INTO tickets (
+          id,
+          movie,
+          show_time,
+          seats,
+          total,
+          customer,
+          payment_status,
+          qr,
+          used
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          'pending',
+          $7,
+          FALSE
+        )
+        RETURNING *;
+      `,
+      [
+        ticketId,
+        showtime.movie_title,
+        `${showtime.show_date} ${showtime.show_time}`,
+        normalizedSeats,
+        total,
+        JSON.stringify(storedCustomer),
+        qrToken
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      success: true,
+      reservation: formatTicket(result.rows[0])
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    console.error(
+      "Error creando la reservaciÃ³n:",
+      error
+    );
+
+    res.status(500).json({
+      error: "No se pudo crear la reservaciÃ³n."
+    });
+  } finally {
+    client.release();
   }
-);
+});
 
 /*
 ==================================================
@@ -2895,6 +1895,8 @@ app.post(
   "/api/reservations/:id/pay",
   async (req, res) => {
     try {
+      const { id } = req.params;
+
       const result = await pool.query(
         `
           UPDATE tickets
@@ -2904,26 +1906,22 @@ app.post(
             AND payment_status = 'pending'
           RETURNING *;
         `,
-        [req.params.id]
+        [id]
       );
 
       if (result.rowCount === 0) {
-        const existingResult =
-          await pool.query(
-            `
-              SELECT *
-              FROM tickets
-              WHERE id = $1;
-            `,
-            [req.params.id]
-          );
+        const existingResult = await pool.query(
+          `
+            SELECT *
+            FROM tickets
+            WHERE id = $1;
+          `,
+          [id]
+        );
 
-        if (
-          existingResult.rowCount === 0
-        ) {
+        if (existingResult.rowCount === 0) {
           return res.status(404).json({
-            error:
-              "ReservaciÃ³n no encontrada."
+            error: "ReservaciÃ³n no encontrada."
           });
         }
 
@@ -2936,8 +1934,7 @@ app.post(
       res.json({
         success: true,
         message: "Pago aprobado.",
-        reservation:
-          formatTicket(result.rows[0])
+        reservation: formatTicket(result.rows[0])
       });
     } catch (error) {
       console.error(
@@ -2946,8 +1943,7 @@ app.post(
       );
 
       res.status(500).json({
-        error:
-          "No se pudo procesar el pago."
+        error: "No se pudo procesar el pago."
       });
     }
   }
@@ -2959,42 +1955,37 @@ CONSULTAR BOLETO
 ==================================================
 */
 
-app.get(
-  "/api/tickets/:id",
-  async (req, res) => {
-    try {
-      const result = await pool.query(
-        `
-          SELECT *
-          FROM tickets
-          WHERE id = $1;
-        `,
-        [req.params.id]
-      );
+app.get("/api/tickets/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          error:
-            "Boleto no encontrado."
-        });
-      }
+    const result = await pool.query(
+      `
+        SELECT *
+        FROM tickets
+        WHERE id = $1;
+      `,
+      [id]
+    );
 
-      res.json(
-        formatTicket(result.rows[0])
-      );
-    } catch (error) {
-      console.error(
-        "Error obteniendo el boleto:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo obtener el boleto."
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        error: "Boleto no encontrado."
       });
     }
+
+    res.json(formatTicket(result.rows[0]));
+  } catch (error) {
+    console.error(
+      "Error obteniendo el boleto:",
+      error
+    );
+
+    res.status(500).json({
+      error: "No se pudo obtener el boleto."
+    });
   }
-);
+});
 
 /*
 ==================================================
@@ -3013,9 +2004,7 @@ app.get(
         ORDER BY created_at DESC;
       `);
 
-      res.json(
-        result.rows.map(formatTicket)
-      );
+      res.json(result.rows.map(formatTicket));
     } catch (error) {
       console.error(
         "Error obteniendo reservaciones:",
@@ -3032,310 +2021,106 @@ app.get(
 
 /*
 ==================================================
-VALIDAR BOLETO SIN MARCARLO
-Acepta el QR largo o el cÃ³digo manual de 5 dÃ­gitos.
+VALIDAR CÃDIGO QR
 ==================================================
 */
 
-app.get(
-  "/api/qr/:code",
-  async (req, res) => {
-    try {
-      const code = normalizeTicketLookup(
-        req.params.code
-      );
+app.get("/api/qr/:qr", async (req, res) => {
+  try {
+    const { qr } = req.params;
 
-      const result = await pool.query(
-        `
-          SELECT *
-          FROM tickets
-          WHERE
-            qr = $1
-            OR manual_code = $1;
-        `,
-        [code]
-      );
+    const result = await pool.query(
+      `
+        SELECT *
+        FROM tickets
+        WHERE qr = $1;
+      `,
+      [qr]
+    );
 
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          valid: false,
-          error:
-            "Boleto no encontrado."
-        });
-      }
-
-      const ticket =
-        formatTicket(result.rows[0]);
-
-      if (
-        ticket.paymentStatus !== "paid" &&
-        ticket.paymentStatus !== "approved"
-      ) {
-        return res.status(400).json({
-          valid: false,
-          error:
-            "Este boleto no ha sido pagado.",
-          ticket
-        });
-      }
-
-      if (ticket.used) {
-        return res.status(409).json({
-          valid: false,
-          error:
-            "Este boleto ya fue utilizado.",
-          ticket
-        });
-      }
-
-      res.json({
-        valid: true,
-        message: "Boleto vÃ¡lido.",
-        ticket
-      });
-    } catch (error) {
-      console.error(
-        "Error validando el boleto:",
-        error
-      );
-
-      res.status(500).json({
+    if (result.rowCount === 0) {
+      return res.status(404).json({
         valid: false,
-        error:
-          "No se pudo validar el boleto."
+        error: "Boleto no encontrado."
       });
     }
+
+    const ticket = formatTicket(result.rows[0]);
+
+    if (
+      ticket.paymentStatus !== "paid" &&
+      ticket.paymentStatus !== "approved"
+    ) {
+      return res.status(400).json({
+        valid: false,
+        error: "Este boleto no ha sido pagado.",
+        ticket
+      });
+    }
+
+    if (ticket.used) {
+      return res.status(409).json({
+        valid: false,
+        error: "Este boleto ya fue utilizado.",
+        ticket
+      });
+    }
+
+    res.json({
+      valid: true,
+      message: "Boleto vÃ¡lido.",
+      ticket
+    });
+  } catch (error) {
+    console.error(
+      "Error validando el cÃ³digo QR:",
+      error
+    );
+
+    res.status(500).json({
+      valid: false,
+      error: "No se pudo validar el boleto."
+    });
   }
-);
+});
 
 /*
 ==================================================
 CHECK-IN DEL EMPLEADO
-Acepta:
-- req.body.qr
-- req.body.code
-- req.body.manualCode
-- req.body.rawCode
 ==================================================
 */
 
-app.post(
-  "/api/employee/checkin",
-  requireEmployee,
-  async (req, res) => {
-    const client = await pool.connect();
-
-    try {
-      const rawLookup =
-        req.body?.qr ||
-        req.body?.code ||
-        req.body?.manualCode ||
-        req.body?.rawCode ||
-        "";
-
-      const lookup =
-        normalizeTicketLookup(rawLookup);
-
-      if (!lookup) {
-        return res.status(400).json({
-          error:
-            "El cÃ³digo del boleto es obligatorio."
-        });
-      }
-
-      await client.query("BEGIN");
-
-      const ticketResult =
-        await client.query(
-          `
-            SELECT *
-            FROM tickets
-            WHERE
-              qr = $1
-              OR manual_code = $1
-            FOR UPDATE;
-          `,
-          [lookup]
-        );
-
-      if (
-        ticketResult.rowCount === 0
-      ) {
-        await client.query("ROLLBACK");
-
-        return res.status(404).json({
-          error:
-            "Boleto no encontrado. Verifica el cÃ³digo de 5 dÃ­gitos."
-        });
-      }
-
-      const ticket =
-        ticketResult.rows[0];
-
-      if (
-        !["paid", "approved"].includes(
-          ticket.payment_status
-        )
-      ) {
-        await client.query("ROLLBACK");
-
-        return res.status(400).json({
-          error:
-            "El boleto no ha sido pagado.",
-          ticket: formatTicket(ticket)
-        });
-      }
-
-      if (ticket.used) {
-        await client.query("ROLLBACK");
-
-        const existing =
-          await pool.query(
-            `
-              SELECT
-                employee_name,
-                scanned_at
-              FROM checkins
-              WHERE ticket_id = $1;
-            `,
-            [ticket.id]
-          );
-
-        return res.status(409).json({
-          error:
-            "Este boleto ya fue utilizado.",
-          ticket: formatTicket(ticket),
-          checkin:
-            existing.rows[0] || null
-        });
-      }
-
-      const seatsCount =
-        Array.isArray(ticket.seats)
-          ? ticket.seats.length
-          : 0;
-
-      if (seatsCount <= 0) {
-        await client.query("ROLLBACK");
-
-        return res.status(400).json({
-          error:
-            "El boleto no contiene asientos vÃ¡lidos."
-        });
-      }
-
-      const updateResult =
-        await client.query(
-          `
-            UPDATE tickets
-            SET
-              used = TRUE,
-              checkin_at = NOW()
-            WHERE id = $1
-            RETURNING *;
-          `,
-          [ticket.id]
-        );
-
-      const checkinResult =
-        await client.query(
-          `
-            INSERT INTO checkins (
-              id,
-              ticket_id,
-              employee_id,
-              employee_name,
-              employee_username,
-              seats_count,
-              movie,
-              show_time,
-              seats
-            )
-            VALUES (
-              $1,
-              $2,
-              $3,
-              $4,
-              $5,
-              $6,
-              $7,
-              $8,
-              $9
-            )
-            RETURNING *;
-          `,
-          [
-            crypto.randomUUID(),
-            ticket.id,
-            req.employee.id,
-            req.employee.name,
-            req.employee.username,
-            seatsCount,
-            ticket.movie,
-            ticket.show_time,
-            ticket.seats
-          ]
-        );
-
-      await client.query("COMMIT");
-
-      const formattedTicket =
-        formatTicket(
-          updateResult.rows[0]
-        );
-
-      res.json({
-        success: true,
-        message:
-          `Entrada registrada por ` +
-          `${req.employee.name}. ` +
-          `${seatsCount} taquilla` +
-          `${seatsCount === 1 ? "" : "s"} ` +
-          `contabilizada` +
-          `${seatsCount === 1 ? "" : "s"}.`,
-        employee: {
-          id: req.employee.id,
-          name: req.employee.name,
-          username: req.employee.username
-        },
-        seatsCount,
-        movie: formattedTicket.movie,
-        showTime: formattedTicket.time,
-        seats: formattedTicket.seats,
-        manualCode:
-          formattedTicket.manualCode,
-        validatedAt:
-          checkinResult.rows[0].scanned_at,
-        ticket: formattedTicket
-      });
-    } catch (error) {
-      try {
-        await client.query("ROLLBACK");
-      } catch (rollbackError) {
-        console.error(
-          "Error haciendo rollback:",
-          rollbackError
-        );
-      }
-
-      console.error(
-        "Error registrando check-in de empleado:",
-        error
-      );
-
-      res.status(500).json({
-        error:
-          "No se pudo registrar la entrada."
-      });
-    } finally {
-      client.release();
+app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const qr = String(req.body?.qr || "").trim();
+    if (!qr) return res.status(400).json({ error: "El cÃ³digo QR es obligatorio." });
+    await client.query("BEGIN");
+    const ticketResult = await client.query(`SELECT * FROM tickets WHERE qr=$1 FOR UPDATE;`, [qr]);
+    if (ticketResult.rowCount === 0) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Boleto no encontrado." }); }
+    const ticket = ticketResult.rows[0];
+    if (!["paid","approved"].includes(ticket.payment_status)) { await client.query("ROLLBACK"); return res.status(400).json({ error: "El boleto no ha sido pagado.", ticket: formatTicket(ticket) }); }
+    if (ticket.used) {
+      await client.query("ROLLBACK");
+      const existing = await pool.query(`SELECT employee_name, scanned_at FROM checkins WHERE ticket_id=$1;`, [ticket.id]);
+      return res.status(409).json({ error: "Este boleto ya fue utilizado.", ticket: formatTicket(ticket), checkin: existing.rows[0] || null });
     }
-  }
-);
+    const seatsCount = Array.isArray(ticket.seats) ? ticket.seats.length : 0;
+    if (seatsCount <= 0) { await client.query("ROLLBACK"); return res.status(400).json({ error: "El boleto no contiene asientos vÃ¡lidos." }); }
+    const updateResult = await client.query(`UPDATE tickets SET used=TRUE,checkin_at=NOW() WHERE id=$1 RETURNING *;`, [ticket.id]);
+    await client.query(`INSERT INTO checkins (id,ticket_id,employee_id,employee_name,employee_username,seats_count,movie,show_time,seats) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);`, [crypto.randomUUID(),ticket.id,req.employee.id,req.employee.name,req.employee.username,seatsCount,ticket.movie,ticket.show_time,ticket.seats]);
+    await client.query("COMMIT");
+    res.json({ success: true, message: `Entrada registrada por ${req.employee.name}. ${seatsCount} taquilla${seatsCount===1?"":"s"} contabilizada${seatsCount===1?"":"s"}.`, employee: { id:req.employee.id,name:req.employee.name,username:req.employee.username }, seatsCount, ticket: formatTicket(updateResult.rows[0]) });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error registrando check-in de empleado:", error);
+    res.status(500).json({ error: "No se pudo registrar la entrada." });
+  } finally { client.release(); }
+});
 
 /*
 ==================================================
-CHECK-IN ADMINISTRATIVO
+CHECK-IN DEL BOLETO
 ==================================================
 */
 
@@ -3346,60 +2131,47 @@ app.post(
     const client = await pool.connect();
 
     try {
-      const lookup =
-        normalizeTicketLookup(
-          req.body?.qr ||
-          req.body?.code ||
-          req.body?.manualCode ||
-          ""
-        );
+      const { qr } = req.body;
 
-      if (!lookup) {
+      if (
+        typeof qr !== "string" ||
+        !qr.trim()
+      ) {
         return res.status(400).json({
-          error:
-            "El cÃ³digo del boleto es obligatorio."
+          error: "El cÃ³digo QR es obligatorio."
         });
       }
 
       await client.query("BEGIN");
 
-      const ticketResult =
-        await client.query(
-          `
-            SELECT *
-            FROM tickets
-            WHERE
-              qr = $1
-              OR manual_code = $1
-            FOR UPDATE;
-          `,
-          [lookup]
-        );
+      const ticketResult = await client.query(
+        `
+          SELECT *
+          FROM tickets
+          WHERE qr = $1
+          FOR UPDATE;
+        `,
+        [qr.trim()]
+      );
 
-      if (
-        ticketResult.rowCount === 0
-      ) {
+      if (ticketResult.rowCount === 0) {
         await client.query("ROLLBACK");
 
         return res.status(404).json({
-          error:
-            "Boleto no encontrado."
+          error: "Boleto no encontrado."
         });
       }
 
-      const ticket =
-        ticketResult.rows[0];
+      const ticket = ticketResult.rows[0];
 
       if (
-        !["paid", "approved"].includes(
-          ticket.payment_status
-        )
+        ticket.payment_status !== "paid" &&
+        ticket.payment_status !== "approved"
       ) {
         await client.query("ROLLBACK");
 
         return res.status(400).json({
-          error:
-            "El boleto no ha sido pagado."
+          error: "El boleto no ha sido pagado."
         });
       }
 
@@ -3407,45 +2179,32 @@ app.post(
         await client.query("ROLLBACK");
 
         return res.status(409).json({
-          error:
-            "Este boleto ya fue utilizado.",
+          error: "Este boleto ya fue utilizado.",
           ticket: formatTicket(ticket)
         });
       }
 
-      const updateResult =
-        await client.query(
-          `
-            UPDATE tickets
-            SET
-              used = TRUE,
-              checkin_at = NOW()
-            WHERE id = $1
-            RETURNING *;
-          `,
-          [ticket.id]
-        );
+      const updateResult = await client.query(
+        `
+          UPDATE tickets
+          SET
+            used = TRUE,
+            checkin_at = NOW()
+          WHERE id = $1
+          RETURNING *;
+        `,
+        [ticket.id]
+      );
 
       await client.query("COMMIT");
 
       res.json({
         success: true,
-        message:
-          "Entrada registrada correctamente.",
-        ticket:
-          formatTicket(
-            updateResult.rows[0]
-          )
+        message: "Entrada registrada correctamente.",
+        ticket: formatTicket(updateResult.rows[0])
       });
     } catch (error) {
-      try {
-        await client.query("ROLLBACK");
-      } catch (rollbackError) {
-        console.error(
-          "Error haciendo rollback:",
-          rollbackError
-        );
-      }
+      await client.query("ROLLBACK");
 
       console.error(
         "Error registrando el check-in:",
@@ -3453,8 +2212,7 @@ app.post(
       );
 
       res.status(500).json({
-        error:
-          "No se pudo registrar la entrada."
+        error: "No se pudo registrar la entrada."
       });
     } finally {
       client.release();
@@ -3481,42 +2239,28 @@ MANEJO GENERAL DE ERRORES
 */
 
 app.use((error, req, res, next) => {
-  console.error(
-    "Error inesperado:",
-    error
-  );
+  console.error("Error inesperado:", error);
 
   if (res.headersSent) {
     return next(error);
   }
 
-  if (
-    error instanceof multer.MulterError
-  ) {
-    if (
-      error.code === "LIMIT_FILE_SIZE"
-    ) {
-      const isTrailer =
-        req.path.includes("/trailers");
-
+  if (error instanceof multer.MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(413).json({
-        error: isTrailer
-          ? "El trÃ¡iler es demasiado grande. El mÃ¡ximo permitido es 50 MB."
-          : "El afiche es demasiado grande. El mÃ¡ximo es 6 MB."
+        error:
+          "El afiche es demasiado grande. El mÃ¡ximo es 6 MB."
       });
     }
 
     return res.status(400).json({
-      error:
-        "No se pudo procesar el archivo."
+      error: "No se pudo procesar el archivo."
     });
   }
 
   if (
     error?.message ===
-      "El afiche debe ser JPG, PNG o WEBP." ||
-    error?.message ===
-      "El trÃ¡iler debe ser MP4, WEBM o MOV."
+    "El afiche debe ser JPG, PNG o WEBP."
   ) {
     return res.status(400).json({
       error: error.message
@@ -3524,8 +2268,7 @@ app.use((error, req, res, next) => {
   }
 
   res.status(500).json({
-    error:
-      "OcurriÃ³ un error inesperado."
+    error: "OcurriÃ³ un error inesperado."
   });
 });
 
@@ -3540,16 +2283,11 @@ async function startServer() {
     await initializeDatabase();
     await cleanupPreviousBusinessDay();
 
-    app.listen(
-      PORT,
-      "0.0.0.0",
-      () => {
-        console.log(
-          `Servidor iniciado correctamente ` +
-          `en el puerto ${PORT}.`
-        );
-      }
-    );
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(
+        `Servidor iniciado correctamente en el puerto ${PORT}.`
+      );
+    });
   } catch (error) {
     console.error(
       "No se pudo iniciar el servidor:",
