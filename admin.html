@@ -1213,6 +1213,16 @@
               Película activa y visible
             </label>
 
+            <label class="checkbox-row">
+              <input id="movieComingSoon" type="checkbox" />
+              Mostrar como “Próximamente”
+            </label>
+
+            <p class="poster-help" style="margin-top:-8px;margin-bottom:16px;">
+              Las películas marcadas como próximamente aparecerán en la cartelera,
+              pero los clientes no podrán seleccionar tandas todavía.
+            </p>
+
             <div class="form-actions">
               <button
                 id="saveMovieButton"
@@ -1251,6 +1261,7 @@
                     <th>Película</th>
                     <th>Duración</th>
                     <th>Tráiler</th>
+                    <th>Publicación</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -1802,6 +1813,11 @@
                 : `<span class="muted">Sin tráiler</span>`
             }
           </td>
+          <td>
+            <span class="badge ${movie.comingSoon ? "warning" : "info"}">
+              ${movie.comingSoon ? "Próximamente" : "En cartelera"}
+            </span>
+          </td>
           <td><span class="badge ${movie.active ? "success" : "danger"}">${movie.active ? "Activa" : "Inactiva"}</span></td>
           <td>
             <div class="table-actions">
@@ -2051,6 +2067,7 @@
       const durationValue = document.getElementById("movieDuration").value;
       const rating = document.getElementById("movieRating").value.trim();
       const active = document.getElementById("movieActive").checked;
+      const comingSoon = document.getElementById("movieComingSoon").checked;
 
       if (selectedPosterFile && !posterUrl) {
         setMessage("movieMessage", "error", "Pulsa “Subir afiche” antes de guardar la película.");
@@ -2080,7 +2097,8 @@
           trailerUrl,
           durationMinutes: durationValue === "" ? null : Number(durationValue),
           rating,
-          active
+          active,
+          comingSoon
         };
 
         if (id) {
@@ -2125,6 +2143,7 @@
       document.getElementById("movieDuration").value = movie.durationMinutes || "";
       document.getElementById("movieRating").value = movie.rating || "";
       document.getElementById("movieActive").checked = Boolean(movie.active);
+      document.getElementById("movieComingSoon").checked = Boolean(movie.comingSoon);
       document.getElementById("movieFormTitle").textContent = "Editar película";
       document.getElementById("saveMovieButton").textContent = "Actualizar película";
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2145,6 +2164,7 @@
       document.getElementById("movieDuration").value = "";
       document.getElementById("movieRating").value = "";
       document.getElementById("movieActive").checked = true;
+      document.getElementById("movieComingSoon").checked = false;
       document.getElementById("movieFormTitle").textContent = "Añadir película";
       document.getElementById("saveMovieButton").textContent = "Guardar película";
       if (clearMessage) setMessage("movieMessage", "", "");
