@@ -565,6 +565,14 @@
         </button>
 
         <button
+          id="navEmployees"
+          type="button"
+          onclick="showSection('employees')"
+        >
+          👥 Empleados
+        </button>
+
+        <button
           id="navPassword"
           type="button"
           onclick="showSection('password')"
@@ -1011,6 +1019,69 @@
         </div>
       </section>
 
+      <!-- EMPLEADOS -->
+
+      <section id="employeesSection" class="page-section">
+        <div class="grid-two">
+          <section class="card">
+            <h2 id="employeeFormTitle">Añadir empleado</h2>
+            <input id="employeeId" type="hidden" />
+
+            <label for="employeeName">Nombre completo</label>
+            <input id="employeeName" type="text" placeholder="Ej. María López" />
+
+            <label for="employeeUsername">Usuario</label>
+            <input id="employeeUsername" type="text" placeholder="Ej. maria" autocomplete="off" />
+
+            <label for="employeePassword">Contraseña</label>
+            <input id="employeePassword" type="password" minlength="8" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+            <p class="poster-help">Al editar, deja la contraseña vacía para conservar la actual.</p>
+
+            <label class="checkbox-row">
+              <input id="employeeActive" type="checkbox" checked />
+              Empleado activo
+            </label>
+
+            <div class="form-actions">
+              <button id="saveEmployeeButton" class="primary" type="button" onclick="saveEmployee()">Guardar empleado</button>
+              <button class="secondary" type="button" onclick="resetEmployeeForm()">Limpiar</button>
+            </div>
+            <div class="message" id="employeeMessage"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <div>
+                <h2>Empleados y escaneos</h2>
+                <p class="subtitle">Cada asiento validado cuenta como una taquilla.</p>
+              </div>
+              <button class="primary" type="button" onclick="loadEmployees()">Actualizar</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th>Empleado</th><th>Usuario</th><th>Estado</th><th>Escaneos</th><th>Taquillas</th><th>Último escaneo</th><th>Acciones</th></tr></thead>
+                <tbody id="employeeRows"></tbody>
+              </table>
+              <div class="empty" id="employeeEmptyMessage">Todavía no hay empleados.</div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="section-header">
+            <div><h2>Historial de escaneos</h2><p class="subtitle">Últimos 200 registros de entrada.</p></div>
+            <button class="primary" type="button" onclick="loadCheckins()">Actualizar</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Fecha</th><th>Empleado</th><th>Película</th><th>Tanda</th><th>Asientos</th><th>Taquillas</th></tr></thead>
+              <tbody id="checkinRows"></tbody>
+            </table>
+            <div class="empty" id="checkinEmptyMessage">Todavía no hay escaneos.</div>
+          </div>
+        </section>
+      </section>
+
       <!-- CONTRASEÑA -->
 
       <section
@@ -1085,6 +1156,7 @@
     let currentSection = "reservations";
     let moviesCache = [];
     let showtimesCache = [];
+    let employeesCache = [];
 
     function setLoading(visible) {
       document.getElementById(
@@ -1298,6 +1370,7 @@
         "reservations",
         "movies",
         "showtimes",
+        "employees",
         "password"
       ];
 
@@ -1334,6 +1407,11 @@
         loadMoviesForSelect();
         loadShowtimes();
       }
+
+      if (sectionName === "employees") {
+        loadEmployees();
+        loadCheckins();
+      }
     }
 
     async function refreshCurrentSection() {
@@ -1348,6 +1426,11 @@
       if (currentSection === "showtimes") {
         await loadMoviesForSelect();
         await loadShowtimes();
+      }
+
+      if (currentSection === "employees") {
+        await loadEmployees();
+        await loadCheckins();
       }
     }
 
@@ -2512,6 +2595,120 @@
       } catch (error) {
         alert(error.message);
       }
+    }
+
+    async function loadEmployees() {
+      setLoading(true);
+      try {
+        const employees = await adminFetch("/api/admin/employees");
+        employeesCache = Array.isArray(employees) ? employees : [];
+        renderEmployees(employeesCache);
+      } catch (error) {
+        setMessage("employeeMessage", "error", error.message);
+      } finally { setLoading(false); }
+    }
+
+    function renderEmployees(employees) {
+      const rows = document.getElementById("employeeRows");
+      const empty = document.getElementById("employeeEmptyMessage");
+      rows.innerHTML = "";
+      if (!employees.length) { empty.style.display = "block"; return; }
+      empty.style.display = "none";
+      employees.forEach((employee) => {
+        const row = document.createElement("tr");
+        const lastScan = employee.lastScan ? new Date(employee.lastScan).toLocaleString("es-PR") : "—";
+        row.innerHTML = `
+          <td><strong>${escapeHtml(employee.name)}</strong></td>
+          <td>${escapeHtml(employee.username)}</td>
+          <td><span class="badge ${employee.active ? "success" : "danger"}">${employee.active ? "Activo" : "Inactivo"}</span></td>
+          <td>${Number(employee.scans || 0)}</td>
+          <td><strong>${Number(employee.ticketsScanned || 0)}</strong></td>
+          <td>${escapeHtml(lastScan)}</td>
+          <td><div class="table-actions">
+            <button class="small primary" type="button" onclick="editEmployee('${employee.id}')">Editar</button>
+            <button class="small danger" type="button" onclick="deleteEmployee('${employee.id}')">Eliminar</button>
+          </div></td>`;
+        rows.appendChild(row);
+      });
+    }
+
+    async function saveEmployee() {
+      const id = document.getElementById("employeeId").value;
+      const name = document.getElementById("employeeName").value.trim();
+      const username = document.getElementById("employeeUsername").value.trim().toLowerCase();
+      const password = document.getElementById("employeePassword").value;
+      const active = document.getElementById("employeeActive").checked;
+      if (!name || !username) { setMessage("employeeMessage", "error", "Escribe el nombre y el usuario."); return; }
+      if ((!id && password.length < 8) || (id && password && password.length < 8)) { setMessage("employeeMessage", "error", "La contraseña debe tener al menos 8 caracteres."); return; }
+      const button = document.getElementById("saveEmployeeButton");
+      button.disabled = true; button.textContent = "Guardando…"; setMessage("employeeMessage", "", "");
+      try {
+        await adminFetch(id ? `/api/admin/employees/${id}` : "/api/admin/employees", { method: id ? "PUT" : "POST", body: JSON.stringify({ name, username, password, active }) });
+        setMessage("employeeMessage", "success", id ? "Empleado actualizado correctamente." : "Empleado creado correctamente.");
+        resetEmployeeForm(false); await loadEmployees();
+      } catch (error) { setMessage("employeeMessage", "error", error.message); }
+      finally { button.disabled = false; button.textContent = id ? "Actualizar empleado" : "Guardar empleado"; }
+    }
+
+    function editEmployee(id) {
+      const employee = employeesCache.find((item) => item.id === id);
+      if (!employee) return;
+      document.getElementById("employeeId").value = employee.id;
+      document.getElementById("employeeName").value = employee.name || "";
+      document.getElementById("employeeUsername").value = employee.username || "";
+      document.getElementById("employeePassword").value = "";
+      document.getElementById("employeeActive").checked = Boolean(employee.active);
+      document.getElementById("employeeFormTitle").textContent = "Editar empleado";
+      document.getElementById("saveEmployeeButton").textContent = "Actualizar empleado";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetEmployeeForm(clearMessage = true) {
+      document.getElementById("employeeId").value = "";
+      document.getElementById("employeeName").value = "";
+      document.getElementById("employeeUsername").value = "";
+      document.getElementById("employeePassword").value = "";
+      document.getElementById("employeeActive").checked = true;
+      document.getElementById("employeeFormTitle").textContent = "Añadir empleado";
+      document.getElementById("saveEmployeeButton").textContent = "Guardar empleado";
+      if (clearMessage) setMessage("employeeMessage", "", "");
+    }
+
+    async function deleteEmployee(id) {
+      const employee = employeesCache.find((item) => item.id === id);
+      if (!confirm(`¿Eliminar al empleado "${employee?.name || ""}"?\n\nSu historial de escaneos se conservará.`)) return;
+      try {
+        await adminFetch(`/api/admin/employees/${id}`, { method: "DELETE" });
+        resetEmployeeForm(); await loadEmployees(); await loadCheckins(); alert("Empleado eliminado correctamente.");
+      } catch (error) { alert(error.message); }
+    }
+
+    async function loadCheckins() {
+      try {
+        const checkins = await adminFetch("/api/admin/checkins?limit=200");
+        renderCheckins(Array.isArray(checkins) ? checkins : []);
+      } catch (error) { setMessage("employeeMessage", "error", error.message); }
+    }
+
+    function renderCheckins(checkins) {
+      const rows = document.getElementById("checkinRows");
+      const empty = document.getElementById("checkinEmptyMessage");
+      rows.innerHTML = "";
+      if (!checkins.length) { empty.style.display = "block"; return; }
+      empty.style.display = "none";
+      checkins.forEach((checkin) => {
+        const row = document.createElement("tr");
+        const scannedAt = checkin.scannedAt ? new Date(checkin.scannedAt).toLocaleString("es-PR") : "—";
+        const seats = Array.isArray(checkin.seats) ? checkin.seats.join(", ") : "—";
+        row.innerHTML = `
+          <td>${escapeHtml(scannedAt)}</td>
+          <td><strong>${escapeHtml(checkin.employeeName || "—")}</strong><br><span class="muted">${escapeHtml(checkin.employeeUsername || "—")}</span></td>
+          <td>${escapeHtml(checkin.movie || "—")}</td>
+          <td>${escapeHtml(checkin.showTime || "—")}</td>
+          <td>${escapeHtml(seats)}</td>
+          <td><strong>${Number(checkin.seatsCount || 0)}</strong></td>`;
+        rows.appendChild(row);
+      });
     }
 
     async function changePassword() {
