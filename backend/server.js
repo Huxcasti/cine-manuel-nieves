@@ -110,7 +110,7 @@ const posterUpload = multer({
 const trailerUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 250 * 1024 * 1024
+    fileSize: 50 * 1024 * 1024
   },
   fileFilter: (req, file, callback) => {
     const allowedTypes = new Set([
@@ -1738,6 +1738,8 @@ app.post(
 /*
 ==================================================
 SUBIR TRÃILER
+Mantiene un solo trÃ¡iler almacenado.
+Antes de subir uno nuevo, elimina el anterior.
 ==================================================
 */
 
@@ -1759,27 +1761,92 @@ app.post(
           req.file.mimetype
         );
 
+      const folderName = "current";
+
+      const {
+        data: existingFiles,
+        error: listError
+      } = await supabase.storage
+        .from(SUPABASE_TRAILERS_BUCKET)
+        .list(
+          folderName,
+          {
+            limit: 100,
+            offset: 0
+          }
+        );
+
+      if (listError) {
+        console.error(
+          "Error consultando trÃ¡ilers anteriores:",
+          listError
+        );
+
+        return res.status(502).json({
+          error:
+            "No se pudo revisar el almacenamiento de trÃ¡ilers. Verifica que el bucket trailers exista y sea pÃºblico."
+        });
+      }
+
+      if (
+        Array.isArray(existingFiles) &&
+        existingFiles.length > 0
+      ) {
+        const pathsToRemove =
+          existingFiles
+            .filter(
+              (file) =>
+                file?.name &&
+                file.name !== ".emptyFolderPlaceholder"
+            )
+            .map(
+              (file) =>
+                `${folderName}/${file.name}`
+            );
+
+        if (pathsToRemove.length > 0) {
+          const {
+            error: removeError
+          } = await supabase.storage
+            .from(SUPABASE_TRAILERS_BUCKET)
+            .remove(pathsToRemove);
+
+          if (removeError) {
+            console.error(
+              "Error eliminando el trÃ¡iler anterior:",
+              removeError
+            );
+
+            return res.status(502).json({
+              error:
+                "No se pudo eliminar el trÃ¡iler anterior."
+            });
+          }
+        }
+      }
+
       const fileName =
         `${Date.now()}-` +
         `${crypto.randomUUID()}.` +
         `${extension}`;
 
       const filePath =
-        `movies/${fileName}`;
+        `${folderName}/${fileName}`;
 
-      const { error: uploadError } =
-        await supabase.storage
-          .from(SUPABASE_TRAILERS_BUCKET)
-          .upload(
-            filePath,
-            req.file.buffer,
-            {
-              contentType:
-                req.file.mimetype,
-              cacheControl: "31536000",
-              upsert: false
-            }
-          );
+      const {
+        error: uploadError
+      } = await supabase.storage
+        .from(SUPABASE_TRAILERS_BUCKET)
+        .upload(
+          filePath,
+          req.file.buffer,
+          {
+            contentType:
+              req.file.mimetype,
+            cacheControl: "3600",
+            upsert: false
+          }
+        );
 
       if (uploadError) {
         console.error(
@@ -1789,14 +1856,16 @@ app.post(
 
         return res.status(502).json({
           error:
+            uploadError.message ||
             "No se pudo subir el trÃ¡iler a Supabase Storage."
         });
       }
 
-      const { data: publicUrlData } =
-        supabase.storage
-          .from(SUPABASE_TRAILERS_BUCKET)
-          .getPublicUrl(filePath);
+      const {
+        data: publicUrlData
+      } = supabase.storage
+        .from(SUPABASE_TRAILERS_BUCKET)
+        .getPublicUrl(filePath);
 
       if (!publicUrlData?.publicUrl) {
         return res.status(500).json({
@@ -1805,8 +1874,18 @@ app.post(
         });
       }
 
+      await pool.query(
+        `
+          UPDATE movies
+          SET trailer_url = NULL
+          WHERE trailer_url IS NOT NULL;
+        `
+      );
+
       res.status(201).json({
         success: true,
+        message:
+          "TrÃ¡iler anterior eliminado y nuevo trÃ¡iler subido correctamente.",
         trailerUrl:
           publicUrlData.publicUrl,
         path: filePath
@@ -3442,7 +3521,7 @@ app.use((error, req, res, next) => {
 
       return res.status(413).json({
         error: isTrailer
-          ? "El trÃ¡iler es demasiado grande. El mÃ¡ximo es 250 MB."
+          ? "El trÃ¡iler es demasiado grande. El mÃ¡ximo permitido es 50 MB."
           : "El afiche es demasiado grande. El mÃ¡ximo es 6 MB."
       });
     }
