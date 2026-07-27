@@ -1012,6 +1012,75 @@
       }
     }
 
+
+    .social-section {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .social-title {
+      margin-bottom: 12px;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .social-link {
+      display: inline-flex;
+      min-width: 150px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border: 1px solid #334565;
+      border-radius: 12px;
+      background: #111827;
+      color: #ffffff;
+      font-weight: 900;
+      text-decoration: none;
+      transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        background 0.18s ease;
+    }
+
+    .social-link:hover {
+      border-color: var(--aqua);
+      background: #172238;
+      transform: translateY(-2px);
+    }
+
+    .social-icon {
+      display: block;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
+      border-radius: 8px;
+      object-fit: contain;
+      background: transparent;
+    }
+
+    @media (max-width: 520px) {
+      .social-links {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .social-link {
+        min-width: 0;
+        width: 100%;
+        padding: 12px 10px;
+      }
+    }
+
     @media print {
       body {
         background: white;
@@ -1447,6 +1516,42 @@
       <strong>Cine Teatro Manuel Nieves Quintero</strong>
       <br />
       Corozal, Puerto Rico
+
+      <div class="social-section">
+        <p class="social-title">Síguenos en nuestras redes</p>
+
+        <div class="social-links">
+          <a
+            class="social-link"
+            href="https://www.facebook.com/share/18iNJBPEJ9/?mibextid=wwXIfr"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook del Cine Teatro Manuel Nieves Quintero"
+          >
+            <img
+              class="social-icon"
+              src="Facebook.PNG"
+              alt="Facebook"
+            />
+            Facebook
+          </a>
+
+          <a
+            class="social-link"
+            href="https://www.instagram.com/cineteatrocorozal?igsh=d2Voc3lqODNhdWFs"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram del Cine Teatro Manuel Nieves Quintero"
+          >
+            <img
+              class="social-icon"
+              src="Instagram.PNG"
+              alt="Instagram"
+            />
+            Instagram
+          </a>
+        </div>
+      </div>
     </div>
   </footer>
 
