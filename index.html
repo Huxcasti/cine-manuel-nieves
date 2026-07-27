@@ -298,6 +298,31 @@
       font-weight: 800;
     }
 
+    .coming-soon-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      padding: 7px 11px;
+      border: 1px solid rgba(255, 198, 42, 0.52);
+      border-radius: 999px;
+      background: rgba(20, 14, 0, 0.9);
+      color: #fde68a;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+    }
+
+    .coming-soon-message {
+      padding: 13px;
+      border: 1px solid rgba(255, 198, 42, 0.34);
+      border-radius: 11px;
+      background: rgba(255, 198, 42, 0.08);
+      color: #fde68a;
+      line-height: 1.5;
+      text-align: center;
+      font-weight: 800;
+    }
+
     .movie-status {
       position: absolute;
       top: 14px;
@@ -1557,10 +1582,13 @@
       const availableMovies =
         movies.filter(
           (movie) =>
-            Array.isArray(
-              movie.showtimes
-            ) &&
-            movie.showtimes.length > 0
+            movie.comingSoon ||
+            (
+              Array.isArray(
+                movie.showtimes
+              ) &&
+              movie.showtimes.length > 0
+            )
         );
 
       if (
@@ -1610,7 +1638,9 @@
             "Sin clasificación";
 
           const buttons =
-            movie.showtimes
+            movie.comingSoon
+              ? ""
+              : movie.showtimes
               .map((showtime) => {
                 const label =
                   `${formatDate(
@@ -1642,8 +1672,14 @@
             <div class="movie-poster-wrapper">
               ${posterHtml}
 
+              ${
+                movie.comingSoon
+                  ? `<span class="coming-soon-badge">PRÓXIMAMENTE</span>`
+                  : ""
+              }
+
               <span class="movie-status">
-                Disponible
+                ${movie.comingSoon ? "Muy pronto" : "Disponible"}
               </span>
             </div>
 
@@ -1683,13 +1719,24 @@
                   : ""
               }
 
-              <p class="showtime-label">
-                Selecciona una tanda:
-              </p>
+              ${
+                movie.comingSoon
+                  ? `
+                    <div class="coming-soon-message">
+                      Próximamente en el Cine Teatro Manuel Nieves Quintero.
+                      Las tandas estarán disponibles más adelante.
+                    </div>
+                  `
+                  : `
+                    <p class="showtime-label">
+                      Selecciona una tanda:
+                    </p>
 
-              <div class="showtime-list">
-                ${buttons}
-              </div>
+                    <div class="showtime-list">
+                      ${buttons}
+                    </div>
+                  `
+              }
             </div>
           `;
 
