@@ -374,6 +374,69 @@
       background: var(--primary);
     }
 
+    .trailer-button {
+      width: 100%;
+      margin-bottom: 12px;
+      border: 1px solid rgba(73, 203, 197, 0.5);
+      border-radius: 11px;
+      padding: 11px 14px;
+      background: rgba(73, 203, 197, 0.12);
+      color: #9ff3ef;
+      font-weight: 900;
+    }
+
+    .trailer-button:hover {
+      background: rgba(73, 203, 197, 0.22);
+    }
+
+    .trailer-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0, 0, 0, 0.86);
+      backdrop-filter: blur(8px);
+    }
+
+    .trailer-modal.open {
+      display: flex;
+    }
+
+    .trailer-modal-content {
+      position: relative;
+      width: min(980px, 100%);
+      padding: 18px;
+      border: 1px solid rgba(73, 203, 197, 0.38);
+      border-radius: 20px;
+      background: #0b1220;
+      box-shadow: var(--shadow);
+    }
+
+    .trailer-modal video {
+      display: block;
+      width: 100%;
+      max-height: 78vh;
+      border-radius: 14px;
+      background: #000;
+    }
+
+    .close-trailer-button {
+      position: absolute;
+      top: -14px;
+      right: -10px;
+      width: 44px;
+      height: 44px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
     .card {
       margin-bottom: 20px;
       padding: 22px;
@@ -1330,6 +1393,30 @@
     </section>
   </main>
 
+  <div
+    class="trailer-modal"
+    id="trailerModal"
+    onclick="closeTrailerFromBackground(event)"
+  >
+    <div class="trailer-modal-content">
+      <button
+        class="close-trailer-button"
+        type="button"
+        onclick="closeTrailer()"
+        aria-label="Cerrar tráiler"
+      >
+        ×
+      </button>
+
+      <video
+        id="trailerPlayer"
+        controls
+        playsinline
+        preload="metadata"
+      ></video>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="container">
       <strong>Cine Teatro Manuel Nieves Quintero</strong>
@@ -1582,6 +1669,20 @@
                 )}
               </p>
 
+              ${
+                movie.trailerUrl
+                  ? `
+                    <button
+                      class="trailer-button"
+                      type="button"
+                      onclick="openTrailer('${movie.id}')"
+                    >
+                      ▶ Ver tráiler
+                    </button>
+                  `
+                  : ""
+              }
+
               <p class="showtime-label">
                 Selecciona una tanda:
               </p>
@@ -1624,6 +1725,76 @@
           "Afiche no disponible"
         )
       );
+    }
+
+    function openTrailer(movieId) {
+      const movie =
+        movies.find(
+          (item) => item.id === movieId
+        );
+
+      if (!movie?.trailerUrl) {
+        alert(
+          "Esta película todavía no tiene tráiler."
+        );
+        return;
+      }
+
+      const modal =
+        document.getElementById(
+          "trailerModal"
+        );
+
+      const player =
+        document.getElementById(
+          "trailerPlayer"
+        );
+
+      player.src =
+        movie.trailerUrl;
+
+      modal.classList.add(
+        "open"
+      );
+
+      document.body.style.overflow =
+        "hidden";
+
+      player.play().catch(() => {});
+    }
+
+    function closeTrailer() {
+      const modal =
+        document.getElementById(
+          "trailerModal"
+        );
+
+      const player =
+        document.getElementById(
+          "trailerPlayer"
+        );
+
+      player.pause();
+      player.removeAttribute("src");
+      player.load();
+
+      modal.classList.remove(
+        "open"
+      );
+
+      document.body.style.overflow =
+        "";
+    }
+
+    function closeTrailerFromBackground(
+      event
+    ) {
+      if (
+        event.target.id ===
+        "trailerModal"
+      ) {
+        closeTrailer();
+      }
     }
 
     async function selectShowtime(
