@@ -747,6 +747,188 @@
         flex: 1;
       }
     }
+
+
+    /* =========================================================
+       AJUSTE DE ANCHO DEL PANEL Y ÁREA DE EMPLEADOS
+       Hace que el encabezado, empleados e historial aprovechen
+       todo el ancho disponible sin dejar espacios vacíos.
+    ========================================================= */
+
+    body {
+      width: 100%;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #dashboard {
+      width: 100%;
+      max-width: none;
+    }
+
+    .dashboard-header {
+      width: 100%;
+      min-height: 122px;
+      padding: 24px;
+    }
+
+    .dashboard-brand {
+      flex: 1 1 auto;
+    }
+
+    .dashboard-logo {
+      width: 96px;
+      height: 78px;
+      flex-basis: 96px;
+      border-radius: 16px;
+    }
+
+    .dashboard-brand h1 {
+      font-size: clamp(27px, 3vw, 38px);
+    }
+
+    .dashboard-brand .subtitle {
+      max-width: 760px;
+      font-size: 16px;
+    }
+
+    .header-actions {
+      flex: 0 0 auto;
+      min-width: 350px;
+    }
+
+    .header-actions .btn {
+      flex: 1;
+      min-height: 52px;
+    }
+
+    .navigation {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .navigation button {
+      flex: 1 1 0;
+      text-align: center;
+    }
+
+    /* En empleados, las tarjetas ahora van una debajo de la otra
+       y ocupan el ancho completo. */
+    #employeesSection {
+      width: 100%;
+    }
+
+    #employeesSection > .grid-two {
+      display: grid;
+      grid-template-columns: 1fr;
+      width: 100%;
+      gap: 20px;
+    }
+
+    #employeesSection > .grid-two > .card,
+    #employeesSection > .card {
+      width: 100%;
+      max-width: none;
+    }
+
+    #employeesSection .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    #employeesSection table {
+      width: 100%;
+      min-width: 980px;
+      table-layout: auto;
+    }
+
+    #employeesSection th,
+    #employeesSection td {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    #employeesSection .section-header {
+      width: 100%;
+    }
+
+    @media (max-width: 850px) {
+      main,
+      #dashboard,
+      .dashboard-header,
+      #employeesSection,
+      #employeesSection > .grid-two,
+      #employeesSection > .grid-two > .card,
+      #employeesSection > .card {
+        width: 100%;
+        max-width: none;
+      }
+
+      .dashboard-header {
+        min-height: 0;
+        padding: 20px;
+      }
+
+      .header-actions {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .navigation {
+        justify-content: flex-start;
+      }
+
+      .navigation button {
+        flex: 0 0 auto;
+      }
+
+      #employeesSection table {
+        min-width: 900px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .dashboard-header {
+        padding: 18px;
+      }
+
+      .dashboard-logo {
+        width: 76px;
+        height: 62px;
+        flex-basis: 76px;
+      }
+
+      .dashboard-brand h1 {
+        font-size: 24px;
+      }
+
+      .dashboard-brand .subtitle {
+        font-size: 14px;
+      }
+
+      .header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .header-actions .btn {
+        width: 100%;
+      }
+
+      #employeesSection > .grid-two {
+        gap: 18px;
+      }
+
+      #employeesSection table {
+        min-width: 820px;
+      }
+    }
+
   </style>
 </head>
 
