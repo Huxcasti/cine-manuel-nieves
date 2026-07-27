@@ -45,6 +45,8 @@
     }
 
     body {
+      position: relative;
+      isolation: isolate;
       min-height: 100vh;
       overflow-x: hidden;
       font-family: Arial, Helvetica, sans-serif;
@@ -1266,6 +1268,76 @@
 
       .movie-poster-wrapper.poster-square {
         aspect-ratio: 1 / 1;
+      }
+    }
+
+
+    /* =========================================================
+       LOGO DECORATIVO FIJO EN EL FONDO
+       Usa el archivo Cineteatro.PNG subido a GitHub.
+    ========================================================= */
+
+    body::before {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      top: 50%;
+      right: clamp(28px, 7vw, 120px);
+      width: clamp(300px, 36vw, 620px);
+      aspect-ratio: 1 / 1;
+      background-image: url("Cineteatro.PNG");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 0.16;
+      filter:
+        saturate(1.05)
+        contrast(1.05);
+      pointer-events: none;
+      transform: translateY(-42%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -2;
+      inset: 0;
+      background:
+        radial-gradient(
+          circle at 78% 48%,
+          rgba(73, 203, 197, 0.08),
+          transparent 33%
+        );
+      pointer-events: none;
+    }
+
+    .site-header,
+    .movie-card,
+    .card,
+    .ticket,
+    .processing-card,
+    .loading-card,
+    .empty-card,
+    .error-card {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+      body::before {
+        right: 50%;
+        top: 60%;
+        width: min(76vw, 520px);
+        opacity: 0.10;
+        transform: translate(50%, -50%);
+      }
+    }
+
+    @media (max-width: 600px) {
+      body::before {
+        top: 57%;
+        width: 82vw;
+        opacity: 0.075;
       }
     }
 
