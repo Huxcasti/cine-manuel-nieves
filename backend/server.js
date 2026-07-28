@@ -2439,10 +2439,10 @@ app.post(
         `
           SELECT *
           FROM tickets
-          WHERE qr = $1
+          WHERE qr = $1 OR manual_code = $1
           FOR UPDATE;
         `,
-        [qr.trim()]
+        [code]
       );
 
       if (ticketResult.rowCount === 0) {
