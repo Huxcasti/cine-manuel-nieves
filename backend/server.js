@@ -24,6 +24,16 @@ const SUPABASE_TRAILERS_BUCKET =
   process.env.SUPABASE_TRAILERS_BUCKET ||
   SUPABASE_POSTERS_BUCKET;
 
+// PayPal y ATH Móvil
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || "";
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
+const PAYPAL_MODE = String(process.env.PAYPAL_MODE || "sandbox").toLowerCase();
+const PAYPAL_CURRENCY = String(process.env.PAYPAL_CURRENCY || "USD").toUpperCase();
+const ATH_MOVIL_PHONE = process.env.ATH_MOVIL_PHONE || "";
+const PAYPAL_API_BASE = PAYPAL_MODE === "live"
+  ? "https://api-m.paypal.com"
+  : "https://api-m.sandbox.paypal.com";
+
 app.use(cors());
 app.use(express.json());
 
@@ -280,6 +290,63 @@ async function requireEmployee(req, res, next) {
 
 /*
 ==================================================
+PAYPAL
+==================================================
+*/
+
+function paypalIsConfigured() {
+  return Boolean(PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET);
+}
+
+async function paypalRequest(path, options = {}) {
+  if (!paypalIsConfigured()) {
+    throw new Error("PayPal no está configurado en el servidor.");
+  }
+
+  const basicAuth = Buffer.from(
+    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
+  ).toString("base64");
+
+  const tokenResponse = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basicAuth}`,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "grant_type=client_credentials"
+  });
+
+  const tokenData = await tokenResponse.json().catch(() => ({}));
+
+  if (!tokenResponse.ok || !tokenData.access_token) {
+    console.error("Error obteniendo token de PayPal:", tokenData);
+    throw new Error("No se pudo autenticar con PayPal.");
+  }
+
+  const response = await fetch(`${PAYPAL_API_BASE}${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error("Error de PayPal:", response.status, data);
+    const detail = Array.isArray(data.details) && data.details[0]
+      ? data.details[0].description || data.details[0].issue
+      : "";
+    throw new Error(detail || data.message || "PayPal rechazó la solicitud.");
+  }
+
+  return data;
+}
+
+/*
+==================================================
 FORMATEADORES
 ==================================================
 */
@@ -319,6 +386,7 @@ function formatTicket(row) {
     total: Number(row.total),
     customer: row.customer,
     paymentStatus: row.payment_status,
+    paymentMethod: row.customer?.paymentMethod || "",
     qr: row.qr,
     manualCode: row.manual_code || "",
     used: row.used,
@@ -1900,6 +1968,7 @@ app.post("/api/reservations", async (req, res) => {
       showtimeId,
       seats,
       ticketTypes,
+      paymentMethod = "",
       customer
     } = req.body;
 
@@ -2086,7 +2155,10 @@ app.post("/api/reservations", async (req, res) => {
       name: customerName,
       email: customerEmail,
       phone: customerPhone,
-      showtimeId
+      showtimeId,
+      paymentMethod: ["paypal", "ath_movil"].includes(paymentMethod)
+        ? paymentMethod
+        : ""
     };
 
     const result = await client.query(
@@ -2151,6 +2223,245 @@ app.post("/api/reservations", async (req, res) => {
     });
   } finally {
     client.release();
+  }
+});
+
+/*
+==================================================
+PAYPAL CHECKOUT
+==================================================
+*/
+
+app.get("/api/paypal/config", (req, res) => {
+  res.json({
+    enabled: paypalIsConfigured(),
+    clientId: paypalIsConfigured() ? PAYPAL_CLIENT_ID : "",
+    currency: PAYPAL_CURRENCY,
+    mode: PAYPAL_MODE
+  });
+});
+
+app.post("/api/paypal/orders", async (req, res) => {
+  try {
+    if (!paypalIsConfigured()) {
+      return res.status(503).json({
+        error: "PayPal todavía no está configurado en Render."
+      });
+    }
+
+    const reservationId = String(req.body?.reservationId || "").trim();
+    if (!reservationId) {
+      return res.status(400).json({ error: "Falta la reservación." });
+    }
+
+    const ticketResult = await pool.query(
+      `SELECT * FROM tickets WHERE id = $1;`,
+      [reservationId]
+    );
+
+    if (ticketResult.rowCount === 0) {
+      return res.status(404).json({ error: "Reservación no encontrada." });
+    }
+
+    const ticket = ticketResult.rows[0];
+    if (ticket.payment_status !== "pending") {
+      return res.status(400).json({
+        error: "Esta reservación ya fue pagada o no puede procesarse."
+      });
+    }
+
+    if (ticket.customer?.paymentMethod !== "paypal") {
+      return res.status(400).json({
+        error: "La reservación no fue creada para PayPal."
+      });
+    }
+
+    const total = Number(ticket.total).toFixed(2);
+    const order = await paypalRequest("/v2/checkout/orders", {
+      method: "POST",
+      headers: {
+        "PayPal-Request-Id": `cine-${reservationId}`
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            custom_id: reservationId,
+            invoice_id: reservationId,
+            description: `Boletos - ${ticket.movie}`.slice(0, 127),
+            amount: {
+              currency_code: PAYPAL_CURRENCY,
+              value: total
+            }
+          }
+        ],
+        application_context: {
+          brand_name: "Cine Teatro Manuel Nieves Quintero",
+          shipping_preference: "NO_SHIPPING",
+          user_action: "PAY_NOW"
+        }
+      })
+    });
+
+    res.status(201).json({ orderId: order.id });
+  } catch (error) {
+    console.error("Error creando orden de PayPal:", error);
+    res.status(502).json({
+      error: error.message || "No se pudo crear la orden de PayPal."
+    });
+  }
+});
+
+app.post("/api/paypal/orders/:orderId/capture", async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const orderId = String(req.params.orderId || "").trim();
+    const reservationId = String(req.body?.reservationId || "").trim();
+
+    if (!orderId || !reservationId) {
+      return res.status(400).json({
+        error: "Faltan los datos de la orden de PayPal."
+      });
+    }
+
+    const capture = await paypalRequest(
+      `/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`,
+      {
+        method: "POST",
+        headers: {
+          "PayPal-Request-Id": `capture-${orderId}`
+        },
+        body: "{}"
+      }
+    );
+
+    const purchaseUnit = capture.purchase_units?.[0];
+    const capturedPayment = purchaseUnit?.payments?.captures?.[0];
+    const capturedAmount = capturedPayment?.amount;
+    const paypalReservationId = purchaseUnit?.custom_id;
+
+    if (capture.status !== "COMPLETED" || capturedPayment?.status !== "COMPLETED") {
+      return res.status(400).json({
+        error: "PayPal no confirmó el pago como completado."
+      });
+    }
+
+    if (paypalReservationId !== reservationId) {
+      return res.status(400).json({
+        error: "La orden de PayPal no corresponde a esta reservación."
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const ticketResult = await client.query(
+      `SELECT * FROM tickets WHERE id = $1 FOR UPDATE;`,
+      [reservationId]
+    );
+
+    if (ticketResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Reservación no encontrada." });
+    }
+
+    const ticket = ticketResult.rows[0];
+    const expectedAmount = Number(ticket.total).toFixed(2);
+
+    if (
+      capturedAmount?.currency_code !== PAYPAL_CURRENCY ||
+      Number(capturedAmount?.value).toFixed(2) !== expectedAmount
+    ) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        error: "El total confirmado por PayPal no coincide con la reservación."
+      });
+    }
+
+    if (ticket.payment_status === "paid" || ticket.payment_status === "approved") {
+      await client.query("COMMIT");
+      return res.json({
+        success: true,
+        reservation: formatTicket(ticket)
+      });
+    }
+
+    const updatedCustomer = {
+      ...(ticket.customer || {}),
+      paymentMethod: "paypal",
+      paypalOrderId: orderId,
+      paypalCaptureId: capturedPayment.id || "",
+      paypalPayerEmail: capture.payer?.email_address || ""
+    };
+
+    const updateResult = await client.query(
+      `
+        UPDATE tickets
+        SET payment_status = 'paid', customer = $2
+        WHERE id = $1
+        RETURNING *;
+      `,
+      [reservationId, JSON.stringify(updatedCustomer)]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      reservation: formatTicket(updateResult.rows[0])
+    });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("Error capturando pago de PayPal:", error);
+    res.status(502).json({
+      error: error.message || "No se pudo confirmar el pago de PayPal."
+    });
+  } finally {
+    client.release();
+  }
+});
+
+/*
+==================================================
+ATH MÓVIL MANUAL
+==================================================
+*/
+
+app.post("/api/reservations/:id/ath-movil/submit", async (req, res) => {
+  try {
+    const id = String(req.params.id || "").trim();
+    const result = await pool.query(
+      `SELECT * FROM tickets WHERE id = $1;`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Reservación no encontrada." });
+    }
+
+    const ticket = result.rows[0];
+    if (ticket.customer?.paymentMethod !== "ath_movil") {
+      return res.status(400).json({
+        error: "La reservación no fue creada para ATH Móvil."
+      });
+    }
+
+    if (ticket.payment_status !== "pending") {
+      return res.status(400).json({
+        error: "Esta reservación ya fue procesada."
+      });
+    }
+
+    res.json({
+      success: true,
+      athMovilPhone: ATH_MOVIL_PHONE,
+      reservation: formatTicket(ticket)
+    });
+  } catch (error) {
+    console.error("Error registrando pago ATH Móvil:", error);
+    res.status(500).json({
+      error: "No se pudo registrar el pago enviado por ATH Móvil."
+    });
   }
 });
 
