@@ -823,6 +823,108 @@
       background: #12351f;
     }
 
+
+
+    /* =========================================================
+       MÉTODOS DE PAGO
+    ========================================================= */
+
+    .payment-section {
+      margin: 8px 0 18px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel-dark);
+    }
+
+    .payment-section h3 {
+      margin-bottom: 14px;
+      font-size: 18px;
+    }
+
+    .payment-methods {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .payment-option {
+      display: flex;
+      min-height: 76px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px;
+      border: 2px solid #334565;
+      border-radius: 13px;
+      background: #111827;
+      color: white;
+      font-weight: 900;
+    }
+
+    .payment-option:hover {
+      border-color: var(--aqua);
+    }
+
+    .payment-option.selected {
+      border-color: var(--aqua);
+      background: rgba(73, 203, 197, 0.13);
+      box-shadow: 0 0 0 3px rgba(73, 203, 197, 0.10);
+    }
+
+    .payment-option img {
+      width: 46px;
+      height: 38px;
+      object-fit: contain;
+      border-radius: 7px;
+      background: white;
+    }
+
+    .payment-message,
+    .ath-payment-instructions {
+      margin-top: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .ath-payment-instructions {
+      display: none;
+      padding: 14px;
+      border: 1px solid rgba(73, 203, 197, 0.28);
+      border-radius: 12px;
+      background: rgba(73, 203, 197, 0.08);
+    }
+
+    .ath-payment-instructions.visible {
+      display: block;
+    }
+
+    #paypalButtonContainer {
+      display: none;
+      margin-top: 16px;
+      min-height: 45px;
+    }
+
+    #paypalButtonContainer.visible {
+      display: block;
+    }
+
+    .payment-status-box {
+      margin-top: 16px;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0c111d;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 520px) {
+      .payment-methods {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .processing-card {
       max-width: 560px;
       margin: 90px auto;
@@ -1846,6 +1948,47 @@
               required
             />
 
+
+
+            <div class="payment-section">
+              <h3>Selecciona tu método de pago</h3>
+
+              <div class="payment-methods">
+                <button
+                  class="payment-option"
+                  id="paypalOption"
+                  type="button"
+                  onclick="selectPaymentMethod('paypal')"
+                >
+                  <img src="PayPal.PNG" alt="PayPal" />
+                  <span>PayPal</span>
+                </button>
+
+                <button
+                  class="payment-option"
+                  id="athMovilOption"
+                  type="button"
+                  onclick="selectPaymentMethod('ath_movil')"
+                >
+                  <img src="Athmovil.png" alt="ATH Móvil" />
+                  <span>ATH Móvil</span>
+                </button>
+              </div>
+
+              <p class="payment-message" id="paymentMessage">
+                Selecciona cómo deseas pagar.
+              </p>
+
+              <div id="paypalButtonContainer"></div>
+
+              <div class="ath-payment-instructions" id="athInstructions">
+                <strong>Pago manual por ATH Móvil</strong>
+                <p id="athInstructionsText" style="margin-top: 7px;">
+                  Al continuar se reservarán tus asientos temporalmente y se mostrarán las instrucciones para completar el pago.
+                </p>
+              </div>
+            </div>
+
             <div
               class="form-message"
               id="customerMessage"
@@ -2078,6 +2221,10 @@
     };
     let occupiedSeats = [];
     let currentTicket = null;
+    let selectedPaymentMethod = null;
+    let pendingReservation = null;
+    let paypalButtonsRendered = false;
+    let paypalSdkPromise = null;
 
     function showPage(pageId) {
       document
@@ -3265,128 +3412,249 @@
       showPage("customerPage");
     }
 
+    function getCustomerData() {
+      return {
+        name: document.getElementById("customerName").value.trim(),
+        email: document.getElementById("customerEmail").value.trim(),
+        phone: document.getElementById("customerPhone").value.trim()
+      };
+    }
+
+    function validateCustomerAndPayment(requirePayment = true) {
+      const customer = getCustomerData();
+
+      if (!customer.name || !customer.email || !customer.phone) {
+        showCustomerMessage("error", "Completa todos los datos del cliente.");
+        return null;
+      }
+
+      if (requirePayment && !selectedPaymentMethod) {
+        showCustomerMessage("error", "Selecciona un método de pago.");
+        return null;
+      }
+
+      return customer;
+    }
+
+    function selectPaymentMethod(method) {
+      selectedPaymentMethod = method;
+      pendingReservation = null;
+
+      document.querySelectorAll(".payment-option").forEach((button) => {
+        button.classList.remove("selected");
+      });
+
+      document.getElementById("paypalOption").classList.toggle(
+        "selected",
+        method === "paypal"
+      );
+      document.getElementById("athMovilOption").classList.toggle(
+        "selected",
+        method === "ath_movil"
+      );
+
+      const paypalContainer = document.getElementById("paypalButtonContainer");
+      const athInstructions = document.getElementById("athInstructions");
+      const purchaseButton = document.getElementById("purchaseButton");
+
+      if (method === "paypal") {
+        document.getElementById("paymentMessage").textContent =
+          "Paga de forma segura con PayPal. El boleto se genera únicamente después de que PayPal confirme el pago.";
+        paypalContainer.classList.add("visible");
+        athInstructions.classList.remove("visible");
+        purchaseButton.style.display = "none";
+        initializePayPalButtons();
+      } else {
+        document.getElementById("paymentMessage").textContent =
+          "ATH Móvil se procesa manualmente. La reservación permanecerá pendiente hasta que el cine confirme el pago.";
+        paypalContainer.classList.remove("visible");
+        athInstructions.classList.add("visible");
+        purchaseButton.style.display = "block";
+        purchaseButton.textContent = "Reservar con ATH Móvil";
+      }
+
+      showCustomerMessage("", "");
+    }
+
+    async function createReservationRecord(paymentMethod) {
+      if (pendingReservation && pendingReservation.paymentMethod === paymentMethod) {
+        return pendingReservation;
+      }
+
+      const customer = validateCustomerAndPayment(false);
+      if (!customer) {
+        throw new Error("Completa todos los datos del cliente.");
+      }
+
+      const response = await fetch(`${API_URL}/api/reservations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          showtimeId: selectedShowtime.id,
+          seats: selectedSeats,
+          ticketTypes: selectedTicketTypes,
+          paymentMethod,
+          customer
+        })
+      });
+
+      const data = await readResponse(response);
+      pendingReservation = data.reservation;
+      return pendingReservation;
+    }
+
+    function loadPayPalSdk(clientId, currency) {
+      if (window.paypal) {
+        return Promise.resolve();
+      }
+
+      if (paypalSdkPromise) {
+        return paypalSdkPromise;
+      }
+
+      paypalSdkPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src =
+          `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}` +
+          `&currency=${encodeURIComponent(currency)}&intent=capture&components=buttons`;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("No se pudo cargar PayPal."));
+        document.head.appendChild(script);
+      });
+
+      return paypalSdkPromise;
+    }
+
+    async function initializePayPalButtons() {
+      if (paypalButtonsRendered) {
+        return;
+      }
+
+      const container = document.getElementById("paypalButtonContainer");
+      container.innerHTML = "Cargando PayPal…";
+
+      try {
+        const configResponse = await fetch(`${API_URL}/api/paypal/config`);
+        const config = await readResponse(configResponse);
+
+        if (!config.enabled || !config.clientId) {
+          throw new Error("PayPal todavía no está configurado en el servidor.");
+        }
+
+        await loadPayPalSdk(config.clientId, config.currency || "USD");
+        container.innerHTML = "";
+
+        window.paypal.Buttons({
+          style: {
+            layout: "vertical",
+            shape: "rect",
+            label: "paypal"
+          },
+
+          createOrder: async () => {
+            showCustomerMessage("", "");
+            const reservation = await createReservationRecord("paypal");
+            const response = await fetch(`${API_URL}/api/paypal/orders`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reservationId: reservation.id })
+            });
+            const order = await readResponse(response);
+            return order.orderId;
+          },
+
+          onApprove: async (data) => {
+            showPage("processingPage");
+            try {
+              const response = await fetch(
+                `${API_URL}/api/paypal/orders/${encodeURIComponent(data.orderID)}/capture`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ reservationId: pendingReservation.id })
+                }
+              );
+              const result = await readResponse(response);
+              currentTicket = result.reservation;
+              renderTicket(currentTicket);
+              showPage("ticketPage");
+            } catch (error) {
+              showPage("customerPage");
+              showCustomerMessage("error", error.message);
+            }
+          },
+
+          onCancel: () => {
+            showCustomerMessage("error", "El pago de PayPal fue cancelado. Tus asientos permanecen reservados temporalmente.");
+          },
+
+          onError: (error) => {
+            console.error("PayPal error:", error);
+            showCustomerMessage("error", "PayPal no pudo procesar el pago. Inténtalo nuevamente.");
+          }
+        }).render("#paypalButtonContainer");
+
+        paypalButtonsRendered = true;
+      } catch (error) {
+        container.innerHTML = "";
+        showCustomerMessage("error", error.message);
+      }
+    }
+
     async function createReservation(
       event
     ) {
       event.preventDefault();
 
-      const name =
-        document.getElementById(
-          "customerName"
-        ).value.trim();
-
-      const email =
-        document.getElementById(
-          "customerEmail"
-        ).value.trim();
-
-      const phone =
-        document.getElementById(
-          "customerPhone"
-        ).value.trim();
-
-      if (
-        !name ||
-        !email ||
-        !phone
-      ) {
-        showCustomerMessage(
-          "error",
-          "Completa todos los datos del cliente."
-        );
-
+      const customer = validateCustomerAndPayment(true);
+      if (!customer) {
         return;
       }
 
-      const button =
-        document.getElementById(
-          "purchaseButton"
-        );
-
-      button.disabled = true;
-      button.textContent =
-        "Procesando…";
-
-      showCustomerMessage("", "");
-      showPage("processingPage");
-
-      try {
-        const reservationResponse =
-          await fetch(
-            `${API_URL}/api/reservations`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-              body: JSON.stringify({
-                showtimeId:
-                  selectedShowtime.id,
-                seats:
-                  selectedSeats,
-                ticketTypes:
-                  selectedTicketTypes,
-                customer: {
-                  name,
-                  email,
-                  phone
-                }
-              })
-            }
-          );
-
-        const reservationData =
-          await readResponse(
-            reservationResponse
-          );
-
-        const reservation =
-          reservationData.reservation;
-
-        const paymentResponse =
-          await fetch(
-            `${API_URL}/api/reservations/` +
-            `${encodeURIComponent(
-              reservation.id
-            )}/pay`,
-            {
-              method: "POST"
-            }
-          );
-
-        const paymentData =
-          await readResponse(
-            paymentResponse
-          );
-
-        currentTicket =
-          paymentData.reservation;
-
-        renderTicket(
-          currentTicket
-        );
-
-        showPage("ticketPage");
-      } catch (error) {
-        showPage("customerPage");
-
+      if (selectedPaymentMethod === "paypal") {
         showCustomerMessage(
           "error",
-          error.message
+          "Usa el botón de PayPal para completar el pago."
         );
+        return;
+      }
 
-        if (
-          error.message
-            .toLowerCase()
-            .includes("asiento")
-        ) {
+      const button = document.getElementById("purchaseButton");
+      button.disabled = true;
+      button.textContent = "Creando reservación…";
+      showCustomerMessage("", "");
+
+      try {
+        const reservation = await createReservationRecord("ath_movil");
+        const response = await fetch(
+          `${API_URL}/api/reservations/${encodeURIComponent(reservation.id)}/ath-movil/submit`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ submitted: true })
+          }
+        );
+        const result = await readResponse(response);
+        pendingReservation = result.reservation;
+
+        const athNumber = result.athMovilPhone
+          ? ` al ${escapeHtml(result.athMovilPhone)}`
+          : "";
+
+        showCustomerMessage(
+          "success",
+          `Reservación creada. Envía $${Number(reservation.total).toFixed(2)} por ATH Móvil${athNumber}. ` +
+          `Usa como referencia ${reservation.manualCode || reservation.id}. ` +
+          "El boleto y el QR se habilitarán cuando el cine confirme el pago."
+        );
+        button.textContent = "Pago enviado para revisión";
+      } catch (error) {
+        showCustomerMessage("error", error.message);
+        if (error.message.toLowerCase().includes("asiento")) {
           await loadOccupiedSeats();
         }
       } finally {
         button.disabled = false;
-        button.textContent =
-          "Reservar y pagar";
       }
     }
 
@@ -3586,6 +3854,17 @@
       };
       occupiedSeats = [];
       currentTicket = null;
+      selectedPaymentMethod = null;
+      pendingReservation = null;
+
+      document.querySelectorAll(".payment-option").forEach((button) => {
+        button.classList.remove("selected");
+      });
+      document.getElementById("paypalButtonContainer").classList.remove("visible");
+      document.getElementById("athInstructions").classList.remove("visible");
+      document.getElementById("purchaseButton").style.display = "block";
+      document.getElementById("purchaseButton").textContent = "Reservar y pagar";
+      document.getElementById("paymentMessage").textContent = "Selecciona cómo deseas pagar.";
 
       document.getElementById(
         "customerName"
