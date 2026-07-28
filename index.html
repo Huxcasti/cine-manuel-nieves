@@ -1717,7 +1717,7 @@
           </div>
 
           <div class="loading-card" id="catalogLoading">
-            Cargando cartelera…
+            Cargando cartelera...
           </div>
 
           <div
@@ -1960,7 +1960,7 @@
                   type="button"
                   onclick="selectPaymentMethod('paypal')"
                 >
-                  <img src="PayPal.PNG" alt="PayPal" />
+                  <img src="paypal.png" alt="PayPal" />
                   <span>PayPal</span>
                 </button>
 
@@ -3531,7 +3531,7 @@
       }
 
       const container = document.getElementById("paypalButtonContainer");
-      container.innerHTML = "Cargando PayPal…";
+      container.innerHTML = "Cargando PayPal...";
 
       try {
         const configResponse = await fetch(`${API_URL}/api/paypal/config`);
@@ -3621,7 +3621,7 @@
 
       const button = document.getElementById("purchaseButton");
       button.disabled = true;
-      button.textContent = "Creando reservación…";
+      button.textContent = "Creando reservación...";
       showCustomerMessage("", "");
 
       try {
