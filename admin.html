@@ -1018,6 +1018,33 @@
       }
     }
 
+   .rating-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.rating-button {
+  border: 2px solid #3a4d70;
+  border-radius: 12px;
+  padding: 14px 8px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.rating-button:hover {
+  border-color: #49cbc5;
+}
+
+.rating-button.selected {
+  border-color: #49cbc5;
+  background: rgba(73, 203, 197, 0.18);
+  box-shadow: 0 0 0 3px rgba(73, 203, 197, 0.1);
+} 
+
   </style>
 </head>
 
@@ -1130,7 +1157,7 @@
         </button>
       </nav>
 
-      <p class="loading" id="loadingMessage">Cargando información…</p>
+      <p class="loading" id="loadingMessage">Cargando información...</p>
 
       <!-- RESERVACIONES -->
       <section id="reservationsSection" class="page-section active">
@@ -1276,9 +1303,27 @@
             <label for="movieDuration">Duración en minutos</label>
             <input id="movieDuration" type="number" min="1" placeholder="120" />
 
-            <label for="movieRating">Clasificación</label>
-            <input id="movieRating" type="text" placeholder="PG-13" />
+            <label>Clasificación</label>
 
+<div class="rating-options">
+  <button type="button" class="rating-button" onclick="selectRating('G', this)">
+    G
+  </button>
+
+  <button type="button" class="rating-button" onclick="selectRating('PG', this)">
+    PG
+  </button>
+
+  <button type="button" class="rating-button" onclick="selectRating('PG-13', this)">
+    PG-13
+  </button>
+
+  <button type="button" class="rating-button" onclick="selectRating('R', this)">
+    R
+  </button>
+</div>
+
+<input id="movieRating" type="hidden" value="" />
             <label class="checkbox-row">
               <input id="movieActive" type="checkbox" checked />
               Película activa y visible
@@ -1698,7 +1743,7 @@
       }
 
       loginButton.disabled = true;
-      loginButton.textContent = "Verificando…";
+      loginButton.textContent = "Verificando...";
       setMessage("loginMessage", "", "");
 
       try {
@@ -2046,8 +2091,8 @@
 
       const button = document.getElementById("uploadPosterButton");
       button.disabled = true;
-      button.textContent = "Subiendo…";
-      setMessage("movieMessage", "info", "Subiendo afiche…");
+      button.textContent = "Subiendo...";
+      setMessage("movieMessage", "info", "Subiendo afiche...");
 
       try {
         const formData = new FormData();
@@ -2162,12 +2207,12 @@
 
       button.disabled = true;
       button.textContent =
-        "Subiendo tráiler…";
+        "Subiendo tráiler...";
 
       setMessage(
         "movieMessage",
         "info",
-        "Subiendo tráiler. No cierres esta página…"
+        "Subiendo tráiler. No cierres esta página..."
       );
 
       try {
@@ -2245,7 +2290,7 @@
 
       const button = document.getElementById("saveMovieButton");
       button.disabled = true;
-      button.textContent = "Guardando…";
+      button.textContent = "Guardando...";
       setMessage("movieMessage", "", "");
 
       try {
@@ -2378,7 +2423,7 @@
 
       const button = document.getElementById("saveGlobalPricesButton");
       button.disabled = true;
-      button.textContent = "Guardando…";
+      button.textContent = "Guardando...";
       setMessage("globalPricesMessage", "", "");
 
       try {
@@ -2469,7 +2514,7 @@
 
       const button = document.getElementById("saveShowtimeButton");
       button.disabled = true;
-      button.textContent = "Guardando…";
+      button.textContent = "Guardando...";
       setMessage("showtimeMessage", "", "");
 
       try {
@@ -2639,7 +2684,7 @@
 
       const button = document.getElementById("saveEmployeeButton");
       button.disabled = true;
-      button.textContent = "Guardando…";
+      button.textContent = "Guardando...";
       setMessage("employeeMessage", "", "");
 
       try {
@@ -2773,7 +2818,7 @@
 
       const button = document.getElementById("changePasswordButton");
       button.disabled = true;
-      button.textContent = "Cambiando…";
+      button.textContent = "Cambiando...";
       setMessage("passwordMessage", "", "");
 
       try {
@@ -2842,6 +2887,17 @@
     });
 
     restoreSession();
+    function selectRating(rating, selectedButton) {
+  document.getElementById("movieRating").value = rating;
+
+  document
+    .querySelectorAll(".rating-button")
+    .forEach((button) => {
+      button.classList.remove("selected");
+    });
+
+  selectedButton.classList.add("selected");
+}
   </script>
 </body>
 </html>
