@@ -1683,6 +1683,65 @@
   text-decoration: underline;
 }
 
+.showtime-date-button {
+  width: 100%;
+  margin: 10px 0 12px;
+  border: 1px solid #36558e;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #17294d;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.showtime-date-button:hover {
+  border-color: #49cbc5;
+  background: #1d3768;
+}
+
+.showtime-date-menu {
+  display: none;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.showtime-date-menu.visible {
+  display: flex;
+}
+
+.showtime-date-menu button {
+  border: 1px solid #36558e;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #111827;
+  color: #dbeafe;
+  font-weight: 800;
+}
+
+.showtime-date-menu button:hover {
+  border-color: #49cbc5;
+  color: #9ff3ef;
+}
+
+.showtime-date-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.showtime-empty-message {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #111827;
+  color: #aab6cd;
+  text-align: center;
+}
+
   </style>
 </head>
 
@@ -2682,12 +2741,63 @@
                   `
                   : `
                     <p class="showtime-label">
-                      Selecciona una tanda:
-                    </p>
+  Selecciona una tanda:
+</p>
 
-                    <div class="showtime-list">
-                      ${buttons}
-                    </div>
+<button
+  class="showtime-date-button"
+  type="button"
+  onclick="openShowtimeDateSelector('${movie.id}')"
+>
+  📅 Escoger fecha
+</button>
+
+<input
+  class="showtime-date-input"
+  id="showtimeDate-${movie.id}"
+  type="date"
+  onchange="filterMovieShowtimesByDate('${movie.id}', this.value)"
+/>
+
+<div
+  class="showtime-date-menu"
+  id="showtimeDateMenu-${movie.id}"
+>
+  <button
+    type="button"
+    onclick="selectRelativeShowtimeDate('${movie.id}', 0)"
+  >
+    Hoy
+  </button>
+
+  <button
+    type="button"
+    onclick="selectRelativeShowtimeDate('${movie.id}', 1)"
+  >
+    Mañana
+  </button>
+
+  <button
+    type="button"
+    onclick="selectRelativeShowtimeDate('${movie.id}', 2)"
+  >
+    Pasado mañana
+  </button>
+
+  <button
+    type="button"
+    onclick="openShowtimeCalendar('${movie.id}')"
+  >
+    Abrir calendario
+  </button>
+</div>
+
+<div
+  class="showtime-list"
+  id="showtimeList-${movie.id}"
+>
+  ${buttons}
+</div>
                   `
               }
             </div>
@@ -4060,6 +4170,141 @@
     expanded
       ? "Ver menos"
       : "Ver más...";
+}
+
+function openShowtimeDateSelector(movieId) {
+  const menu = document.getElementById(
+    `showtimeDateMenu-${movieId}`
+  );
+
+  if (!menu) {
+    return;
+  }
+
+  menu.classList.toggle("visible");
+}
+
+function selectRelativeShowtimeDate(movieId, daysToAdd) {
+  const date = new Date();
+
+  date.setDate(
+    date.getDate() + Number(daysToAdd)
+  );
+
+  const selectedDate =
+    date.toLocaleDateString(
+      "en-CA",
+      {
+        timeZone: "America/Puerto_Rico"
+      }
+    );
+
+  const input = document.getElementById(
+    `showtimeDate-${movieId}`
+  );
+
+  if (input) {
+    input.value = selectedDate;
+  }
+
+  filterMovieShowtimesByDate(
+    movieId,
+    selectedDate
+  );
+}
+
+function openShowtimeCalendar(movieId) {
+  const input = document.getElementById(
+    `showtimeDate-${movieId}`
+  );
+
+  if (!input) {
+    return;
+  }
+
+  if (typeof input.showPicker === "function") {
+    input.showPicker();
+  } else {
+    input.click();
+  }
+}
+
+function filterMovieShowtimesByDate(
+  movieId,
+  selectedDate
+) {
+  const movie = movies.find(
+    (item) => item.id === movieId
+  );
+
+  const list = document.getElementById(
+    `showtimeList-${movieId}`
+  );
+
+  if (!movie || !list) {
+    return;
+  }
+
+  const filteredShowtimes =
+    movie.showtimes.filter(
+      (showtime) =>
+        normalizeDate(showtime.showDate) ===
+        selectedDate
+    );
+
+  if (filteredShowtimes.length === 0) {
+    list.innerHTML = `
+      <div class="showtime-empty-message">
+        No hay tandas registradas para esta fecha.
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML =
+    filteredShowtimes
+      .map((showtime) => {
+        const label =
+          `${formatDate(showtime.showDate)} · ` +
+          `${formatTime(showtime.showTime)}`;
+
+        const expired =
+          isShowtimeExpired(showtime);
+
+        return `
+          <button
+            class="showtime-button ${
+              expired
+                ? "showtime-expired"
+                : ""
+            }"
+            type="button"
+            ${
+              expired
+                ? "disabled"
+                : `onclick="selectShowtime(
+                    '${movie.id}',
+                    '${showtime.id}'
+                  )"`
+            }
+          >
+            <span>
+              ${
+                expired
+                  ? `${escapeHtml(label)} · CERRADA`
+                  : escapeHtml(label)
+              }
+            </span>
+
+            <span class="showtime-language">
+              ${escapeHtml(
+                getShowtimeLanguageLabel(showtime)
+              )}
+            </span>
+          </button>
+        `;
+      })
+      .join("");
 }
 
   </script>
