@@ -1663,6 +1663,26 @@
         color: black;
       }
     }
+
+.movie-description.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.description-toggle {
+  margin-bottom: 14px;
+  border: none;
+  background: transparent;
+  color: #49cbc5;
+  font-weight: 900;
+  text-align: left;
+}
+
+.description-toggle:hover {
+  text-decoration: underline;
+}
+
   </style>
 </head>
 
@@ -2623,13 +2643,21 @@
                 </span>
               </div>
 
-              <p class="movie-description">
+              <p class="movie-description"
+
+  id="description-${movie.id}">
                 ${escapeHtml(
                   movie.description ||
                   "Información próximamente."
                 )}
               </p>
-
+<button
+  class="description-toggle"
+  type="button"
+  onclick="toggleMovieDescription('${movie.id}', this)"
+>
+  Ver más...
+</button>
               ${
                 movie.trailerUrl
                   ? `
@@ -4015,6 +4043,25 @@
         renderMovies();
       }
     }, 30_000);
+
+    function toggleMovieDescription(movieId, button) {
+  const description = document.getElementById(
+    `description-${movieId}`
+  );
+
+  if (!description) {
+    return;
+  }
+
+  const expanded =
+    description.classList.toggle("expanded");
+
+  button.textContent =
+    expanded
+      ? "Ver menos"
+      : "Ver más...";
+}
+
   </script>
 </body>
 </html>
