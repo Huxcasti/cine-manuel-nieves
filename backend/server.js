@@ -267,7 +267,7 @@ async function requireEmployee(req, res, next) {
   try {
     const token = req.headers["x-employee-token"];
     if (!token || typeof token !== "string") {
-      return res.status(401).json({ error: "Debes iniciar sesiÃ³n como empleado." });
+      return res.status(401).json({ error: "Debes iniciar sesiÃ3n como empleado." });
     }
     const tokenHash = hashSessionToken(token);
     const result = await pool.query(`
@@ -277,14 +277,14 @@ async function requireEmployee(req, res, next) {
       WHERE s.token_hash = $1 AND s.expires_at > NOW() AND e.active = TRUE;
     `, [tokenHash]);
     if (result.rowCount === 0) {
-      return res.status(401).json({ error: "La sesiÃ³n del empleado expirÃ³ o no es vÃ¡lida." });
+      return res.status(401).json({ error: "La sesiÃ3n del empleado expirÃ3 o no es vÃ¡lida." });
     }
     req.employee = result.rows[0];
     req.employeeTokenHash = tokenHash;
     next();
   } catch (error) {
     console.error("Error verificando al empleado:", error);
-    res.status(500).json({ error: "No se pudo verificar la sesiÃ³n del empleado." });
+    res.status(500).json({ error: "No se pudo verificar la sesiÃ3n del empleado." });
   }
 }
 
@@ -373,7 +373,7 @@ async function generateUniqueManualCode(client) {
   }
 
   throw new Error(
-    "No se pudo generar un cÃ³digo manual Ãºnico."
+    "No se pudo generar un cÃ3digo manual Ãonico."
   );
 }
 
@@ -406,6 +406,7 @@ function formatMovie(row) {
     title: row.title,
     description: row.description,
     posterUrl: row.poster_url,
+    trailerUrl: row.trailer_url,
     durationMinutes: row.duration_minutes,
     rating: row.rating,
     active: row.active,
@@ -504,12 +505,18 @@ async function initializeDatabase() {
       title TEXT NOT NULL,
       description TEXT,
       poster_url TEXT,
+      trailer_url TEXT,
       duration_minutes INTEGER,
       rating TEXT,
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await pool.query(`
+  ALTER TABLE movies
+  ADD COLUMN IF NOT EXISTS trailer_url TEXT;
+`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS showtimes (
@@ -917,10 +924,10 @@ app.post("/api/admin/login", async (req, res) => {
       message: "Acceso autorizado."
     });
   } catch (error) {
-    console.error("Error iniciando sesiÃ³n:", error);
+    console.error("Error iniciando sesiÃ3n:", error);
 
     res.status(500).json({
-      error: "No se pudo iniciar sesiÃ³n."
+      error: "No se pudo iniciar sesiÃ3n."
     });
   }
 });
@@ -1019,8 +1026,8 @@ app.post("/api/employee/login", async (req, res) => {
     await pool.query(`INSERT INTO employee_sessions (id, employee_id, token_hash, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '12 hours');`, [crypto.randomUUID(), employee.id, hashSessionToken(token)]);
     res.json({ success: true, token, expiresInHours: 12, employee: { id: employee.id, name: employee.name, username: employee.username } });
   } catch (error) {
-    console.error("Error iniciando sesiÃ³n de empleado:", error);
-    res.status(500).json({ error: "No se pudo iniciar la sesiÃ³n." });
+    console.error("Error iniciando sesiÃ3n de empleado:", error);
+    res.status(500).json({ error: "No se pudo iniciar la sesiÃ3n." });
   }
 });
 
@@ -1031,10 +1038,10 @@ app.get("/api/employee/me", requireEmployee, async (req, res) => {
 app.post("/api/employee/logout", requireEmployee, async (req, res) => {
   try {
     await pool.query(`DELETE FROM employee_sessions WHERE token_hash = $1;`, [req.employeeTokenHash]);
-    res.json({ success: true, message: "SesiÃ³n cerrada correctamente." });
+    res.json({ success: true, message: "SesiÃ3n cerrada correctamente." });
   } catch (error) {
-    console.error("Error cerrando sesiÃ³n de empleado:", error);
-    res.status(500).json({ error: "No se pudo cerrar la sesiÃ³n." });
+    console.error("Error cerrando sesiÃ3n de empleado:", error);
+    res.status(500).json({ error: "No se pudo cerrar la sesiÃ3n." });
   }
 });
 
@@ -1065,7 +1072,7 @@ app.post("/api/admin/employees", requireAdmin, async (req, res) => {
     const password = req.body?.password;
     const active = req.body?.active !== false;
     if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
-    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, nÃºmeros, punto, guion o guion bajo." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, nÃomeros, punto, guion o guion bajo." });
     if (typeof password !== "string" || password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
     const credentials = await hashPassword(password);
     const result = await pool.query(`INSERT INTO employees (id,name,username,password_salt,password_hash,active) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`, [crypto.randomUUID(),name,username,credentials.salt,credentials.hash,Boolean(active)]);
@@ -1186,7 +1193,7 @@ app.post(
       if (!publicUrlData?.publicUrl) {
         return res.status(500).json({
           error:
-            "El afiche se subiÃ³, pero no se pudo obtener su URL pÃºblica."
+            "El afiche se subiÃ3, pero no se pudo obtener su URL pÃoblica."
         });
       }
 
@@ -1245,6 +1252,7 @@ app.post(
         title,
         description = "",
         posterUrl = "",
+        trailerUrl = "",
         durationMinutes = null,
         rating = "",
         active = true
@@ -1268,7 +1276,7 @@ app.post(
       ) {
         return res.status(400).json({
           error:
-            "La duraciÃ³n debe ser un nÃºmero entero mayor que cero."
+            "La duraciÃ3n debe ser un nÃomero entero mayor que cero."
         });
       }
 
@@ -1281,11 +1289,12 @@ app.post(
             title,
             description,
             poster_url,
+            trailer_url,
             duration_minutes,
             rating,
             active
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING *;
         `,
         [
@@ -1293,6 +1302,7 @@ app.post(
           title.trim(),
           description.trim(),
           posterUrl.trim(),
+          trailerUrl.trim(),
           durationMinutes === null
             ? null
             : Number(durationMinutes),
@@ -1328,6 +1338,7 @@ app.put(
         title,
         description = "",
         posterUrl = "",
+        trailerUrl = "",
         durationMinutes = null,
         rating = "",
         active = true
@@ -1351,7 +1362,7 @@ app.put(
       ) {
         return res.status(400).json({
           error:
-            "La duraciÃ³n debe ser un nÃºmero entero mayor que cero."
+            "La duraciÃ3n debe ser un nÃomero entero mayor que cero."
         });
       }
 
@@ -1362,16 +1373,18 @@ app.put(
             title = $1,
             description = $2,
             poster_url = $3,
-            duration_minutes = $4,
-            rating = $5,
-            active = $6
-          WHERE id = $7
+            trailer_url = $4,
+            duration_minutes = $5,
+            rating = $6,
+            active = $7
+          WHERE id = $8
           RETURNING *;
         `,
         [
           title.trim(),
           description.trim(),
           posterUrl.trim(),
+          trailerUrl.trim(),
           durationMinutes === null
             ? null
             : Number(durationMinutes),
@@ -2214,12 +2227,12 @@ app.post("/api/reservations", async (req, res) => {
     await client.query("ROLLBACK");
 
     console.error(
-      "Error creando la reservaciÃ³n:",
+      "Error creando la reservaciÃ3n:",
       error
     );
 
     res.status(500).json({
-      error: "No se pudo crear la reservaciÃ³n."
+      error: "No se pudo crear la reservaciÃ3n."
     });
   } finally {
     client.release();
@@ -2501,13 +2514,13 @@ app.post(
 
         if (existingResult.rowCount === 0) {
           return res.status(404).json({
-            error: "ReservaciÃ³n no encontrada."
+            error: "ReservaciÃ3n no encontrada."
           });
         }
 
         return res.status(400).json({
           error:
-            "La reservaciÃ³n ya fue pagada o no puede procesarse."
+            "La reservaciÃ3n ya fue pagada o no puede procesarse."
         });
       }
 
@@ -2653,7 +2666,7 @@ app.get("/api/qr/:qr", async (req, res) => {
     });
   } catch (error) {
     console.error(
-      "Error validando el cÃ³digo QR:",
+      "Error validando el cÃ3digo QR:",
       error
     );
 
@@ -2682,7 +2695,7 @@ app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
 
     if (!code) {
       return res.status(400).json({
-        error: "El cÃ³digo del boleto es obligatorio."
+        error: "El cÃ3digo del boleto es obligatorio."
       });
     }
 
@@ -2740,7 +2753,7 @@ app.post(
 
       if (!code) {
         return res.status(400).json({
-          error: "El cÃ³digo del boleto es obligatorio."
+          error: "El cÃ3digo del boleto es obligatorio."
         });
       }
 
@@ -2885,7 +2898,7 @@ app.post(
       if (!publicUrlData?.publicUrl) {
         return res.status(500).json({
           error:
-            "El trÃ¡iler se subiÃ³, pero no se pudo obtener su URL pÃºblica."
+            "El trÃ¡iler se subiÃ3, pero no se pudo obtener su URL pÃoblica."
         });
       }
 
@@ -2963,7 +2976,7 @@ app.use((error, req, res, next) => {
   }
 
   res.status(500).json({
-    error: "OcurriÃ³ un error inesperado."
+    error: "OcurriÃ3 un error inesperado."
   });
 });
 
