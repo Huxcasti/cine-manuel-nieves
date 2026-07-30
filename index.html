@@ -1,4 +1,4 @@
-		<!DOCTYPE html>
+				<!DOCTYPE html>
 		<html lang="es">
 		<head>
   <!-- MAPA OFICIAL 193 ASIENTOS - VERSION 2026-07-30 -->
@@ -721,6 +721,7 @@
             }
 
             .official-seat:hover:not(:disabled) { filter: brightness(1.12); }
+            .official-seat { touch-action: manipulation; }
             .official-seat.selected { border-color: #93c5fd; background: var(--selected); }
             .official-seat.occupied {
               border-color: #ef4444;
@@ -788,15 +789,122 @@
             }
 
             @media (max-width: 600px) {
-              .official-auditorium {
-                width: 820px;
-                min-height: 720px;
-                padding-inline: 62px;
+              .official-map-wrapper {
+                width: 100%;
+                overflow-x: hidden;
+                padding: 4px 0 10px;
               }
-              .official-seat { width: 34px; height: 35px; font-size: 9px; }
-              .official-seat small { font-size: 8px; }
-              .official-row-seats { gap: 5px; }
-              .official-stairs { width: 34px; }
+
+              .official-auditorium {
+                width: 100%;
+                min-width: 0;
+                min-height: 500px;
+                padding: 42px 8px 88px;
+                border-radius: 14px;
+              }
+
+              .official-rows {
+                width: 100%;
+                gap: 4px;
+              }
+
+              .official-seat-row {
+                width: 100%;
+                grid-template-columns: 18px minmax(0, 1fr);
+                gap: 2px;
+              }
+
+              .official-row-label {
+                font-size: 11px;
+              }
+
+              .official-row-seats {
+                width: 100%;
+                justify-content: center;
+                gap: 2px;
+              }
+
+              .official-seat {
+                width: clamp(18px, 5.05vw, 22px);
+                height: clamp(25px, 6.4vw, 29px);
+                padding: 0;
+                border-radius: 6px 6px 3px 3px;
+                font-size: clamp(6px, 1.75vw, 8px);
+                line-height: 1;
+                box-shadow: inset 0 -3px rgba(0, 0, 0, 0.18);
+              }
+
+              .official-seat small {
+                margin-top: 1px;
+                font-size: clamp(5px, 1.5vw, 7px);
+              }
+
+              .official-stairs {
+                display: none;
+              }
+
+              .official-exit,
+              .official-entrance {
+                padding: 5px 7px;
+                border-radius: 7px;
+                font-size: 8px;
+              }
+
+              .official-exit.top-left {
+                top: 8px;
+                left: 8px;
+              }
+
+              .official-entrance {
+                left: 8px;
+                bottom: 52px;
+              }
+
+              .official-exit.bottom-right {
+                right: 8px;
+                bottom: 52px;
+              }
+
+              .official-stage {
+                bottom: 12px;
+                width: 68%;
+                padding: 9px 6px 6px;
+                border-width: 2px;
+                font-size: 12px;
+                letter-spacing: 3px;
+              }
+
+              .official-seat-legend {
+                gap: 10px;
+                margin: 12px 0;
+                font-size: 11px;
+              }
+
+              .official-seat-legend .legend-seat {
+                width: 17px;
+                height: 17px;
+                border-radius: 5px 5px 3px 3px;
+              }
+            }
+
+            @media (max-width: 390px) {
+              .official-auditorium {
+                padding-inline: 5px;
+              }
+
+              .official-seat-row {
+                grid-template-columns: 15px minmax(0, 1fr);
+                gap: 1px;
+              }
+
+              .official-row-seats {
+                gap: 1px;
+              }
+
+              .official-seat {
+                width: clamp(17px, 4.85vw, 19px);
+                height: 25px;
+              }
             }
 		
 		    .summary-card {
