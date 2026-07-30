@@ -1,4 +1,4 @@
-		<!DOCTYPE html>
+				<!DOCTYPE html>
 		<html lang="es">
 		<head>
 		  <meta charset="UTF-8" />
@@ -4222,21 +4222,6 @@ filterMovieShowtimesByDate(movie.id, today);
 		    }
 		
 		    loadMovies();
-		
-		    setInterval(() => {
-		      if (
-		        document
-		          .getElementById(
-		            "catalogPage"
-		          )
-		          .classList.contains(
-		            "active"
-		          ) &&
-		        movies.length > 0
-		      ) {
-		        renderMovies();
-		      }
-		    }, 30_000);
 		
 		    function toggleMovieDescription(movieId, button) {
 		  const description = document.getElementById(
