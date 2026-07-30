@@ -1257,7 +1257,7 @@ app.post(
         durationMinutes = null,
         rating = "",
         active = true
-        comingSoon
+        comingSoon,
       } = req.body;
 
       if (
