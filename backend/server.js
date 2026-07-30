@@ -410,6 +410,7 @@ function formatMovie(row) {
     durationMinutes: row.duration_minutes,
     rating: row.rating,
     active: row.active,
+    comingSoon: Boolean(row.coming_soon),
     created: row.created_at
   };
 }
@@ -1256,6 +1257,7 @@ app.post(
         durationMinutes = null,
         rating = "",
         active = true
+        comingSoon
       } = req.body;
 
       if (
@@ -1377,7 +1379,8 @@ app.put(
             duration_minutes = $5,
             rating = $6,
             active = $7
-          WHERE id = $8
+            coming_soon = $8
+          WHERE id = $9
           RETURNING *;
         `,
         [
@@ -1390,6 +1393,7 @@ app.put(
             : Number(durationMinutes),
           rating.trim(),
           Boolean(active),
+          Boolean(comingSoon),
           id
         ]
       );
