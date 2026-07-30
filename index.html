@@ -1,4 +1,4 @@
-		<!DOCTYPE html>
+				<!DOCTYPE html>
 		<html lang="es">
 		<head>
 		  <meta charset="UTF-8" />
@@ -2866,11 +2866,13 @@
 		</div>
 		
 		<div
-		  class="showtime-list"
-		  id="showtimeList-${movie.id}"
-		>
-		  ${buttons}
-		</div>
+  class="showtime-list"
+  id="showtimeList-${movie.id}"
+>
+  <div class="showtime-empty-message">
+    Escoge una fecha para ver las tandas disponibles.
+  </div>
+</div>
 		                  `
 		              }
 		            </div>
@@ -4334,11 +4336,12 @@ if (label && selectedDate) {
 		  }
 		
 		  const filteredShowtimes =
-		    movie.showtimes.filter(
-		      (showtime) =>
-		        normalizeDate(showtime.showDate) ===
-		        selectedDate
-		    );
+  movie.showtimes.filter(
+    (showtime) =>
+      normalizeDate(showtime.showDate) ===
+        selectedDate &&
+      !isShowtimeExpired(showtime)
+  );
 		
 		  if (filteredShowtimes.length === 0) {
 		    list.innerHTML = `
