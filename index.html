@@ -1871,6 +1871,113 @@ body {
     min-width: 38px;
   }
 }
+
+/* AJUSTE MÓVIL PARA LA PANTALLA DE COMPRA */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#seatsPage,
+#seatsPage .container,
+.purchase-layout,
+.purchase-layout > div,
+.summary-card,
+.card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.selected-movie {
+  grid-template-columns: 82px minmax(0, 1fr);
+  align-items: start;
+}
+
+.selected-movie img,
+.selected-poster-placeholder {
+  width: 82px;
+  height: 123px;
+}
+
+.selected-movie > div {
+  min-width: 0;
+}
+
+.selected-movie h2,
+.selected-movie p,
+.selected-showtime {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.ticket-type-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.ticket-counter {
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.ticket-counter button {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+}
+
+@media (max-width: 600px) {
+  .container {
+    width: calc(100% - 24px);
+  }
+
+  .purchase-layout {
+    padding: 24px 0 50px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .selected-movie {
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .selected-movie img,
+  .selected-poster-placeholder {
+    width: 74px;
+    height: 111px;
+  }
+
+  .selected-movie h2 {
+    font-size: 26px;
+  }
+
+  .selected-movie p {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .selected-showtime {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .ticket-type-row {
+    padding: 12px;
+  }
+
+  .ticket-counter button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+  }
+}
 		
 		  </style>
 		</head>
