@@ -1256,8 +1256,8 @@ app.post(
         trailerUrl = "",
         durationMinutes = null,
         rating = "",
-        active = true
-        comingSoon,
+        active = true, 
+        comingSoon, false
       } = req.body;
 
       if (
