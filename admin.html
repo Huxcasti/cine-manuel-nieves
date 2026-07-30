@@ -1068,6 +1068,29 @@
   color: #ffffff;
 }
 
+.duration-select {
+  width: 220px;
+  max-width: 100%;
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border: 1px solid #3a4d70;
+  border-radius: 11px;
+  outline: none;
+  background: #384861;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.duration-select:focus {
+  border-color: #49cbc5;
+  box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+}
+
+.duration-select option {
+  background: #111827;
+  color: #ffffff;
+}
+
   </style>
 </head>
 
@@ -1323,8 +1346,28 @@
 
             <input id="movieTrailerUrl" type="hidden" />
 
-            <label for="movieDuration">Duración en minutos</label>
-            <input id="movieDuration" type="number" min="1" placeholder="120" />
+            <label for="movieDuration">
+  Duración
+</label>
+
+<select
+  id="movieDuration"
+  class="duration-select"
+>
+  <option value="">
+    Seleccionar duración
+  </option>
+
+  <option value="60">60 minutos</option>
+  <option value="75">75 minutos</option>
+  <option value="90">90 minutos</option>
+  <option value="105">105 minutos</option>
+  <option value="120">120 minutos</option>
+  <option value="135">135 minutos</option>
+  <option value="150">150 minutos</option>
+  <option value="165">165 minutos</option>
+  <option value="180">180 minutos</option>
+</select>
 
             <label for="movieRating">Clasificación</label>
 
