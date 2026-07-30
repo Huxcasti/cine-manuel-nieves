@@ -1,4 +1,4 @@
-				<!DOCTYPE html>
+		<!DOCTYPE html>
 		<html lang="es">
 		<head>
 		  <meta charset="UTF-8" />
@@ -2879,6 +2879,15 @@
 		          `;
 		
 		          grid.appendChild(card);
+		
+		          const todayParts = getPuertoRicoNowParts();
+
+const today =
+  `${todayParts.year}-` +
+  `${String(todayParts.month).padStart(2, "0")}-` +
+  `${String(todayParts.day).padStart(2, "0")}`;
+
+filterMovieShowtimesByDate(movie.id, today);
 		        }
 		      );
 		    }
