@@ -1892,6 +1892,20 @@ app.delete(
   }
 );
 
+
+const OFFICIAL_SEAT_IDS = (() => {
+  const ids = new Set(["A1-WC", "A10-WC", "M1-WC", "M11-WC"]);
+
+  for (let position = 2; position <= 9; position += 1) ids.add(`A${position}`);
+  for (const rowName of ["B","C","D","E","F","G","H","I","J","K"]) {
+    for (let position = 1; position <= 16; position += 1) ids.add(`${rowName}${position}`);
+  }
+  for (let position = 1; position <= 15; position += 1) ids.add(`L${position}`);
+  for (let position = 2; position <= 11; position += 1) ids.add(`M${position}`);
+
+  return ids;
+})();
+
 /*
 ==================================================
 ASIENTOS OCUPADOS
@@ -2022,6 +2036,17 @@ app.post("/api/reservations", async (req, res) => {
     if (normalizedSeats.length === 0) {
       return res.status(400).json({
         error: "Los asientos seleccionados no son vÃ¡lidos."
+      });
+    }
+
+    const invalidSeats = normalizedSeats.filter(
+      (seat) => !OFFICIAL_SEAT_IDS.has(seat)
+    );
+
+    if (invalidSeats.length > 0) {
+      return res.status(400).json({
+        error: "Uno o más asientos no pertenecen al mapa oficial.",
+        invalidSeats
       });
     }
 
