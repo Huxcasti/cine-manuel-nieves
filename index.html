@@ -1,4 +1,4 @@
-				<!DOCTYPE html>
+		<!DOCTYPE html>
 		<html lang="es">
 		<head>
 		  <meta charset="UTF-8" />
@@ -1810,6 +1810,66 @@
   background: #111827;
   color: #ffffff;
   color-scheme: dark;
+}
+
+/* Evita que la página sea más ancha que el iPhone */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.container,
+.purchase-layout,
+.card,
+.selected-movie,
+.ticket-type-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.purchase-layout {
+  width: 100%;
+}
+
+.selected-movie {
+  grid-template-columns: 110px minmax(0, 1fr);
+}
+
+.selected-movie > div,
+.selected-movie p,
+.selected-movie h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-type-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+@media (max-width: 600px) {
+  .container {
+    width: calc(100% - 24px);
+  }
+
+  .purchase-layout {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .selected-movie {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+
+  .ticket-counter {
+    gap: 8px;
+  }
+
+  .ticket-counter button {
+    width: 38px;
+    min-width: 38px;
+  }
 }
 		
 		  </style>
