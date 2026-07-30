@@ -1,6 +1,7 @@
-				<!DOCTYPE html>
+		<!DOCTYPE html>
 		<html lang="es">
 		<head>
+  <!-- MAPA OFICIAL 193 ASIENTOS - VERSION 2026-07-30 -->
 		  <meta charset="UTF-8" />
 		  <meta
 		    name="viewport"
@@ -622,108 +623,181 @@
 		      line-height: 1.5;
 		      font-weight: 800;
 		    }
-		
-		    .screen {
-		      width: min(600px, 88%);
-		      margin: 0 auto 34px;
-		      padding: 9px;
-		      border-radius: 50% 50% 12px 12px;
-		      background: linear-gradient(to bottom, #e2e8f0, #64748b);
-		      color: #07101e;
-		      text-align: center;
-		      font-size: 12px;
-		      font-weight: 900;
-		      letter-spacing: 4px;
-		      box-shadow: 0 15px 35px rgba(147, 197, 253, 0.2);
-		    }
-		
-		    .seat-legend {
-		      display: flex;
-		      justify-content: center;
-		      gap: 18px;
-		      flex-wrap: wrap;
-		      margin-bottom: 24px;
-		      color: var(--muted);
-		      font-size: 13px;
-		    }
-		
-		    .legend-item {
-		      display: flex;
-		      align-items: center;
-		      gap: 7px;
-		    }
-		
-		    .legend-seat {
-		      width: 21px;
-		      height: 21px;
-		      border-radius: 6px 6px 3px 3px;
-		      background: #263653;
-		    }
-		
-		    .legend-seat.selected {
-		      background: var(--selected);
-		    }
-		
-		    .legend-seat.occupied {
-		      background: var(--occupied);
-		    }
-		
-		    .seat-map-wrapper {
-		      overflow-x: auto;
-		      padding-bottom: 10px;
-		    }
-		
-		    .seat-map {
-		      width: max-content;
-		      min-width: 100%;
-		      margin: 0 auto;
-		    }
-		
-		    .seat-row {
-		      display: flex;
-		      align-items: center;
-		      justify-content: center;
-		      gap: 7px;
-		      margin-bottom: 8px;
-		    }
-		
-		    .row-label {
-		      width: 24px;
-		      color: #93c5fd;
-		      font-size: 13px;
-		      font-weight: 900;
-		      text-align: center;
-		    }
-		
-		    .seat {
-		      width: 38px;
-		      height: 34px;
-		      border: 1px solid #405173;
-		      border-radius: 9px 9px 5px 5px;
-		      background: #263653;
-		      color: white;
-		      font-size: 11px;
-		      font-weight: 900;
-		    }
-		
-		    .seat:hover:not(:disabled) {
-		      background: #36517c;
-		    }
-		
-		    .seat.selected {
-		      border-color: #60a5fa;
-		      background: var(--selected);
-		    }
-		
-		    .seat.occupied {
-		      border-color: #475569;
-		      background: var(--occupied);
-		      color: #94a3b8;
-		    }
-		
-		    .aisle {
-		      width: 18px;
-		    }
+
+            .official-seat-legend {
+              display: flex;
+              justify-content: center;
+              gap: 14px;
+              flex-wrap: wrap;
+              margin: 18px 0;
+              color: var(--muted);
+              font-size: 13px;
+            }
+
+            .official-seat-legend .legend-item {
+              display: flex;
+              align-items: center;
+              gap: 7px;
+            }
+
+            .official-seat-legend .legend-seat {
+              width: 22px;
+              height: 22px;
+              border-radius: 7px 7px 4px 4px;
+              background: #2f9e44;
+            }
+
+            .official-seat-legend .legend-seat.selected { background: var(--selected); }
+            .official-seat-legend .legend-seat.occupied { background: #c92a2a; }
+            .official-seat-legend .legend-seat.accessible { background: #7b2cbf; }
+
+            .official-map-wrapper {
+              overflow-x: auto;
+              overflow-y: hidden;
+              padding: 8px 0 14px;
+              -webkit-overflow-scrolling: touch;
+            }
+
+            .official-auditorium {
+              position: relative;
+              width: 920px;
+              min-height: 780px;
+              margin: 0 auto;
+              padding: 54px 76px 118px;
+              border: 1px solid #334155;
+              border-radius: 18px;
+              background: #0b1019;
+            }
+
+            .official-rows {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 8px;
+            }
+
+            .official-seat-row {
+              display: grid;
+              grid-template-columns: 28px auto;
+              align-items: center;
+              gap: 6px;
+            }
+
+            .official-row-label {
+              color: #e2e8f0;
+              font-size: 15px;
+              font-weight: 900;
+              text-align: center;
+            }
+
+            .official-row-seats {
+              display: flex;
+              justify-content: center;
+              gap: 6px;
+            }
+
+            .official-seat {
+              width: 39px;
+              height: 39px;
+              border: 1px solid #55b765;
+              border-radius: 9px 9px 5px 5px;
+              background: #2f9e44;
+              color: white;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              font-size: 10px;
+              font-weight: 900;
+              line-height: 1.05;
+              box-shadow: inset 0 -5px rgba(0, 0, 0, 0.18);
+              flex: 0 0 auto;
+            }
+
+            .official-seat small {
+              margin-top: 2px;
+              font-size: 9px;
+              opacity: 0.9;
+            }
+
+            .official-seat:hover:not(:disabled) { filter: brightness(1.12); }
+            .official-seat.selected { border-color: #93c5fd; background: var(--selected); }
+            .official-seat.occupied {
+              border-color: #ef4444;
+              background: #c92a2a;
+              color: #fee2e2;
+              cursor: not-allowed;
+            }
+            .official-seat.accessible { border-color: #a855f7; background: #7b2cbf; }
+            .official-seat.accessible.selected { border-color: #93c5fd; background: var(--selected); }
+
+            .official-stairs {
+              position: absolute;
+              top: 68px;
+              bottom: 125px;
+              width: 42px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              writing-mode: vertical-rl;
+              border-radius: 10px;
+              background: repeating-linear-gradient(to bottom, #343a40 0 13px, #495057 13px 26px);
+              color: #e2e8f0;
+              font-weight: 900;
+            }
+            .official-stairs.left { left: 10px; transform: rotate(180deg); }
+            .official-stairs.right { right: 10px; }
+
+            .official-exit,
+            .official-entrance {
+              position: absolute;
+              z-index: 2;
+              padding: 9px 13px;
+              border-radius: 10px;
+              font-weight: 900;
+            }
+            .official-exit {
+              border: 2px solid #ef4444;
+              background: #2b1111;
+              color: #ff4d4f;
+            }
+            .official-exit.top-left { top: 10px; left: 10px; }
+            .official-exit.bottom-right { right: 10px; bottom: 70px; }
+            .official-entrance {
+              left: 10px;
+              bottom: 70px;
+              border: 1px solid #64748b;
+              background: #343a40;
+              color: white;
+            }
+
+            .official-stage {
+              position: absolute;
+              left: 50%;
+              bottom: 16px;
+              width: 62%;
+              transform: translateX(-50%);
+              border: 3px solid #cbd5e1;
+              border-bottom: 0;
+              border-radius: 50% 50% 0 0;
+              padding: 15px 10px 9px;
+              color: white;
+              text-align: center;
+              font-weight: 900;
+              letter-spacing: 4px;
+            }
+
+            @media (max-width: 600px) {
+              .official-auditorium {
+                width: 820px;
+                min-height: 720px;
+                padding-inline: 62px;
+              }
+              .official-seat { width: 34px; height: 35px; font-size: 9px; }
+              .official-seat small { font-size: 8px; }
+              .official-row-seats { gap: 5px; }
+              .official-stairs { width: 34px; }
+            }
 		
 		    .summary-card {
 		      position: sticky;
@@ -2134,33 +2208,29 @@ body {
 		
 		          <section class="card">
 		            <h2>Selecciona tus asientos</h2>
-		
-		            <p class="subtitle" style="margin-bottom: 25px;">
-		              Los asientos grises ya están ocupados.
-		            </p>
-		
-		            <div class="screen">PANTALLA</div>
-		
-		            <div class="seat-legend">
-		              <div class="legend-item">
-		                <span class="legend-seat"></span>
-		                Disponible
-		              </div>
-		
-		              <div class="legend-item">
-		                <span class="legend-seat selected"></span>
-		                Seleccionado
-		              </div>
-		
-		              <div class="legend-item">
-		                <span class="legend-seat occupied"></span>
-		                Ocupado
-		              </div>
-		            </div>
-		
-		            <div class="seat-map-wrapper">
-		              <div class="seat-map" id="seatMap"></div>
-		            </div>
+
+                    <p class="subtitle" style="margin-bottom: 10px;">
+                      Los asientos rojos ya están ocupados. Desliza horizontalmente para ver el mapa completo.
+                    </p>
+
+                    <div class="official-seat-legend">
+                      <div class="legend-item"><span class="legend-seat"></span>Disponible</div>
+                      <div class="legend-item"><span class="legend-seat selected"></span>Seleccionado</div>
+                      <div class="legend-item"><span class="legend-seat occupied"></span>Ocupado</div>
+                      <div class="legend-item"><span class="legend-seat accessible"></span>Accesible</div>
+                    </div>
+
+                    <div class="official-map-wrapper" id="officialMapWrapper">
+                      <div class="official-auditorium">
+                        <div class="official-exit top-left">EXIT</div>
+                        <div class="official-stairs left">Escalera Izquierda</div>
+                        <div class="official-stairs right">Escalera Derecha</div>
+                        <div class="official-rows" id="seatMap"></div>
+                        <div class="official-entrance">Entrada →</div>
+                        <div class="official-exit bottom-right">EXIT</div>
+                        <div class="official-stage">TARIMA</div>
+                      </div>
+                    </div>
 		
 		            <div
 		              class="form-message"
@@ -2520,19 +2590,67 @@ body {
 		  <script>
 		    const API_URL =
 		      "https://cine-manuel-nieves.onrender.com";
-		
-		    const seatRows = [
-		      "A",
-		      "B",
-		      "C",
-		      "D",
-		      "E",
-		      "F",
-		      "G",
-		      "H"
-		    ];
-		
-		    const seatsPerRow = 10;
+
+            const OFFICIAL_SEAT_LAYOUT = (() => {
+              const rows = {};
+              let realNumber = 1;
+
+              rows.A = [
+                { id: "A1-WC", label: "A1", number: null, accessible: true }
+              ];
+              for (let position = 2; position <= 9; position += 1) {
+                rows.A.push({
+                  id: `A${position}`,
+                  label: `A${position}`,
+                  number: realNumber,
+                  accessible: false
+                });
+                realNumber += 1;
+              }
+              rows.A.push({ id: "A10-WC", label: "A10", number: null, accessible: true });
+
+              for (const rowName of ["B","C","D","E","F","G","H","I","J","K"]) {
+                rows[rowName] = [];
+                for (let position = 1; position <= 16; position += 1) {
+                  rows[rowName].push({
+                    id: `${rowName}${position}`,
+                    label: `${rowName}${position}`,
+                    number: realNumber,
+                    accessible: false
+                  });
+                  realNumber += 1;
+                }
+              }
+
+              rows.L = [];
+              for (let position = 1; position <= 15; position += 1) {
+                rows.L.push({
+                  id: `L${position}`,
+                  label: `L${position}`,
+                  number: realNumber,
+                  accessible: false
+                });
+                realNumber += 1;
+              }
+
+              rows.M = [
+                { id: "M1-WC", label: "M1", number: null, accessible: true }
+              ];
+              for (let position = 2; position <= 11; position += 1) {
+                rows.M.push({
+                  id: `M${position}`,
+                  label: `M${position}`,
+                  number: realNumber,
+                  accessible: false
+                });
+                realNumber += 1;
+              }
+              rows.M.push({ id: "M11-WC", label: "M11", number: null, accessible: true });
+
+              return rows;
+            })();
+
+            const OFFICIAL_ROW_ORDER = ["M","L","K","J","I","H","G","F","E","D","C","B","A"];
 		
 		    let movies = [];
 		    let selectedMovie = null;
@@ -3447,128 +3565,77 @@ filterMovieShowtimesByDate(movie.id, today);
 		        );
 		      }
 		    }
-		
-		    function renderSeatMap() {
-		      const seatMap =
-		        document.getElementById(
-		          "seatMap"
-		        );
-		
-		      seatMap.innerHTML = "";
-		
-		      seatRows.forEach(
-		        (rowName) => {
-		          const row =
-		            document.createElement(
-		              "div"
-		            );
-		
-		          row.className = "seat-row";
-		
-		          const firstLabel =
-		            document.createElement(
-		              "span"
-		            );
-		
-		          firstLabel.className =
-		            "row-label";
-		
-		          firstLabel.textContent =
-		            rowName;
-		
-		          row.appendChild(
-		            firstLabel
-		          );
-		
-		          for (
-		            let seatNumber = 1;
-		            seatNumber <= seatsPerRow;
-		            seatNumber += 1
-		          ) {
-		            if (
-		              seatNumber === 6
-		            ) {
-		              const aisle =
-		                document.createElement(
-		                  "span"
-		                );
-		
-		              aisle.className =
-		                "aisle";
-		
-		              row.appendChild(
-		                aisle
-		              );
-		            }
-		
-		            const seatName =
-		              `${rowName}${seatNumber}`;
-		
-		            const button =
-		              document.createElement(
-		                "button"
-		              );
-		
-		            button.type = "button";
-		            button.className = "seat";
-		            button.textContent =
-		              seatNumber;
-		
-		            button.title =
-		              `Asiento ${seatName}`;
-		
-		            if (
-		              occupiedSeats.includes(
-		                seatName
-		              )
-		            ) {
-		              button.classList.add(
-		                "occupied"
-		              );
-		
-		              button.disabled = true;
-		            }
-		
-		            if (
-		              selectedSeats.includes(
-		                seatName
-		              )
-		            ) {
-		              button.classList.add(
-		                "selected"
-		              );
-		            }
-		
-		            button.addEventListener(
-		              "click",
-		              () =>
-		                toggleSeat(
-		                  seatName,
-		                  button
-		                )
-		            );
-		
-		            row.appendChild(button);
-		          }
-		
-		          const lastLabel =
-		            document.createElement(
-		              "span"
-		            );
-		
-		          lastLabel.className =
-		            "row-label";
-		
-		          lastLabel.textContent =
-		            rowName;
-		
-		          row.appendChild(lastLabel);
-		          seatMap.appendChild(row);
-		        }
-		      );
-		    }
-		
-		    function toggleSeat(
+
+            function renderSeatMap() {
+              const seatMap = document.getElementById("seatMap");
+              seatMap.innerHTML = "";
+
+              OFFICIAL_ROW_ORDER.forEach((rowName) => {
+                const row = document.createElement("div");
+                row.className = "official-seat-row";
+
+                const label = document.createElement("span");
+                label.className = "official-row-label";
+                label.textContent = rowName;
+
+                const seatsContainer = document.createElement("div");
+                seatsContainer.className = "official-row-seats";
+
+                OFFICIAL_SEAT_LAYOUT[rowName].forEach((seatData) => {
+                  const button = document.createElement("button");
+                  button.type = "button";
+                  button.className = "official-seat";
+                  button.dataset.seatId = seatData.id;
+                  button.innerHTML = `
+                    <span>${escapeHtml(seatData.label)}</span>
+                    <small>${seatData.accessible ? "♿" : seatData.number}</small>
+                  `;
+
+                  const occupied = occupiedSeats.includes(seatData.id);
+                  const selected = selectedSeats.includes(seatData.id);
+
+                  if (seatData.accessible) {
+                    button.classList.add("accessible");
+                  }
+
+                  if (occupied) {
+                    button.classList.add("occupied");
+                    button.disabled = true;
+                  }
+
+                  if (selected) {
+                    button.classList.add("selected");
+                  }
+
+                  button.title = seatData.accessible
+                    ? `Espacio accesible ${seatData.label}`
+                    : `Asiento ${seatData.label}, número ${seatData.number}`;
+
+                  button.addEventListener("click", () =>
+                    toggleSeat(seatData.id, button)
+                  );
+
+                  seatsContainer.appendChild(button);
+                });
+
+                row.appendChild(label);
+                row.appendChild(seatsContainer);
+                seatMap.appendChild(row);
+              });
+
+              const wrapper = document.getElementById("officialMapWrapper");
+              if (wrapper && !wrapper.dataset.centered) {
+                requestAnimationFrame(() => {
+                  wrapper.scrollLeft = Math.max(
+                    0,
+                    (wrapper.scrollWidth - wrapper.clientWidth) / 2
+                  );
+                  wrapper.dataset.centered = "true";
+                });
+              }
+            }
+
+            function toggleSeat(
 		      seatName,
 		      button
 		    ) {
