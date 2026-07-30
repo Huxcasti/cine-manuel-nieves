@@ -1384,6 +1384,14 @@
   <option value="other">Otro...</option>
 </select>
 
+<input
+  id="movieDurationCustom"
+  type="number"
+  min="1"
+  placeholder="Escribe la duración en minutos"
+  style="display: none;"
+/>
+
             <label for="movieRating">Clasificación</label>
 
 <select id="movieRating" class="rating-select">
@@ -2337,7 +2345,16 @@
       const trailerUrl = document.getElementById("movieTrailerUrl").value.trim();
       const selectedPosterFile = document.getElementById("moviePosterFile").files?.[0];
       const selectedTrailerFile = document.getElementById("movieTrailerFile").files?.[0];
-      const durationValue = document.getElementById("movieDuration").value;
+      const durationSelect =
+  document.getElementById("movieDuration");
+
+const durationCustom =
+  document.getElementById("movieDurationCustom");
+
+const durationValue =
+  durationSelect.value === "other"
+    ? durationCustom.value
+    : durationSelect.value;
       const rating = document.getElementById("movieRating").value.trim();
       const active = document.getElementById("movieActive").checked;
       const comingSoon = document.getElementById("movieComingSoon").checked;
@@ -2956,6 +2973,23 @@
     });
 
     restoreSession();
+
+const movieDurationSelect =
+  document.getElementById("movieDuration");
+
+const movieDurationCustom =
+  document.getElementById("movieDurationCustom");
+
+movieDurationSelect.addEventListener("change", () => {
+  if (movieDurationSelect.value === "other") {
+    movieDurationCustom.style.display = "block";
+    movieDurationCustom.focus();
+  } else {
+    movieDurationCustom.style.display = "none";
+    movieDurationCustom.value = "";
+  }
+});
+
   </script>
 </body>
 </html>
