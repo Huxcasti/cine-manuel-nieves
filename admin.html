@@ -1045,6 +1045,29 @@
   box-shadow: 0 0 0 3px rgba(73, 203, 197, 0.1);
 } 
 
+.rating-select {
+  width: 220px;
+  max-width: 100%;
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border: 1px solid #3a4d70;
+  border-radius: 11px;
+  outline: none;
+  background: #384861;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.rating-select:focus {
+  border-color: #49cbc5;
+  box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+}
+
+.rating-select option {
+  background: #111827;
+  color: #ffffff;
+}
+
   </style>
 </head>
 
@@ -1303,27 +1326,15 @@
             <label for="movieDuration">Duración en minutos</label>
             <input id="movieDuration" type="number" min="1" placeholder="120" />
 
-            <label>Clasificación</label>
+            <label for="movieRating">Clasificación</label>
 
-<div class="rating-options">
-  <button type="button" class="rating-button" onclick="selectRating('G', this)">
-    G
-  </button>
-
-  <button type="button" class="rating-button" onclick="selectRating('PG', this)">
-    PG
-  </button>
-
-  <button type="button" class="rating-button" onclick="selectRating('PG-13', this)">
-    PG-13
-  </button>
-
-  <button type="button" class="rating-button" onclick="selectRating('R', this)">
-    R
-  </button>
-</div>
-
-<input id="movieRating" type="hidden" value="" />
+<select id="movieRating" class="rating-select">
+  <option value="">Seleccionar clasificación</option>
+  <option value="G">G</option>
+  <option value="PG">PG</option>
+  <option value="PG-13">PG-13</option>
+  <option value="R">R</option>
+</select>
             <label class="checkbox-row">
               <input id="movieActive" type="checkbox" checked />
               Película activa y visible
@@ -2887,17 +2898,6 @@
     });
 
     restoreSession();
-    function selectRating(rating, selectedButton) {
-  document.getElementById("movieRating").value = rating;
-
-  document
-    .querySelectorAll(".rating-button")
-    .forEach((button) => {
-      button.classList.remove("selected");
-    });
-
-  selectedButton.classList.add("selected");
-}
   </script>
 </body>
 </html>
