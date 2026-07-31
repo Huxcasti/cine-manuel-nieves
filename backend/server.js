@@ -2382,7 +2382,13 @@ app.post("/api/paypal/orders/:orderId/capture", async (req, res) => {
     const purchaseUnit = capture.purchase_units?.[0];
     const capturedPayment = purchaseUnit?.payments?.captures?.[0];
     const capturedAmount = capturedPayment?.amount;
-    const paypalReservationId = purchaseUnit?.custom_id;
+    const paypalReservationId = String(
+  purchaseUnit?.custom_id || ""
+).trim();
+
+const requestedReservationId = String(
+  reservationId || ""
+).trim();
 
     if (capture.status !== "COMPLETED" || capturedPayment?.status !== "COMPLETED") {
       return res.status(400).json({
@@ -2390,7 +2396,10 @@ app.post("/api/paypal/orders/:orderId/capture", async (req, res) => {
       });
     }
 
-    if (paypalReservationId !== reservationId) {
+    if (
+  !paypalReservationId ||
+  paypalReservationId !== requestedReservationId
+) {
       return res.status(400).json({
         error: "La orden de PayPal no corresponde a esta reservación."
       });
