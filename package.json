@@ -12,6 +12,7 @@
     "express": "^4.19.2",
     "pg": "^8.13.1",
     "qrcode": "^1.5.3",
+    "resend": "^4.0.1",
     "uuid": "^11.0.3",
     "@supabase/supabase-js": "^2.57.4",
     "multer": "^2.0.2"
