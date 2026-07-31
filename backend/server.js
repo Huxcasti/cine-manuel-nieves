@@ -1343,7 +1343,7 @@ app.put(
         trailerUrl = "",
         durationMinutes = null,
         rating = "",
-        active = true
+        active = true,
         comingSoon = false 
       } = req.body;
 
