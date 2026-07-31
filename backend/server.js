@@ -2383,7 +2383,11 @@ app.post("/api/paypal/orders/:orderId/capture", async (req, res) => {
     const capturedPayment = purchaseUnit?.payments?.captures?.[0];
     const capturedAmount = capturedPayment?.amount;
     const paypalReservationId = String(
-  purchaseUnit?.custom_id || ""
+  capturedPayment?.custom_id ||
+  capturedPayment?.invoice_id ||
+  purchaseUnit?.custom_id ||
+  purchaseUnit?.invoice_id ||
+  ""
 ).trim();
 
 const requestedReservationId = String(
