@@ -1344,6 +1344,7 @@ app.put(
         durationMinutes = null,
         rating = "",
         active = true
+        comingSoon = false 
       } = req.body;
 
       if (
