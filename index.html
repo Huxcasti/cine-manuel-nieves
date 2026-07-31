@@ -1889,6 +1889,7 @@
 		  display: none;
 		  gap: 8px;
 		  flex-wrap: wrap;
+		  align-items: stretch;
 		  margin-bottom: 12px;
 		}
 		
@@ -1981,11 +1982,10 @@
   position: relative;
   display: inline-flex;
   width: auto;
-  min-width: 0;
   height: auto;
   margin: 0;
+  align-self: stretch;
 }
-
 .calendar-date-option input[type="date"] {
   position: absolute;
   inset: 0;
@@ -2008,13 +2008,13 @@
   align-items: center;
   justify-content: center;
   padding: 11px 14px;
+  min-height: 100%;
   pointer-events: none;
   color: white;
   font-weight: 900;
   font-size: 16px;
   white-space: nowrap;
 }
-
 /* Evita que la página sea más ancha que el iPhone */
 html,
 body {
