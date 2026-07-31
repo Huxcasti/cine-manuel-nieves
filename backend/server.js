@@ -1379,7 +1379,7 @@ app.put(
             trailer_url = $4,
             duration_minutes = $5,
             rating = $6,
-            active = $7
+            active = $7,
             coming_soon = $8
           WHERE id = $9
           RETURNING *;
