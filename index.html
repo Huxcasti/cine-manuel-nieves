@@ -2170,6 +2170,26 @@ body {
     height: 40px;
   }
 }
+
+.calendar-date-option {
+  position: relative;
+}
+
+.calendar-date-option input[type="date"] {
+  color: transparent;
+}
+
+.date-input-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: white;
+  font-weight: 900;
+  font-size: 16px;
+}
 		
 		  </style>
 		</head>
@@ -3255,11 +3275,19 @@ body {
 		  </button>
 		
 		  <label class="calendar-date-option">
-		    <span>Más fechas 📅</span>
-		
-		    <input
-		      id="showtimeDate-${movie.id}"
-		      type="date"
+  <input
+    id="showtimeDate-${movie.id}"
+    type="date"
+    onchange="filterMovieShowtimesByDate(
+      '${movie.id}',
+      this.value
+    )"
+  />
+
+  <span class="date-input-label">
+    Más fechas 📅
+  </span>
+</label>
 		      onchange="filterMovieShowtimesByDate(
 		        '${movie.id}',
 		        this.value
