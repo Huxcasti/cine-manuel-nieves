@@ -2326,9 +2326,9 @@ app.post("/api/reservations", async (req, res) => {
     await client.query("COMMIT");
 
     res.status(201).json({
-      success: true,
-      reservation: formatTicket(result.rows[0])
-    });
+  success: true,
+  reservation: formatTicket(result.rows[0])
+});
   } catch (error) {
     await client.query("ROLLBACK");
 
@@ -2510,31 +2510,25 @@ const requestedReservationId = String(
       });
     }
 
-    if (ticket.payment_status === "paid" || ticket.payment_status === "approved") {
-      await client.query("COMMIT");
+    if (
+  ticket.payment_status === "paid" ||
+  ticket.payment_status === "approved"
+) {
+  await client.query("COMMIT");
 
-const reservation = formatTicket(updateResult.rows[0]);
-
-try {
-  await sendTicketEmail(reservation);
-} catch (err) {
-  console.error("Error enviando correo:", err);
+  return res.json({
+    success: true,
+    reservation: formatTicket(ticket)
+  });
 }
 
-res.json({
-  success: true,
-  reservation
-});
-    }
-
-    const updatedCustomer = {
-      ...(ticket.customer || {}),
-      paymentMethod: "paypal",
-      paypalOrderId: orderId,
-      paypalCaptureId: capturedPayment.id || "",
-      paypalPayerEmail: capture.payer?.email_address || ""
-    };
-
+const updatedCustomer = {
+  ...(ticket.customer || {}),
+  paymentMethod: "paypal",
+  paypalOrderId: orderId,
+  paypalCaptureId: capturedPayment.id || "",
+  paypalPayerEmail: capture.payer?.email_address || ""
+};
     const updateResult = await client.query(
       `
         UPDATE tickets
