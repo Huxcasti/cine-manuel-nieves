@@ -5,6 +5,8 @@ const { Pool } = require("pg");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
 
+const { Resend } = require("resend");
+const QRCode = require("qrcode");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -16,6 +18,10 @@ VARIABLES DE ENTORNO
 
 const INITIAL_ADMIN_PASSWORD = process.env.ADMIN_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const resend = RESEND_API_KEY
+  ? new Resend(RESEND_API_KEY)
+  : null;
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_POSTERS_BUCKET =
@@ -400,6 +406,76 @@ function formatTicket(row) {
   };
 }
 
+async function sendTicketEmail(ticket) {
+  async function sendTicketEmail(ticket) {
+  if (!resend) {
+    console.warn("Resend no está configurado.");
+    return;
+  }
+
+  const customerEmail = ticket?.customer?.email;
+
+  if (!customerEmail) {
+    console.warn("El boleto no tiene correo del cliente.");
+    return;
+  }
+
+  const qrBuffer = await QRCode.toBuffer(String(ticket.qr || ""), {
+    type: "png",
+    width: 320,
+    margin: 2
+  });
+
+  const seats = Array.isArray(ticket.seats)
+    ? ticket.seats.join(", ")
+    : String(ticket.seats || "");
+
+  const { error } = await resend.emails.send({
+    from: "Cine Manuel Nieves <onboarding@resend.dev>",
+    to: [customerEmail],
+    subject: `Tu boleto para ${ticket.movie}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;background:#0f172a;color:#ffffff;border-radius:16px;">
+        <h1 style="margin-top:0;">🎟️ Boleto confirmado</h1>
+        <p>Tu pago fue confirmado correctamente.</p>
+
+        <h2>${ticket.movie}</h2>
+
+        <p><strong>Fecha y hora:</strong> ${ticket.time}</p>
+        <p><strong>Asientos:</strong> ${seats}</p>
+        <p><strong>Total:</strong> $${Number(ticket.total).toFixed(2)}</p>
+        <p><strong>Código manual:</strong> ${ticket.manualCode}</p>
+        <p><strong>Reservación:</strong> ${ticket.id}</p>
+
+        <div style="margin-top:24px;text-align:center;">
+          <img
+            src="cid:ticket-qr"
+            alt="Código QR del boleto"
+            width="260"
+            height="260"
+            style="background:#ffffff;padding:12px;border-radius:12px;"
+          />
+        </div>
+
+        <p style="margin-top:24px;color:#cbd5e1;">
+          Presenta este código QR al entrar al cine.
+        </p>
+      </div>
+    `,
+    attachments: [
+      {
+        filename: "boleto-qr.png",
+        content: qrBuffer,
+        contentId: "ticket-qr"
+      }
+    ]
+  });
+
+  if (error) {
+    throw new Error(error.message || "No se pudo enviar el boleto.");
+  }
+}
+
 function formatMovie(row) {
   return {
     id: row.id,
@@ -416,9 +492,9 @@ function formatMovie(row) {
 }
 
 const SHOWTIME_LANGUAGES = {
-  spanish: "EspaÃ±ol",
-  english: "InglÃ©s",
-  english_subtitled: "InglÃ©s con subtÃ­tulos en espaÃ±ol"
+  spanish: "Español",
+  english: "Ingles",
+  english_subtitled: "Ingles con subtitulos en español"
 };
 
 function normalizeShowtimeLanguage(value) {
@@ -2436,10 +2512,19 @@ const requestedReservationId = String(
 
     if (ticket.payment_status === "paid" || ticket.payment_status === "approved") {
       await client.query("COMMIT");
-      return res.json({
-        success: true,
-        reservation: formatTicket(ticket)
-      });
+
+const reservation = formatTicket(updateResult.rows[0]);
+
+try {
+  await sendTicketEmail(reservation);
+} catch (err) {
+  console.error("Error enviando correo:", err);
+}
+
+res.json({
+  success: true,
+  reservation
+});
     }
 
     const updatedCustomer = {
