@@ -406,7 +406,6 @@ function formatTicket(row) {
   };
 }
 
-async function sendTicketEmail(ticket) {
   async function sendTicketEmail(ticket) {
   if (!resend) {
     console.warn("Resend no está configurado.");
