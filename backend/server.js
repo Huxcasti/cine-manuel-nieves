@@ -419,11 +419,10 @@ function formatTicket(row) {
     return;
   }
 
-  const qrBuffer = await QRCode.toBuffer(String(ticket.qr || ""), {
-    type: "png",
-    width: 320,
-    margin: 2
-  });
+  const qrDataUrl = await QRCode.toDataURL(String(ticket.qr || ""), {
+  width: 320,
+  margin: 2
+});
 
   const seats = Array.isArray(ticket.seats)
     ? ticket.seats.join(", ")
@@ -448,12 +447,11 @@ function formatTicket(row) {
 
         <div style="margin-top:24px;text-align:center;">
           <img
-            src="cid:ticket-qr"
-            alt="Código QR del boleto"
-            width="260"
-            height="260"
-            style="background:#ffffff;padding:12px;border-radius:12px;"
-          />
+  src="${qrDataUrl}"
+  alt="Código QR del boleto"
+  width="260"
+  style="display:block;margin:0 auto;background:#ffffff;padding:12px;border-radius:12px;"
+/>
         </div>
 
         <p style="margin-top:24px;color:#cbd5e1;">
@@ -461,13 +459,7 @@ function formatTicket(row) {
         </p>
       </div>
     `,
-    attachments: [
-      {
-        filename: "boleto-qr.png",
-        content: qrBuffer,
-        contentId: "ticket-qr"
-      }
-    ]
+
   });
 
   if (error) {
