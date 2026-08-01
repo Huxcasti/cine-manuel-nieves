@@ -569,6 +569,20 @@ async function initializeDatabase() {
     ADD COLUMN IF NOT EXISTS manual_code VARCHAR(5);
   `);
 
+await pool.query(`
+  ALTER TABLE tickets
+  DROP CONSTRAINT IF EXISTS tickets_manual_code_format_check;
+`);
+
+await pool.query(`
+  ALTER TABLE tickets
+  ADD CONSTRAINT tickets_manual_code_format_check
+  CHECK (
+    manual_code IS NULL
+    OR manual_code ~ '^[0-9]{5}$'
+  );
+`);
+
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS tickets_manual_code_unique_idx
     ON tickets (manual_code)
