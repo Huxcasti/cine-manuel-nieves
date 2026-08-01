@@ -2547,10 +2547,18 @@ res.json({
 
     await client.query("COMMIT");
 
-    res.json({
-      success: true,
-      reservation: formatTicket(updateResult.rows[0])
-    });
+const reservation = formatTicket(updateResult.rows[0]);
+
+try {
+  await sendTicketEmail(reservation);
+} catch (emailError) {
+  console.error("Error enviando correo:", emailError);
+}
+
+res.json({
+  success: true,
+  reservation
+});
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
     console.error("Error capturando pago de PayPal:", error);
