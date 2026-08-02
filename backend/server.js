@@ -2054,7 +2054,6 @@ app.get("/api/seats", async (req, res) => {
         WHERE
           customer->>'showtimeId' = $1
           AND payment_status IN (
-            'pending',
             'paid',
             'approved'
           );
@@ -2252,7 +2251,6 @@ app.post("/api/reservations", async (req, res) => {
         WHERE
           customer->>'showtimeId' = $1
           AND payment_status IN (
-            'pending',
             'paid',
             'approved'
           )
