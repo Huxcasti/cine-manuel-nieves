@@ -419,10 +419,30 @@ function formatTicket(row) {
     return;
   }
 
-  const qrDataUrl = await QRCode.toDataURL(String(ticket.qr || ""), {
+  const qrBuffer = await QRCode.toBuffer(String(ticket.qr || ""), {
+  type: "png",
   width: 320,
   margin: 2
 });
+
+const qrFilePath = `tickets/${ticket.id}-qr.png`;
+const { error: qrUploadError } = await supabase.storage
+  .from(SUPABASE_POSTERS_BUCKET)
+  .upload(qrFilePath, qrBuffer, {
+    contentType: "image/png",
+    cacheControl: "31536000",
+    upsert: true
+  });
+
+if (qrUploadError) {
+  throw new Error(qrUploadError.message);
+}
+
+const { data: qrPublicData } = supabase.storage
+  .from(SUPABASE_POSTERS_BUCKET)
+  .getPublicUrl(qrFilePath);
+
+const qrPublicUrl = qrPublicData.publicUrl;
 
   const seats = Array.isArray(ticket.seats)
     ? ticket.seats.join(", ")
@@ -447,7 +467,7 @@ function formatTicket(row) {
 
         <div style="margin-top:24px;text-align:center;">
           <img
-  src="${qrDataUrl}"
+  src="${qrPublicUrl}"
   alt="Código QR del boleto"
   width="260"
   style="display:block;margin:0 auto;background:#ffffff;padding:12px;border-radius:12px;"
