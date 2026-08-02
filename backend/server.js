@@ -785,19 +785,22 @@ async function cleanupPreviousBusinessDay() {
   await pool.query(`DELETE FROM employee_sessions WHERE expires_at <= NOW();`);
 
   const result = await pool.query(`
-  DELETE FROM tickets
+  DELETE FROM tickets AS t
+  USING showtimes AS s
   WHERE
-    LEFT(show_time, 10)::date <
-    CASE
-      WHEN
-        (NOW() AT TIME ZONE 'America/Puerto_Rico')::time
-        >= TIME '03:00:00'
-      THEN
-        (NOW() AT TIME ZONE 'America/Puerto_Rico')::date
-      ELSE
-        (NOW() AT TIME ZONE 'America/Puerto_Rico')::date - 1
-    END;
+    t.customer->>'showtimeId' = s.id::text
+    AND s.show_date <
+      CASE
+        WHEN
+          (NOW() AT TIME ZONE 'America/Puerto_Rico')::time
+          >= TIME '03:00:00'
+        THEN
+          (NOW() AT TIME ZONE 'America/Puerto_Rico')::date
+        ELSE
+          (NOW() AT TIME ZONE 'America/Puerto_Rico')::date - 1
+      END;
 `);
+
   if (result.rowCount > 0) {
     console.log(
       `Reinicio diario completado: ${result.rowCount} reservaciones eliminadas.`
