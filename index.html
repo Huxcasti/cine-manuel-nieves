@@ -3661,7 +3661,7 @@ filterMovieShowtimesByDate(movie.id, today);
 		      showSeatMessage("", "");
 		
 		      try {
-		        const response = await fetch(
+		        t fetch(
 		          `${API_URL}/api/seats?` +
 		          `showtimeId=` +
 		          encodeURIComponent(
@@ -4203,20 +4203,10 @@ filterMovieShowtimesByDate(movie.id, today);
 		
 		      try {
 		        const reservation = await createReservationRecord("ath_movil");
-		        const response = await fetch(
-		          `${API_URL}/api/reservations/${encodeURIComponent(reservation.id)}/ath-movil/submit`,
-		          {
-		            method: "POST",
-		            headers: { "Content-Type": "application/json" },
-		            body: JSON.stringify({ submitted: true })
-		          }
-		        );
-		        const result = await readResponse(response);
+		        
 		        pendingReservation = reservation;
-		
-		        const athNumber = result.athMovilPhone
-		          ? ` al ${escapeHtml(result.athMovilPhone)}`
-		          : "";
+
+const athNumber = "";
 		
 		        showCustomerMessage(
 		          "success",
