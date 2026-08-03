@@ -36,6 +36,10 @@ const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
 const PAYPAL_MODE = String(process.env.PAYPAL_MODE || "sandbox").toLowerCase();
 const PAYPAL_CURRENCY = String(process.env.PAYPAL_CURRENCY || "USD").toUpperCase();
 const ATH_MOVIL_PHONE = process.env.ATH_MOVIL_PHONE || "";
+
+const ATH_TEST_MODE =
+  String(process.env.ATH_TEST_MODE || "false").toLowerCase() === "true";
+
 const PAYPAL_API_BASE = PAYPAL_MODE === "live"
   ? "https://api-m.paypal.com"
   : "https://api-m.sandbox.paypal.com";
@@ -2090,13 +2094,25 @@ app.post("/api/reservations", async (req, res) => {
   const client = await pool.connect();
 
   try {
+
     const {
-      showtimeId,
-      seats,
-      ticketTypes,
-      paymentMethod = "",
-      customer
-    } = req.body;
+  showtimeId,
+  seats,
+  ticketTypes,
+  paymentMethod = "",
+  athTestApproved = false,
+  customer
+} = req.body;
+
+if (
+  paymentMethod === "ath_movil" &&
+  ATH_TEST_MODE &&
+  athTestApproved !== true
+) {
+  return res.status(400).json({
+    error: "El pago de prueba de ATH Móvil no fue aprobado."
+  });
+}
 
     if (
       typeof showtimeId !== "string" ||
@@ -2286,6 +2302,13 @@ app.post("/api/reservations", async (req, res) => {
       normalizedTicketTypes.child * childPrice +
       normalizedTicketTypes.senior * seniorPrice;
 
+const initialPaymentStatus =
+  paymentMethod === "ath_movil" &&
+  ATH_TEST_MODE &&
+  athTestApproved === true
+    ? "paid"
+    : "pending";
+
     const storedCustomer = {
       ...customer,
       name: customerName,
@@ -2319,11 +2342,11 @@ app.post("/api/reservations", async (req, res) => {
           $4,
           $5,
           $6,
-          'pending',
           $7,
           $8,
+          $9,
           FALSE,
-          $9
+          $10
         )
         RETURNING *;
       `,
@@ -2334,6 +2357,7 @@ app.post("/api/reservations", async (req, res) => {
         normalizedSeats,
         total,
         JSON.stringify(storedCustomer),
+        initialPaymentStatus,
         qrToken,
         manualCode,
         JSON.stringify(normalizedTicketTypes)
