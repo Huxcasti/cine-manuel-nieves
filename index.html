@@ -4075,12 +4075,13 @@ filterMovieShowtimesByDate(movie.id, today);
 		        method: "POST",
 		        headers: { "Content-Type": "application/json" },
 		        body: JSON.stringify({
-		          showtimeId: selectedShowtime.id,
-		          seats: selectedSeats,
-		          ticketTypes: selectedTicketTypes,
-		          paymentMethod,
-		          customer
-		        })
+  showtimeId: selectedShowtime.id,
+  seats: selectedSeats,
+  ticketTypes: selectedTicketTypes,
+  paymentMethod: method,
+  athTestApproved: method === "ath_movil",
+  customer
+})
 		      });
 		
 		      const data = await readResponse(response);
