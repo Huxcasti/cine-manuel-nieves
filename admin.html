@@ -2026,9 +2026,9 @@
   const selectedDate = dateInput?.value || "";
 
   if (!selectedDate) {
-    updateStatistics(reservationsCache);
-    return;
-  }
+  updateStatistics([]);
+  return;
+}
 
   const filteredReservations = reservationsCache.filter((ticket) => {
     const rawTime = String(ticket.time || "").trim();
