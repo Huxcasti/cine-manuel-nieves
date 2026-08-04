@@ -1207,6 +1207,24 @@
 
       <!-- RESERVACIONES -->
       <section id="reservationsSection" class="page-section active">
+
+      <div class="card" style="margin-bottom: 20px;">
+  <label for="salesDateFilter">Ver ventas de la fecha:</label>
+
+  <input
+    id="salesDateFilter"
+    type="date"
+    onchange="applySalesDateFilter()"
+  />
+
+  <button
+    type="button"
+    onclick="showAllSales()"
+  >
+    Ver todas
+  </button>
+</div>
+
         <div class="stats">
           <article class="stat">
             <span class="stat-label">Reservaciones</span>
@@ -1922,8 +1940,21 @@
 
       try {
         const reservations = await adminFetch("/api/admin/reservations");
+
+        const todayInPuertoRico = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Puerto_Rico",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+}).format(new Date());
+
+const todayReservations = reservations.filter((ticket) => {
+  const showDate = String(ticket.time || "").slice(0, 10);
+  return showDate === todayInPuertoRico;
+});
+
         renderReservations(reservations);
-        updateStatistics(reservations);
+        updateStatistics(todayReservations);
       } catch (error) {
         alert(error.message);
       } finally {
