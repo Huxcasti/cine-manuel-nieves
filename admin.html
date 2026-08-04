@@ -1949,6 +1949,22 @@
       : [];
 
     renderReservations(reservationsCache);
+
+    const dateInput =
+  document.getElementById("salesDateFilter");
+
+if (dateInput && !dateInput.value) {
+  const todayInPuertoRico =
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Puerto_Rico",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date());
+
+  dateInput.value = todayInPuertoRico;
+}
+
     applySalesDateFilter();
   } catch (error) {
     alert(error.message);
