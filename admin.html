@@ -1100,6 +1100,7 @@
   background: #111a2b;
   border: 1px solid #334766;
   border-radius: 22px;
+  overflow: hidden;
 }
 
 .sales-filter-card label {
@@ -1110,9 +1111,11 @@
 
 .sales-date-input {
   display: block;
-  width: 100%;
+  width: calc(100% - 8px);
+  max-width: 100%;
   box-sizing: border-box;
-  padding: 18px 20px;
+  margin: 0 auto;
+  padding: 18px 16px;
   border: 2px solid #3b506f;
   border-radius: 18px;
   background: #0b1322;
@@ -1120,8 +1123,8 @@
   font-size: 1.15rem;
   text-align: center;
   outline: none;
+  min-width: 0;
 }
-
 .sales-date-input:focus {
   border-color: #42d4d1;
 }
