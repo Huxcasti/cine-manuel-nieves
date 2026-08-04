@@ -2030,13 +2030,31 @@
     return;
   }
 
-  const filteredReservations =
-    reservationsCache.filter((ticket) => {
-      const showDate =
-        String(ticket.time || "").slice(0, 10);
+  const filteredReservations = reservationsCache.filter((ticket) => {
+    const rawTime = String(ticket.time || "").trim();
 
-      return showDate === selectedDate;
-    });
+    let showDate = "";
+
+    // Formato correcto: 2026-08-13 20:00
+    if (/^\d{4}-\d{2}-\d{2}/.test(rawTime)) {
+      showDate = rawTime.slice(0, 10);
+    } else {
+      // Formato actual: Thu Aug 13 2026...
+      const dateMatch = rawTime.match(
+        /^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/
+      );
+
+      if (dateMatch) {
+        const parsedDate = new Date(`${dateMatch[0]} 00:00:00 UTC`);
+
+        if (!Number.isNaN(parsedDate.getTime())) {
+          showDate = parsedDate.toISOString().slice(0, 10);
+        }
+      }
+    }
+
+    return showDate === selectedDate;
+  });
 
   updateStatistics(filteredReservations);
 }
