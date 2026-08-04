@@ -1091,6 +1091,57 @@
   color: #ffffff;
 }
 
+.sales-filter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  background: #111a2b;
+  border: 1px solid #334766;
+  border-radius: 22px;
+}
+
+.sales-filter-card label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #eef4ff;
+}
+
+.sales-date-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 20px;
+  border: 2px solid #3b506f;
+  border-radius: 18px;
+  background: #0b1322;
+  color: #ffffff;
+  font-size: 1.15rem;
+  text-align: center;
+  outline: none;
+}
+
+.sales-date-input:focus {
+  border-color: #42d4d1;
+}
+
+.sales-all-button {
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #42d4d1, #2aa9b4);
+  color: #07131c;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sales-all-button:active {
+  transform: scale(0.98);
+}
+
   </style>
 </head>
 
@@ -1208,23 +1259,26 @@
       <!-- RESERVACIONES -->
       <section id="reservationsSection" class="page-section active">
 
-      <div class="card" style="margin-bottom: 20px;">
-  <label for="salesDateFilter">Ver ventas de la fecha:</label>
+      <div class="sales-filter-card">
+  <label for="salesDateFilter">
+    Ver ventas de la fecha:
+  </label>
 
   <input
     id="salesDateFilter"
+    class="sales-date-input"
     type="date"
     onchange="applySalesDateFilter()"
   />
 
   <button
+    class="sales-all-button"
     type="button"
     onclick="showAllSales()"
   >
-    Ver todas
+    Ver todas las ventas
   </button>
 </div>
-
         <div class="stats">
           <article class="stat">
             <span class="stat-label">Reservaciones</span>
