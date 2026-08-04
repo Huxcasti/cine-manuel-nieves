@@ -789,20 +789,9 @@ async function cleanupPreviousBusinessDay() {
   await pool.query(`DELETE FROM employee_sessions WHERE expires_at <= NOW();`);
 
   const result = await pool.query(`
-  DELETE FROM tickets AS t
-  USING showtimes AS s
-  WHERE
-    t.customer->>'showtimeId' = s.id::text
-    AND s.show_date <
-      CASE
-        WHEN
-          (NOW() AT TIME ZONE 'America/Puerto_Rico')::time
-          >= TIME '03:00:00'
-        THEN
-          (NOW() AT TIME ZONE 'America/Puerto_Rico')::date
-        ELSE
-          (NOW() AT TIME ZONE 'America/Puerto_Rico')::date - 1
-      END;
+  DELETE FROM tickets
+  WHERE payment_status = 'pending'
+    AND created_at < NOW() - INTERVAL '30 minutes';
 `);
 
   if (result.rowCount > 0) {
