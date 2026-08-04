@@ -3658,19 +3658,19 @@ filterMovieShowtimesByDate(movie.id, today);
 		    }
 		
 		    async function loadOccupiedSeats() {
-		      showSeatMessage("", "");
-		
-		      try {
-		        t fetch(
-		          `${API_URL}/api/seats?` +
-		          `showtimeId=` +
-		          encodeURIComponent(
-		            selectedShowtime.id
-		          )
-		        );
-		
-		        const data =
-		          await readResponse(response);
+  showSeatMessage("", "");
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/seats?` +
+      `showtimeId=` +
+      encodeURIComponent(
+        selectedShowtime.id
+      )
+    );
+
+    const data =
+      await readResponse(response);
 		
 		        occupiedSeats =
 		          Array.isArray(
