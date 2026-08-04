@@ -1773,6 +1773,7 @@
     let moviesCache = [];
     let showtimesCache = [];
     let employeesCache = [];
+    let reservationsCache = [];
 
     function setLoading(visible) {
       document.getElementById("loadingMessage").style.display = visible ? "block" : "none";
@@ -1936,31 +1937,25 @@
     }
 
     async function loadReservations() {
-      setLoading(true);
+  setLoading(true);
 
-      try {
-        const reservations = await adminFetch("/api/admin/reservations");
+  try {
+    const reservations = await adminFetch(
+      "/api/admin/reservations"
+    );
 
-        const todayInPuertoRico = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/Puerto_Rico",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit"
-}).format(new Date());
+    reservationsCache = Array.isArray(reservations)
+      ? reservations
+      : [];
 
-const todayReservations = reservations.filter((ticket) => {
-  const showDate = String(ticket.time || "").slice(0, 10);
-  return showDate === todayInPuertoRico;
-});
-
-        renderReservations(reservations);
-        updateStatistics(todayReservations);
-      } catch (error) {
-        alert(error.message);
-      } finally {
-        setLoading(false);
-      }
-    }
+    renderReservations(reservationsCache);
+    applySalesDateFilter();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    setLoading(false);
+  }
+}
 
     function renderReservations(reservations) {
       const rows = document.getElementById("reservationRows");
@@ -2023,6 +2018,39 @@ const todayReservations = reservations.filter((ticket) => {
       document.getElementById("salesTotal").textContent = `$${salesTotal.toFixed(2)}`;
       document.getElementById("usedCount").textContent = usedCount;
     }
+
+    function applySalesDateFilter() {
+  const dateInput =
+    document.getElementById("salesDateFilter");
+
+  const selectedDate = dateInput?.value || "";
+
+  if (!selectedDate) {
+    updateStatistics(reservationsCache);
+    return;
+  }
+
+  const filteredReservations =
+    reservationsCache.filter((ticket) => {
+      const showDate =
+        String(ticket.time || "").slice(0, 10);
+
+      return showDate === selectedDate;
+    });
+
+  updateStatistics(filteredReservations);
+}
+
+function showAllSales() {
+  const dateInput =
+    document.getElementById("salesDateFilter");
+
+  if (dateInput) {
+    dateInput.value = "";
+  }
+
+  updateStatistics(reservationsCache);
+}
 
     async function loadMovies() {
       setLoading(true);
