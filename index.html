@@ -4150,17 +4150,34 @@ filterMovieShowtimesByDate(movie.id, today);
 		          },
 		
 		          onApprove: async (data) => {
-		            showPage("processingPage");
-		            try {
-		              currentTicket = result.reservation;
-		              renderTicket(currentTicket);
-		              showPage("ticketPage");
-		            } catch (error) {
-		              showPage("customerPage");
-		              showCustomerMessage("error", error.message);
-		            }
-		          },
-		
+  showPage("processingPage");
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/paypal/orders/${
+        encodeURIComponent(data.orderID)
+      }/capture`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          reservationId: pendingReservation.id
+        })
+      }
+    );
+
+    const result = await readResponse(response);
+
+    currentTicket = result.reservation;
+    renderTicket(currentTicket);
+    showPage("ticketPage");
+  } catch (error) {
+    showPage("customerPage");
+    showCustomerMessage("error", error.message);
+  }
+},
 		          onCancel: () => {
 		            showCustomerMessage("error", "El pago de PayPal fue cancelado. Tus asientos permanecen reservados temporalmente.");
 		          },
