@@ -2503,9 +2503,9 @@ body {
 		              <div id="paypalButtonContainer"></div>
 		
 		              <div class="ath-payment-instructions" id="athInstructions">
-		                <strong>Pago manual por ATH Móvil</strong>
+		                <strong>Pago con ATH Móvil</strong>
 		                <p id="athInstructionsText" style="margin-top: 7px;">
-		                  Al continuar se reservarán tus asientos temporalmente y se mostrarán las instrucciones para completar el pago.
+		                  Al continuar serás dirigido al enlace oficial de ATH Móvil para completar el pago.
 		                </p>
 		              </div>
 		            </div>
@@ -2717,6 +2717,9 @@ body {
 		  <script>
 		    const API_URL =
 		      "https://cine-manuel-nieves.onrender.com";
+
+		    // Pega aquí el enlace oficial de pago cuando ATH Móvil Business lo entregue.
+		    const ATH_MOVIL_PAYMENT_URL = "";
 
             const OFFICIAL_SEAT_LAYOUT = (() => {
               const rows = {};
@@ -4051,11 +4054,11 @@ filterMovieShowtimesByDate(movie.id, today);
 		        initializePayPalButtons();
 		      } else {
 		        document.getElementById("paymentMessage").textContent =
-		          "ATH Móvil se procesa manualmente. La reservación permanecerá pendiente hasta que el cine confirme el pago.";
+		          "Serás dirigido al enlace oficial de ATH Móvil para completar el pago.";
 		        paypalContainer.classList.remove("visible");
 		        athInstructions.classList.add("visible");
 		        purchaseButton.style.display = "block";
-		        purchaseButton.textContent = "Reservar con ATH Móvil";
+		        purchaseButton.textContent = "Pagar con ATH Móvil";
 		      }
 		
 		      showCustomerMessage("", "");
@@ -4199,12 +4202,12 @@ filterMovieShowtimesByDate(movie.id, today);
 		      event
 		    ) {
 		      event.preventDefault();
-		
+
 		      const customer = validateCustomerAndPayment(true);
 		      if (!customer) {
 		        return;
 		      }
-		
+
 		      if (selectedPaymentMethod === "paypal") {
 		        showCustomerMessage(
 		          "error",
@@ -4212,36 +4215,31 @@ filterMovieShowtimesByDate(movie.id, today);
 		        );
 		        return;
 		      }
-		
+
+		      if (selectedPaymentMethod !== "ath_movil") {
+		        showCustomerMessage(
+		          "error",
+		          "Selecciona un método de pago."
+		        );
+		        return;
+		      }
+
+		      if (!ATH_MOVIL_PAYMENT_URL.trim()) {
+		        showCustomerMessage(
+		          "error",
+		          "ATH Móvil todavía no está disponible. Añade el enlace oficial en ATH_MOVIL_PAYMENT_URL."
+		        );
+		        return;
+		      }
+
 		      const button = document.getElementById("purchaseButton");
 		      button.disabled = true;
-		      button.textContent = "Creando reservación...";
+		      button.textContent = "Abriendo ATH Móvil...";
 		      showCustomerMessage("", "");
-		
-		      try {
-		        const reservation = await createReservationRecord("ath_movil");
-		        
-		        pendingReservation = reservation;
 
-const athNumber = "";
-		
-		        showCustomerMessage(
-		          "success",
-		          `Reservación creada. Envía $${Number(reservation.total).toFixed(2)} por ATH Móvil${athNumber}. ` +
-		          `Usa como referencia ${reservation.manualCode || reservation.id}. ` +
-		          "El boleto y el QR se habilitarán cuando el cine confirme el pago."
-		        );
-		        button.textContent = "Pago enviado para revisión";
-		      } catch (error) {
-		        showCustomerMessage("error", error.message);
-		        if (error.message.toLowerCase().includes("asiento")) {
-		          await loadOccupiedSeats();
-		        }
-		      } finally {
-		        button.disabled = false;
-		      }
+		      window.location.assign(ATH_MOVIL_PAYMENT_URL);
 		    }
-		
+
 		    function renderTicket(ticket) {
 		      const details =
 		        document.getElementById(
