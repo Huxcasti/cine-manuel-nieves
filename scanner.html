@@ -1129,6 +1129,114 @@
       return date.toLocaleString("es-PR");
     }
 
+    function formatShowtimeDateTime(value) {
+      const rawValue = String(value || "").trim();
+
+      if (!rawValue || rawValue === "—") return "—";
+
+      let year;
+      let month;
+      let day;
+
+      const isoDateMatch = rawValue.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+
+      if (isoDateMatch) {
+        year = Number(isoDateMatch[1]);
+        month = Number(isoDateMatch[2]);
+        day = Number(isoDateMatch[3]);
+      } else {
+        const englishDateMatch = rawValue.match(
+          /\b(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/i
+        );
+
+        if (englishDateMatch) {
+          const monthNumbers = {
+            jan: 1,
+            feb: 2,
+            mar: 3,
+            apr: 4,
+            may: 5,
+            jun: 6,
+            jul: 7,
+            aug: 8,
+            sep: 9,
+            oct: 10,
+            nov: 11,
+            dec: 12
+          };
+
+          month = monthNumbers[englishDateMatch[1].toLowerCase()];
+          day = Number(englishDateMatch[2]);
+          year = Number(englishDateMatch[3]);
+        }
+      }
+
+      const timeMatches = [...rawValue.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)];
+      const lastTimeMatch = timeMatches.length
+        ? timeMatches[timeMatches.length - 1]
+        : null;
+
+      let formattedTime = "";
+
+      if (lastTimeMatch) {
+        const hours24 = Number(lastTimeMatch[1]);
+        const minutes = lastTimeMatch[2];
+        const period = hours24 >= 12 ? "p. m." : "a. m.";
+        const hours12 = hours24 % 12 || 12;
+
+        formattedTime = `${hours12}:${minutes} ${period}`;
+      }
+
+      if (
+        Number.isInteger(year) &&
+        Number.isInteger(month) &&
+        Number.isInteger(day) &&
+        month >= 1 &&
+        month <= 12 &&
+        day >= 1 &&
+        day <= 31
+      ) {
+        const monthNames = [
+          "enero",
+          "febrero",
+          "marzo",
+          "abril",
+          "mayo",
+          "junio",
+          "julio",
+          "agosto",
+          "septiembre",
+          "octubre",
+          "noviembre",
+          "diciembre"
+        ];
+
+        const weekdayNames = [
+          "domingo",
+          "lunes",
+          "martes",
+          "miércoles",
+          "jueves",
+          "viernes",
+          "sábado"
+        ];
+
+        const weekdayIndex = new Date(
+          Date.UTC(year, month - 1, day, 12)
+        ).getUTCDay();
+
+        const formattedDate =
+          `${weekdayNames[weekdayIndex]}, ${day} de ` +
+          `${monthNames[month - 1]} de ${year}`;
+
+        return formattedTime
+          ? `${formattedDate} • ${formattedTime}`
+          : formattedDate;
+      }
+
+      return formattedTime || rawValue;
+    }
+
     function getEmployeeDisplayName(session) {
       return (
         session?.employee?.name ||
@@ -1417,7 +1525,7 @@
 
           <div class="result-item">
             <span>Tanda</span>
-            <strong>${escapeHtml(showTime)}</strong>
+            <strong>${escapeHtml(formatShowtimeDateTime(showTime))}</strong>
           </div>
 
           <div class="result-item">
@@ -1487,7 +1595,7 @@
       recentHistory.unshift({
         ok,
         title: movie,
-        subtitle: showTime,
+        subtitle: formatShowtimeDateTime(showTime),
         seats: seatsText,
         seatsCount,
         time,
