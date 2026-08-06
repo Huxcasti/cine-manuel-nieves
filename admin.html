@@ -1117,11 +1117,11 @@
 }
 
 .sales-date-input {
-  display: block;
-  width: 82%;
-  max-width: 560px;
-  align-self: center;
-  box-sizing: border-box;
+      display: block;
+      width: 100%;
+      max-width: none;
+      align-self: auto;
+      box-sizing: border-box;
   margin: 0;
   padding: 18px 16px;
   border: 2px solid #3b506f;
@@ -1180,7 +1180,10 @@
 
     .sales-date-wrap {
       position: relative;
-      width: 100%;
+      width: 72%;
+      max-width: 520px;
+      min-width: 280px;
+      margin: 0 auto;
     }
 
     .sales-date-icon {
@@ -1276,12 +1279,12 @@
     }
 
     @media (max-width: 520px) {
-  .sales-date-input {
-    width: 82% !important;
-    max-width: 560px !important;
-    align-self: center !important;
-  }
-}
+      .sales-date-wrap {
+        width: 74%;
+        max-width: 420px;
+        min-width: 250px;
+      }
+    }
 
   </style>
 </head>
