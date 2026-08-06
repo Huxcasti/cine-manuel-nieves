@@ -1076,6 +1076,8 @@
 
   <script>
     const API_URL = "https://cine-manuel-nieves.onrender.com";
+    const SCANNER_BUILD = "tanda-formateada-v3";
+    console.log("Scanner build:", SCANNER_BUILD);
 
     const LOGIN_ENDPOINTS = [
       "/api/employee/login",
@@ -1129,73 +1131,58 @@
       return date.toLocaleString("es-PR");
     }
 
-    function formatShowtimeDateTime(value) {
-      const rawValue = String(value || "").trim();
+    function formatShowtime(value) {
+      const raw = String(value || "").trim();
 
-      if (!rawValue || rawValue === "—") return "—";
+      if (!raw || raw === "—") return "—";
 
-      let year;
-      let month;
-      let day;
+      const months = {
+        Jan: "enero",
+        Feb: "febrero",
+        Mar: "marzo",
+        Apr: "abril",
+        May: "mayo",
+        Jun: "junio",
+        Jul: "julio",
+        Aug: "agosto",
+        Sep: "septiembre",
+        Oct: "octubre",
+        Nov: "noviembre",
+        Dec: "diciembre"
+      };
 
-      const isoDateMatch = rawValue.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+      const weekdays = {
+        Sun: "domingo",
+        Mon: "lunes",
+        Tue: "martes",
+        Wed: "miércoles",
+        Thu: "jueves",
+        Fri: "viernes",
+        Sat: "sábado"
+      };
 
-      if (isoDateMatch) {
-        year = Number(isoDateMatch[1]);
-        month = Number(isoDateMatch[2]);
-        day = Number(isoDateMatch[3]);
-      } else {
-        const englishDateMatch = rawValue.match(
-          /\b(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/i
-        );
+      const dateMatch = raw.match(
+        /\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/
+      );
 
-        if (englishDateMatch) {
-          const monthNumbers = {
-            jan: 1,
-            feb: 2,
-            mar: 3,
-            apr: 4,
-            may: 5,
-            jun: 6,
-            jul: 7,
-            aug: 8,
-            sep: 9,
-            oct: 10,
-            nov: 11,
-            dec: 12
-          };
+      const isoMatch = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
 
-          month = monthNumbers[englishDateMatch[1].toLowerCase()];
-          day = Number(englishDateMatch[2]);
-          year = Number(englishDateMatch[3]);
-        }
-      }
+      const allTimes = raw.match(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g);
+      const time24 = allTimes && allTimes.length
+        ? allTimes[allTimes.length - 1]
+        : "";
 
-      const timeMatches = [...rawValue.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)];
-      const lastTimeMatch = timeMatches.length
-        ? timeMatches[timeMatches.length - 1]
-        : null;
+      let dateText = "";
 
-      let formattedTime = "";
+      if (dateMatch) {
+        dateText =
+          `${weekdays[dateMatch[1]]}, ${Number(dateMatch[3])} de ` +
+          `${months[dateMatch[2]]} de ${dateMatch[4]}`;
+      } else if (isoMatch) {
+        const year = Number(isoMatch[1]);
+        const month = Number(isoMatch[2]);
+        const day = Number(isoMatch[3]);
 
-      if (lastTimeMatch) {
-        const hours24 = Number(lastTimeMatch[1]);
-        const minutes = lastTimeMatch[2];
-        const period = hours24 >= 12 ? "p. m." : "a. m.";
-        const hours12 = hours24 % 12 || 12;
-
-        formattedTime = `${hours12}:${minutes} ${period}`;
-      }
-
-      if (
-        Number.isInteger(year) &&
-        Number.isInteger(month) &&
-        Number.isInteger(day) &&
-        month >= 1 &&
-        month <= 12 &&
-        day >= 1 &&
-        day <= 31
-      ) {
         const monthNames = [
           "enero",
           "febrero",
@@ -1221,20 +1208,32 @@
           "sábado"
         ];
 
-        const weekdayIndex = new Date(
+        const weekday = new Date(
           Date.UTC(year, month - 1, day, 12)
         ).getUTCDay();
 
-        const formattedDate =
-          `${weekdayNames[weekdayIndex]}, ${day} de ` +
+        dateText =
+          `${weekdayNames[weekday]}, ${day} de ` +
           `${monthNames[month - 1]} de ${year}`;
-
-        return formattedTime
-          ? `${formattedDate} • ${formattedTime}`
-          : formattedDate;
       }
 
-      return formattedTime || rawValue;
+      let timeText = "";
+
+      if (time24) {
+        const parts = time24.split(":");
+        const hours24 = Number(parts[0]);
+        const minutes = parts[1];
+        const hours12 = hours24 % 12 || 12;
+        const period = hours24 >= 12 ? "p. m." : "a. m.";
+
+        timeText = `${hours12}:${minutes} ${period}`;
+      }
+
+      if (dateText && timeText) return `${dateText} • ${timeText}`;
+      if (dateText) return dateText;
+      if (timeText) return timeText;
+
+      return raw;
     }
 
     function getEmployeeDisplayName(session) {
@@ -1466,11 +1465,13 @@
         data?.ticket?.movie ||
         "—";
 
-      const showTime =
+      const rawShowTime =
         data?.time ||
         data?.showTime ||
         data?.ticket?.time ||
         "—";
+
+      const showTime = formatShowtime(rawShowTime);
 
       const customer =
         data?.customer?.name ||
@@ -1525,7 +1526,7 @@
 
           <div class="result-item">
             <span>Tanda</span>
-            <strong>${escapeHtml(formatShowtimeDateTime(showTime))}</strong>
+            <strong>${escapeHtml(showTime)}</strong>
           </div>
 
           <div class="result-item">
@@ -1566,11 +1567,13 @@
         data?.movieTitle ||
         data?.ticket?.movie ||
         "Validación";
-      const showTime =
+      const rawShowTime =
         data?.time ||
         data?.showTime ||
         data?.ticket?.time ||
         "—";
+
+      const showTime = formatShowtime(rawShowTime);
       const seatsArray =
         data?.seats ||
         data?.ticket?.seats ||
@@ -1595,7 +1598,7 @@
       recentHistory.unshift({
         ok,
         title: movie,
-        subtitle: formatShowtimeDateTime(showTime),
+        subtitle: showTime,
         seats: seatsText,
         seatsCount,
         time,
