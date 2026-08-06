@@ -1123,13 +1123,14 @@
 }
 
 .sales-date-input {
-      display: block;
-      width: 100%;
-      max-width: none;
-      align-self: auto;
-      box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 68px;
+  max-width: none;
+  align-self: auto;
+  box-sizing: border-box;
   margin: 0;
-  padding: 18px 16px;
+  padding: 0 42px 0 56px;
   border: 2px solid #3b506f;
   border-radius: 18px;
   background: #0b1322;
@@ -1141,9 +1142,27 @@
 }
 
 .sales-date-input::-webkit-date-and-time-value {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   text-align: center;
-  transform: translate(-14px, 8px);
+  transform: translateX(-10px);
 }
+
+    .sales-date-input::-webkit-calendar-picker-indicator {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
 .sales-date-input:focus {
   border-color: #42d4d1;
 }
@@ -1212,6 +1231,8 @@
     .sales-date-wrap .sales-date-input {
       padding-left: 56px;
       padding-right: 42px;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     .stats .stat {
