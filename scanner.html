@@ -1711,33 +1711,36 @@
         await html5QrScanner.start(
           cameraId || { facingMode: "environment" },
           {
-            {
-  fps: 15,
-  qrbox: (viewfinderWidth, viewfinderHeight) => {
-    const size = Math.floor(
-      Math.min(viewfinderWidth, viewfinderHeight) * 0.8
-    );
+            fps: 15,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const size = Math.floor(
+                Math.min(viewfinderWidth, viewfinderHeight) * 0.8
+              );
 
-    return {
-      width: size,
-      height: size
-    };
-  }
-},
+              return {
+                width: size,
+                height: size
+              };
+            }
           },
           async (decodedText) => {
             if (scanCooldown) return;
             scanCooldown = true;
 
             try {
-  await validateTicket(decodedText, "camera");
+              await validateTicket(decodedText, "camera");
 
-  if (html5QrScanner && scannerStarted) {
-    html5QrScanner.pause(true);
-  }
+              // Detiene nuevas lecturas después de una validación exitosa.
+              // El servidor marca este boleto como usado, por lo que no podrá
+              // validarse nuevamente aunque se intente desde otro dispositivo.
+              if (html5QrScanner && scannerStarted) {
+                html5QrScanner.pause(true);
+              }
 
-  hideScannerPlaceholder();
-}
+              hideScannerPlaceholder();
+              document
+                .getElementById("resultContent")
+                .scrollIntoView({ behavior: "smooth", block: "center" });
             } catch (error) {
               renderResult(
                 {
