@@ -1,80 +1,122 @@
-const express = require(“express”); const cors = require(“cors”); const
-crypto = require(“crypto”); const { Pool } = require(“pg”); const multer
-= require(“multer”); const { createClient } =
-require(“@supabase/supabase-js”);
+const express = require("express");
+const cors = require("cors");
+const crypto = require("crypto");
+const { Pool } = require("pg");
+const multer = require("multer");
+const { createClient } = require("@supabase/supabase-js");
 
-const { Resend } = require(“resend”); const QRCode = require(“qrcode”);
-const app = express(); const PORT = process.env.PORT || 3000;
+const { Resend } = require("resend");
+const QRCode = require("qrcode");
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 /*
-
+==================================================
 VARIABLES DE ENTORNO
-
+==================================================
 */
 
-const INITIAL_ADMIN_PASSWORD = process.env.ADMIN_KEY; const SUPABASE_URL
-= process.env.SUPABASE_URL; const RESEND_API_KEY =
-process.env.RESEND_API_KEY; const resend = RESEND_API_KEY ? new
-Resend(RESEND_API_KEY) : null; const SUPABASE_SERVICE_ROLE_KEY =
-process.env.SUPABASE_SERVICE_ROLE_KEY; const SUPABASE_POSTERS_BUCKET =
-process.env.SUPABASE_POSTERS_BUCKET || “posters”; const
-SUPABASE_TRAILERS_BUCKET = process.env.SUPABASE_TRAILERS_BUCKET ||
-SUPABASE_POSTERS_BUCKET;
+const INITIAL_ADMIN_PASSWORD = process.env.ADMIN_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const resend = RESEND_API_KEY
+  ? new Resend(RESEND_API_KEY)
+  : null;
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_POSTERS_BUCKET =
+  process.env.SUPABASE_POSTERS_BUCKET || "posters";
+const SUPABASE_TRAILERS_BUCKET =
+  process.env.SUPABASE_TRAILERS_BUCKET ||
+  SUPABASE_POSTERS_BUCKET;
 
-// PayPal y ATH Móvil const PAYPAL_CLIENT_ID =
-process.env.PAYPAL_CLIENT_ID || ““; const PAYPAL_CLIENT_SECRET =
-process.env.PAYPAL_CLIENT_SECRET ||”“; const PAYPAL_MODE =
-String(process.env.PAYPAL_MODE ||”sandbox”).toLowerCase(); const
-PAYPAL_CURRENCY = String(process.env.PAYPAL_CURRENCY ||
-“USD”).toUpperCase(); const ATH_MOVIL_PHONE =
-process.env.ATH_MOVIL_PHONE || ““;
+// PayPal y ATH Móvil
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || "";
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
+const PAYPAL_MODE = String(process.env.PAYPAL_MODE || "sandbox").toLowerCase();
+const PAYPAL_CURRENCY = String(process.env.PAYPAL_CURRENCY || "USD").toUpperCase();
+const ATH_MOVIL_PHONE = process.env.ATH_MOVIL_PHONE || "";
 
-const ATH_TEST_MODE = String(process.env.ATH_TEST_MODE ||
-“false”).toLowerCase() === “true”;
+const ATH_TEST_MODE =
+  String(process.env.ATH_TEST_MODE || "false").toLowerCase() === "true";
 
-const PAYPAL_API_BASE = PAYPAL_MODE === “live” ?
-“https://api-m.paypal.com” : “https://api-m.sandbox.paypal.com”;
+const PAYPAL_API_BASE = PAYPAL_MODE === "live"
+  ? "https://api-m.paypal.com"
+  : "https://api-m.sandbox.paypal.com";
 
-app.use(cors()); app.use(express.json());
+app.use(cors());
+app.use(express.json());
 
-if (!process.env.DATABASE_URL) { console.error(“Falta la variable
-DATABASE_URL.”); process.exit(1); }
+if (!process.env.DATABASE_URL) {
+  console.error("Falta la variable DATABASE_URL.");
+  process.exit(1);
+}
 
-if (!INITIAL_ADMIN_PASSWORD) { console.error(“Falta la variable
-ADMIN_KEY.”); process.exit(1); }
+if (!INITIAL_ADMIN_PASSWORD) {
+  console.error("Falta la variable ADMIN_KEY.");
+  process.exit(1);
+}
 
-if (!SUPABASE_URL) { console.error(“Falta la variable SUPABASE_URL.”);
-process.exit(1); }
+if (!SUPABASE_URL) {
+  console.error("Falta la variable SUPABASE_URL.");
+  process.exit(1);
+}
 
-if (!SUPABASE_SERVICE_ROLE_KEY) { console.error( “Falta la variable
-SUPABASE_SERVICE_ROLE_KEY.” ); process.exit(1); }
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  console.error(
+    "Falta la variable SUPABASE_SERVICE_ROLE_KEY."
+  );
+  process.exit(1);
+}
 
 /*
-
+==================================================
 CONEXIÃN CON POSTGRESQL
-
+==================================================
 */
 
-const useSSL = process.env.DATABASE_URL.includes(“render.com”) ||
-process.env.DATABASE_URL.includes(“supabase.com”);
+const useSSL =
+  process.env.DATABASE_URL.includes("render.com") ||
+  process.env.DATABASE_URL.includes("supabase.com");
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl:
-useSSL ? { rejectUnauthorized: false } : false });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: useSSL
+    ? {
+        rejectUnauthorized: false
+      }
+    : false
+});
 
 /*
-
+==================================================
 SUPABASE STORAGE
-
+==================================================
 */
 
-const supabase = createClient( SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-{ auth: { autoRefreshToken: false, persistSession: false,
-detectSessionInUrl: false } } );
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false
+    }
+  }
+);
 
-const posterUpload = multer({ storage: multer.memoryStorage(), limits: {
-fileSize: 6 * 1024 * 1024 }, fileFilter: (req, file, callback) => {
-const allowedTypes = new Set([ “image/jpeg”, “image/png”, “image/webp”
-]);
+const posterUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 6 * 1024 * 1024
+  },
+  fileFilter: (req, file, callback) => {
+    const allowedTypes = new Set([
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ]);
 
     if (!allowedTypes.has(file.mimetype)) {
       callback(
@@ -86,18 +128,30 @@ const allowedTypes = new Set([ “image/jpeg”, “image/png”, “image/webp�
     }
 
     callback(null, true);
+  }
+});
 
-} });
+function extensionFromMimeType(mimeType) {
+  const extensions = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp"
+  };
 
-function extensionFromMimeType(mimeType) { const extensions = {
-“image/jpeg”: “jpg”, “image/png”: “png”, “image/webp”: “webp” };
+  return extensions[mimeType] || "jpg";
+}
 
-return extensions[mimeType] || “jpg”; }
-
-const trailerUpload = multer({ storage: multer.memoryStorage(), limits:
-{ fileSize: 50 * 1024 * 1024 }, fileFilter: (req, file, callback) => {
-const allowedTypes = new Set([ “video/mp4”, “video/webm”,
-“video/quicktime” ]);
+const trailerUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024
+  },
+  fileFilter: (req, file, callback) => {
+    const allowedTypes = new Set([
+      "video/mp4",
+      "video/webm",
+      "video/quicktime"
+    ]);
 
     if (!allowedTypes.has(file.mimetype)) {
       callback(
@@ -109,67 +163,99 @@ const allowedTypes = new Set([ “video/mp4”, “video/webm”,
     }
 
     callback(null, true);
+  }
+});
 
-} });
+function trailerExtensionFromMimeType(mimeType) {
+  const extensions = {
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+    "video/quicktime": "mov"
+  };
 
-function trailerExtensionFromMimeType(mimeType) { const extensions = {
-“video/mp4”: “mp4”, “video/webm”: “webm”, “video/quicktime”: “mov” };
-
-return extensions[mimeType] || “mp4”; }
+  return extensions[mimeType] || "mp4";
+}
 
 /*
-
+==================================================
 CONTRASEÃA DEL ADMINISTRADOR
-
+==================================================
 */
 
-function scryptAsync(password, salt) { return new Promise((resolve,
-reject) => { crypto.scrypt(password, salt, 64, (error, derivedKey) => {
-if (error) { reject(error); return; }
+function scryptAsync(password, salt) {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, (error, derivedKey) => {
+      if (error) {
+        reject(error);
+        return;
+      }
 
       resolve(derivedKey);
     });
+  });
+}
 
-}); }
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derivedKey = await scryptAsync(password, salt);
 
-async function hashPassword(password) { const salt =
-crypto.randomBytes(16).toString(“hex”); const derivedKey = await
-scryptAsync(password, salt);
+  return {
+    salt,
+    hash: derivedKey.toString("hex")
+  };
+}
 
-return { salt, hash: derivedKey.toString(“hex”) }; }
+async function verifyPassword(password, storedSalt, storedHash) {
+  const derivedKey = await scryptAsync(password, storedSalt);
+  const storedBuffer = Buffer.from(storedHash, "hex");
 
-async function verifyPassword(password, storedSalt, storedHash) { const
-derivedKey = await scryptAsync(password, storedSalt); const storedBuffer
-= Buffer.from(storedHash, “hex”);
+  if (storedBuffer.length !== derivedKey.length) {
+    return false;
+  }
 
-if (storedBuffer.length !== derivedKey.length) { return false; }
+  return crypto.timingSafeEqual(storedBuffer, derivedKey);
+}
 
-return crypto.timingSafeEqual(storedBuffer, derivedKey); }
+function hashSessionToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
 
-function hashSessionToken(token) { return
-crypto.createHash(“sha256”).update(token).digest(“hex”); }
+function normalizeUsername(username) {
+  return String(username || "").trim().toLowerCase();
+}
 
-function normalizeUsername(username) { return String(username ||
-““).trim().toLowerCase(); }
+async function getAdminCredentials() {
+  const result = await pool.query(`
+    SELECT password_salt, password_hash
+    FROM admin_settings
+    WHERE id = 1;
+  `);
 
-async function getAdminCredentials() { const result = await
-pool.query(SELECT password_salt, password_hash     FROM admin_settings     WHERE id = 1;);
+  return result.rows[0] || null;
+}
 
-return result.rows[0] || null; }
+async function isValidAdminPassword(password) {
+  if (!password || typeof password !== "string") {
+    return false;
+  }
 
-async function isValidAdminPassword(password) { if (!password || typeof
-password !== “string”) { return false; }
+  const credentials = await getAdminCredentials();
 
-const credentials = await getAdminCredentials();
+  if (!credentials) {
+    return false;
+  }
 
-if (!credentials) { return false; }
+  return verifyPassword(
+    password,
+    credentials.password_salt,
+    credentials.password_hash
+  );
+}
 
-return verifyPassword( password, credentials.password_salt,
-credentials.password_hash ); }
-
-async function requireAdmin(req, res, next) { try { const
-providedPassword = req.headers[“x-admin-key”]; const valid = await
-isValidAdminPassword(providedPassword);
+async function requireAdmin(req, res, next) {
+  try {
+    const providedPassword = req.headers["x-admin-key"];
+    const valid = await isValidAdminPassword(providedPassword);
 
     if (!valid) {
       return res.status(401).json({
@@ -178,78 +264,108 @@ isValidAdminPassword(providedPassword);
     }
 
     next();
-
-} catch (error) { console.error(“Error verificando acceso
-administrativo:”, error);
+  } catch (error) {
+    console.error("Error verificando acceso administrativo:", error);
 
     res.status(500).json({
       error: "No se pudo verificar el acceso administrativo."
     });
+  }
+}
 
-} }
-
-async function requireEmployee(req, res, next) { try { const token =
-req.headers[“x-employee-token”]; if (!token || typeof token !==
-“string”) { return res.status(401).json({ error: “Debes iniciar sesiÃ3n
-como empleado.” }); } const tokenHash = hashSessionToken(token); const
-result = await
-pool.query(SELECT e.id, e.name, e.username, e.active       FROM employee_sessions s       JOIN employees e ON e.id = s.employee_id       WHERE s.token_hash = $1 AND s.expires_at > NOW() AND e.active = TRUE;,
-[tokenHash]); if (result.rowCount === 0) { return res.status(401).json({
-error: “La sesiÃ3n del empleado expirÃ3 o no es vÃ¡lida.” }); }
-req.employee = result.rows[0]; req.employeeTokenHash = tokenHash;
-next(); } catch (error) { console.error(“Error verificando al
-empleado:”, error); res.status(500).json({ error: “No se pudo verificar
-la sesiÃ3n del empleado.” }); } }
+async function requireEmployee(req, res, next) {
+  try {
+    const token = req.headers["x-employee-token"];
+    if (!token || typeof token !== "string") {
+      return res.status(401).json({ error: "Debes iniciar sesiÃ3n como empleado." });
+    }
+    const tokenHash = hashSessionToken(token);
+    const result = await pool.query(`
+      SELECT e.id, e.name, e.username, e.active
+      FROM employee_sessions s
+      JOIN employees e ON e.id = s.employee_id
+      WHERE s.token_hash = $1 AND s.expires_at > NOW() AND e.active = TRUE;
+    `, [tokenHash]);
+    if (result.rowCount === 0) {
+      return res.status(401).json({ error: "La sesiÃ3n del empleado expirÃ3 o no es vÃ¡lida." });
+    }
+    req.employee = result.rows[0];
+    req.employeeTokenHash = tokenHash;
+    next();
+  } catch (error) {
+    console.error("Error verificando al empleado:", error);
+    res.status(500).json({ error: "No se pudo verificar la sesiÃ3n del empleado." });
+  }
+}
 
 /*
-
+==================================================
 PAYPAL
-
+==================================================
 */
 
-function paypalIsConfigured() { return Boolean(PAYPAL_CLIENT_ID &&
-PAYPAL_CLIENT_SECRET); }
+function paypalIsConfigured() {
+  return Boolean(PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET);
+}
 
-async function paypalRequest(path, options = {}) { if
-(!paypalIsConfigured()) { throw new Error(“PayPal no está configurado en
-el servidor.”); }
+async function paypalRequest(path, options = {}) {
+  if (!paypalIsConfigured()) {
+    throw new Error("PayPal no está configurado en el servidor.");
+  }
 
-const basicAuth = Buffer.from(
-${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET} ).toString(“base64”);
+  const basicAuth = Buffer.from(
+    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
+  ).toString("base64");
 
-const tokenResponse = await fetch(${PAYPAL_API_BASE}/v1/oauth2/token, {
-method: “POST”, headers: { Authorization: Basic ${basicAuth},
-“Content-Type”: “application/x-www-form-urlencoded” }, body:
-“grant_type=client_credentials” });
+  const tokenResponse = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basicAuth}`,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "grant_type=client_credentials"
+  });
 
-const tokenData = await tokenResponse.json().catch(() => ({}));
+  const tokenData = await tokenResponse.json().catch(() => ({}));
 
-if (!tokenResponse.ok || !tokenData.access_token) { console.error(“Error
-obteniendo token de PayPal:”, tokenData); throw new Error(“No se pudo
-autenticar con PayPal.”); }
+  if (!tokenResponse.ok || !tokenData.access_token) {
+    console.error("Error obteniendo token de PayPal:", tokenData);
+    throw new Error("No se pudo autenticar con PayPal.");
+  }
 
-const response = await fetch(${PAYPAL_API_BASE}${path}, { …options,
-headers: { Authorization: Bearer ${tokenData.access_token},
-“Content-Type”: “application/json”, …(options.headers || {}) } });
+  const response = await fetch(`${PAYPAL_API_BASE}${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
 
-const data = await response.json().catch(() => ({}));
+  const data = await response.json().catch(() => ({}));
 
-if (!response.ok) { console.error(“Error de PayPal:”, response.status,
-data); const detail = Array.isArray(data.details) && data.details[0] ?
-data.details[0].description || data.details[0].issue : ““; throw new
-Error(detail || data.message ||”PayPal rechazó la solicitud.”); }
+  if (!response.ok) {
+    console.error("Error de PayPal:", response.status, data);
+    const detail = Array.isArray(data.details) && data.details[0]
+      ? data.details[0].description || data.details[0].issue
+      : "";
+    throw new Error(detail || data.message || "PayPal rechazó la solicitud.");
+  }
 
-return data; }
+  return data;
+}
 
 /*
-
+==================================================
 FORMATEADORES
-
+==================================================
 */
 
-async function generateUniqueManualCode(client) { for (let attempt = 0;
-attempt < 30; attempt += 1) { const code = String( crypto.randomInt(0,
-100000) ).padStart(5, “0”);
+async function generateUniqueManualCode(client) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const code = String(
+      crypto.randomInt(0, 100000)
+    ).padStart(5, "0");
 
     const existing = await client.query(
       `
@@ -264,35 +380,62 @@ attempt < 30; attempt += 1) { const code = String( crypto.randomInt(0,
     if (existing.rowCount === 0) {
       return code;
     }
+  }
 
+  throw new Error(
+    "No se pudo generar un cÃ3digo manual Ãonico."
+  );
 }
 
-throw new Error( “No se pudo generar un cÃ3digo manual Ãonico.” ); }
+function formatTicket(row) {
+  return {
+    id: row.id,
+    movie: row.movie,
+    time: row.show_time,
+    seats: row.seats,
+    total: Number(row.total),
+    customer: row.customer,
+    paymentStatus: row.payment_status,
+    paymentMethod: row.customer?.paymentMethod || "",
+    qr: row.qr,
+    manualCode: row.manual_code || "",
+    used: row.used,
+    created: row.created_at,
+    checkin: row.checkin_at,
+    ticketTypes: row.ticket_breakdown || {
+      adult: Array.isArray(row.seats) ? row.seats.length : 0,
+      child: 0,
+      senior: 0
+    }
+  };
+}
 
-function formatTicket(row) { return { id: row.id, movie: row.movie,
-time: row.show_time, seats: row.seats, total: Number(row.total),
-customer: row.customer, paymentStatus: row.payment_status,
-paymentMethod: row.customer?.paymentMethod || ““, qr: row.qr,
-manualCode: row.manual_code ||”“, used: row.used, created:
-row.created_at, checkin: row.checkin_at, ticketTypes:
-row.ticket_breakdown || { adult: Array.isArray(row.seats) ?
-row.seats.length : 0, child: 0, senior: 0 } }; }
 
-function formatTicketDateTime(value) { const rawValue = String(value ||
-““).trim();
+function formatTicketDateTime(value) {
+  const rawValue = String(value || "").trim();
 
-if (!rawValue) { return { date: “Fecha no disponible”, time: “Hora no
-disponible”, full: “Fecha y hora no disponibles” }; }
+  if (!rawValue) {
+    return {
+      date: "Fecha no disponible",
+      time: "Hora no disponible",
+      full: "Fecha y hora no disponibles"
+    };
+  }
 
-let year; let month; let day;
+  let year;
+  let month;
+  let day;
 
-const isoDateMatch = rawValue.match(/)-()-());
+  const isoDateMatch = rawValue.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
 
-if (isoDateMatch) { year = Number(isoDateMatch[1]); month =
-Number(isoDateMatch[2]); day = Number(isoDateMatch[3]); } else { const
-englishDateMatch = rawValue.match(
-/?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)+()+()i
-);
+  if (isoDateMatch) {
+    year = Number(isoDateMatch[1]);
+    month = Number(isoDateMatch[2]);
+    day = Number(isoDateMatch[3]);
+  } else {
+    const englishDateMatch = rawValue.match(
+      /\b(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/i
+    );
 
     if (englishDateMatch) {
       const monthNumbers = {
@@ -314,30 +457,49 @@ englishDateMatch = rawValue.match(
       day = Number(englishDateMatch[2]);
       year = Number(englishDateMatch[3]);
     }
+  }
 
-}
+  const timeMatches = [...rawValue.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)];
+  const lastTimeMatch = timeMatches.length
+    ? timeMatches[timeMatches.length - 1]
+    : null;
 
-const timeMatches = […rawValue.matchAll(/[01]?2[0-3]):([0-5]g)]; const
-lastTimeMatch = timeMatches.length ? timeMatches[timeMatches.length - 1]
-: null;
+  let formattedTime = "Hora no disponible";
 
-let formattedTime = “Hora no disponible”;
-
-if (lastTimeMatch) { const hours24 = Number(lastTimeMatch[1]); const
-minutes = lastTimeMatch[2]; const period = hours24 >= 12 ? “p. m.” : “a.
-m.”; const hours12 = hours24 % 12 || 12;
+  if (lastTimeMatch) {
+    const hours24 = Number(lastTimeMatch[1]);
+    const minutes = lastTimeMatch[2];
+    const period = hours24 >= 12 ? "p. m." : "a. m.";
+    const hours12 = hours24 % 12 || 12;
 
     formattedTime = `${hours12}:${minutes} ${period}`;
+  }
 
-}
+  let formattedDate = "Fecha no disponible";
 
-let formattedDate = “Fecha no disponible”;
-
-if ( Number.isInteger(year) && Number.isInteger(month) &&
-Number.isInteger(day) && month >= 1 && month <= 12 && day >= 1 && day <=
-31 ) { const monthNames = [ “enero”, “febrero”, “marzo”, “abril”,
-“mayo”, “junio”, “julio”, “agosto”, “septiembre”, “octubre”,
-“noviembre”, “diciembre” ];
+  if (
+    Number.isInteger(year) &&
+    Number.isInteger(month) &&
+    Number.isInteger(day) &&
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= 31
+  ) {
+    const monthNames = [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre"
+    ];
 
     const weekdayNames = [
       "domingo",
@@ -356,44 +518,66 @@ Number.isInteger(day) && month >= 1 && month <= 12 && day >= 1 && day <=
     formattedDate =
       `${weekdayNames[weekdayIndex]}, ${day} de ` +
       `${monthNames[month - 1]} de ${year}`;
+  }
 
+  return {
+    date: formattedDate,
+    time: formattedTime,
+    full: `${formattedDate} • ${formattedTime}`
+  };
 }
 
-return { date: formattedDate, time: formattedTime, full:
-${formattedDate} • ${formattedTime} }; }
 
-async function sendTicketEmail(ticket) { if (!resend) {
-console.warn(“Resend no está configurado.”); return; }
+  async function sendTicketEmail(ticket) {
+  if (!resend) {
+    console.warn("Resend no está configurado.");
+    return;
+  }
 
-const customerEmail = ticket?.customer?.email;
+  const customerEmail = ticket?.customer?.email;
 
-if (!customerEmail) { console.warn(“El boleto no tiene correo del
-cliente.”); return; }
+  if (!customerEmail) {
+    console.warn("El boleto no tiene correo del cliente.");
+    return;
+  }
 
-const qrBuffer = await QRCode.toBuffer(String(ticket.qr || ““), {
-type:”png”, width: 320, margin: 2 });
+  const qrBuffer = await QRCode.toBuffer(String(ticket.qr || ""), {
+  type: "png",
+  width: 320,
+  margin: 2
+});
 
-const qrFilePath = tickets/${ticket.id}-qr.png; const { error:
-qrUploadError } = await supabase.storage .from(SUPABASE_POSTERS_BUCKET)
-.upload(qrFilePath, qrBuffer, { contentType: “image/png”, cacheControl:
-“31536000”, upsert: true });
+const qrFilePath = `tickets/${ticket.id}-qr.png`;
+const { error: qrUploadError } = await supabase.storage
+  .from(SUPABASE_POSTERS_BUCKET)
+  .upload(qrFilePath, qrBuffer, {
+    contentType: "image/png",
+    cacheControl: "31536000",
+    upsert: true
+  });
 
-if (qrUploadError) { throw new Error(qrUploadError.message); }
+if (qrUploadError) {
+  throw new Error(qrUploadError.message);
+}
 
 const { data: qrPublicData } = supabase.storage
-.from(SUPABASE_POSTERS_BUCKET) .getPublicUrl(qrFilePath);
+  .from(SUPABASE_POSTERS_BUCKET)
+  .getPublicUrl(qrFilePath);
 
 const qrPublicUrl = qrPublicData.publicUrl;
 
-const seats = Array.isArray(ticket.seats) ? ticket.seats.join(“,”) :
-String(ticket.seats || ““);
+  const seats = Array.isArray(ticket.seats)
+    ? ticket.seats.join(", ")
+    : String(ticket.seats || "");
 
-const ticketDateTime = formatTicketDateTime(ticket.time);
+  const ticketDateTime = formatTicketDateTime(ticket.time);
 
-const { error } = await resend.emails.send({ from: “Cine Manuel Nieves
-onboarding@resend.dev”, to: [customerEmail], subject:
-Tu boleto para ${ticket.movie}, html: `
-
+  const { error } = await resend.emails.send({
+    from: "Cine Manuel Nieves <onboarding@resend.dev>",
+    to: [customerEmail],
+    subject: `Tu boleto para ${ticket.movie}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;background:#0f172a;color:#ffffff;border-radius:16px;">
         <h1 style="margin-top:0;">🎟️ Boleto confirmado</h1>
         <p>Tu pago fue confirmado correctamente.</p>
 
@@ -417,10 +601,12 @@ Tu boleto para ${ticket.movie}, html: `
 
         <div style="margin-top:24px;text-align:center;">
           <img
-
-src=“${qrPublicUrl}” alt=“Código QR del boleto” width=“260”
-style=“display:block;margin:0
-auto;background:#ffffff;padding:12px;border-radius:12px;” />
+  src="${qrPublicUrl}"
+  alt="Código QR del boleto"
+  width="260"
+  style="display:block;margin:0 auto;background:#ffffff;padding:12px;border-radius:12px;"
+/>
+        </div>
 
         <p style="margin-top:24px;color:#cbd5e1;">
           Presenta este código QR al entrar al cine.
@@ -428,128 +614,275 @@ auto;background:#ffffff;padding:12px;border-radius:12px;” />
       </div>
     `,
 
-});
+  });
 
-if (error) { throw new Error(error.message || “No se pudo enviar el
-boleto.”); } }
+  if (error) {
+    throw new Error(error.message || "No se pudo enviar el boleto.");
+  }
+}
 
-function formatMovie(row) { return { id: row.id, title: row.title,
-description: row.description, posterUrl: row.poster_url, trailerUrl:
-row.trailer_url, durationMinutes: row.duration_minutes, rating:
-row.rating, active: row.active, comingSoon: Boolean(row.coming_soon),
-created: row.created_at }; }
+function formatMovie(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    posterUrl: row.poster_url,
+    trailerUrl: row.trailer_url,
+    durationMinutes: row.duration_minutes,
+    rating: row.rating,
+    active: row.active,
+    comingSoon: Boolean(row.coming_soon),
+    created: row.created_at
+  };
+}
 
-const SHOWTIME_LANGUAGES = { spanish: “Español”, english: “Ingles”,
-english_subtitled: “Ingles con subtitulos en español” };
+const SHOWTIME_LANGUAGES = {
+  spanish: "Español",
+  english: "Ingles",
+  english_subtitled: "Ingles con subtitulos en español"
+};
 
-function normalizeShowtimeLanguage(value) { const language =
-String(value || “spanish”).trim(); return
-Object.prototype.hasOwnProperty.call(SHOWTIME_LANGUAGES, language) ?
-language : null; }
+function normalizeShowtimeLanguage(value) {
+  const language = String(value || "spanish").trim();
+  return Object.prototype.hasOwnProperty.call(SHOWTIME_LANGUAGES, language)
+    ? language
+    : null;
+}
 
-function formatShowtime(row) { const language =
-normalizeShowtimeLanguage(row.language) || “spanish”;
+function formatShowtime(row) {
+  const language = normalizeShowtimeLanguage(row.language) || "spanish";
 
-return { id: row.id, movieId: row.movie_id, movieTitle: row.movie_title,
-showDate: row.show_date, showTime: row.show_time, price:
-Number(row.global_adult_price ?? row.adult_price ?? row.price),
-adultPrice: Number(row.global_adult_price ?? row.adult_price ??
-row.price), childPrice: Number(row.global_child_price ?? row.child_price
-?? row.price), seniorPrice: Number(row.global_senior_price ??
-row.senior_price ?? row.price), language, languageLabel:
-SHOWTIME_LANGUAGES[language], active: row.active, created:
-row.created_at }; }
+  return {
+    id: row.id,
+    movieId: row.movie_id,
+    movieTitle: row.movie_title,
+    showDate: row.show_date,
+    showTime: row.show_time,
+    price: Number(row.global_adult_price ?? row.adult_price ?? row.price),
+    adultPrice: Number(row.global_adult_price ?? row.adult_price ?? row.price),
+    childPrice: Number(row.global_child_price ?? row.child_price ?? row.price),
+    seniorPrice: Number(row.global_senior_price ?? row.senior_price ?? row.price),
+    language,
+    languageLabel: SHOWTIME_LANGUAGES[language],
+    active: row.active,
+    created: row.created_at
+  };
+}
 
-function formatEmployee(row) { return { id: row.id, name: row.name,
-username: row.username, active: row.active, created: row.created_at,
-scans: Number(row.scans || 0), ticketsScanned:
-Number(row.tickets_scanned || 0), lastScan: row.last_scan || null }; }
+function formatEmployee(row) {
+  return {
+    id: row.id, name: row.name, username: row.username, active: row.active,
+    created: row.created_at, scans: Number(row.scans || 0),
+    ticketsScanned: Number(row.tickets_scanned || 0), lastScan: row.last_scan || null
+  };
+}
 
-function formatCheckin(row) { return { id: row.id, ticketId:
-row.ticket_id, employeeId: row.employee_id, employeeName:
-row.employee_name, employeeUsername: row.employee_username, seatsCount:
-Number(row.seats_count || 0), movie: row.movie, showTime: row.show_time,
-seats: row.seats || [], scannedAt: row.scanned_at }; }
+function formatCheckin(row) {
+  return {
+    id: row.id, ticketId: row.ticket_id, employeeId: row.employee_id,
+    employeeName: row.employee_name, employeeUsername: row.employee_username,
+    seatsCount: Number(row.seats_count || 0), movie: row.movie,
+    showTime: row.show_time, seats: row.seats || [], scannedAt: row.scanned_at
+  };
+}
 
 /*
-
+==================================================
 CREAR TABLAS AUTOMÃTICAMENTE
-
+==================================================
 */
 
-async function initializeDatabase() { await
-pool.query(CREATE TABLE IF NOT EXISTS tickets (       id UUID PRIMARY KEY,       movie TEXT NOT NULL,       show_time TEXT NOT NULL,       seats TEXT[] NOT NULL,       total NUMERIC(10, 2) NOT NULL,       customer JSONB NOT NULL,       payment_status TEXT NOT NULL DEFAULT 'pending',       qr TEXT UNIQUE NOT NULL,       manual_code VARCHAR(5) UNIQUE,       used BOOLEAN NOT NULL DEFAULT FALSE,       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),       checkin_at TIMESTAMPTZ     ););
+async function initializeDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tickets (
+      id UUID PRIMARY KEY,
+      movie TEXT NOT NULL,
+      show_time TEXT NOT NULL,
+      seats TEXT[] NOT NULL,
+      total NUMERIC(10, 2) NOT NULL,
+      customer JSONB NOT NULL,
+      payment_status TEXT NOT NULL DEFAULT 'pending',
+      qr TEXT UNIQUE NOT NULL,
+      manual_code VARCHAR(5) UNIQUE,
+      used BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      checkin_at TIMESTAMPTZ
+    );
+  `);
 
-await
-pool.query(ALTER TABLE tickets     ADD COLUMN IF NOT EXISTS manual_code VARCHAR(5););
+  await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS manual_code VARCHAR(5);
+  `);
 
-await
-pool.query(ALTER TABLE tickets   DROP CONSTRAINT IF EXISTS tickets_manual_code_format_check;);
+await pool.query(`
+  ALTER TABLE tickets
+  DROP CONSTRAINT IF EXISTS tickets_manual_code_format_check;
+`);
 
-await
-pool.query(ALTER TABLE tickets   ADD CONSTRAINT tickets_manual_code_format_check   CHECK (     manual_code IS NULL     OR manual_code ~ '^[0-9]{5}$'   ););
+await pool.query(`
+  ALTER TABLE tickets
+  ADD CONSTRAINT tickets_manual_code_format_check
+  CHECK (
+    manual_code IS NULL
+    OR manual_code ~ '^[0-9]{5}$'
+  );
+`);
 
-await
-pool.query(CREATE UNIQUE INDEX IF NOT EXISTS tickets_manual_code_unique_idx     ON tickets (manual_code)     WHERE manual_code IS NOT NULL;);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS tickets_manual_code_unique_idx
+    ON tickets (manual_code)
+    WHERE manual_code IS NOT NULL;
+  `);
 
-await
-pool.query(CREATE TABLE IF NOT EXISTS movies (       id UUID PRIMARY KEY,       title TEXT NOT NULL,       description TEXT,       poster_url TEXT,       trailer_url TEXT,       duration_minutes INTEGER,       rating TEXT,       active BOOLEAN NOT NULL DEFAULT TRUE,       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()     ););
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS movies (
+      id UUID PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      poster_url TEXT,
+      trailer_url TEXT,
+      duration_minutes INTEGER,
+      rating TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-await
-pool.query(ALTER TABLE movies   ADD COLUMN IF NOT EXISTS trailer_url TEXT;);
+  await pool.query(`
+  ALTER TABLE movies
+  ADD COLUMN IF NOT EXISTS trailer_url TEXT;
+`);
 
-await
-pool.query(CREATE TABLE IF NOT EXISTS showtimes (       id UUID PRIMARY KEY,       movie_id UUID NOT NULL         REFERENCES movies(id)         ON DELETE CASCADE,       show_date DATE NOT NULL,       show_time TEXT NOT NULL,       price NUMERIC(10, 2) NOT NULL,       adult_price NUMERIC(10, 2),       child_price NUMERIC(10, 2),       senior_price NUMERIC(10, 2),       language TEXT NOT NULL DEFAULT 'spanish',       active BOOLEAN NOT NULL DEFAULT TRUE,       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()     ););
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS showtimes (
+      id UUID PRIMARY KEY,
+      movie_id UUID NOT NULL
+        REFERENCES movies(id)
+        ON DELETE CASCADE,
+      show_date DATE NOT NULL,
+      show_time TEXT NOT NULL,
+      price NUMERIC(10, 2) NOT NULL,
+      adult_price NUMERIC(10, 2),
+      child_price NUMERIC(10, 2),
+      senior_price NUMERIC(10, 2),
+      language TEXT NOT NULL DEFAULT 'spanish',
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-await
-pool.query(ALTER TABLE showtimes     ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'spanish';);
+  await pool.query(`
+    ALTER TABLE showtimes
+    ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'spanish';
+  `);
 
-await
-pool.query(ALTER TABLE showtimes       ADD COLUMN IF NOT EXISTS adult_price NUMERIC(10, 2),       ADD COLUMN IF NOT EXISTS child_price NUMERIC(10, 2),       ADD COLUMN IF NOT EXISTS senior_price NUMERIC(10, 2););
+  await pool.query(`
+    ALTER TABLE showtimes
+      ADD COLUMN IF NOT EXISTS adult_price NUMERIC(10, 2),
+      ADD COLUMN IF NOT EXISTS child_price NUMERIC(10, 2),
+      ADD COLUMN IF NOT EXISTS senior_price NUMERIC(10, 2);
+  `);
 
-await
-pool.query(UPDATE showtimes     SET       adult_price = COALESCE(adult_price, price),       child_price = COALESCE(child_price, price),       senior_price = COALESCE(senior_price, price););
+  await pool.query(`
+    UPDATE showtimes
+    SET
+      adult_price = COALESCE(adult_price, price),
+      child_price = COALESCE(child_price, price),
+      senior_price = COALESCE(senior_price, price);
+  `);
 
-await
-pool.query(ALTER TABLE tickets     ADD COLUMN IF NOT EXISTS ticket_breakdown JSONB;);
+  await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS ticket_breakdown JSONB;
+  `);
 
-await
-pool.query(UPDATE showtimes     SET language = 'spanish'     WHERE language IS NULL        OR language NOT IN ('spanish', 'english', 'english_subtitled'););
+  await pool.query(`
+    UPDATE showtimes
+    SET language = 'spanish'
+    WHERE language IS NULL
+       OR language NOT IN ('spanish', 'english', 'english_subtitled');
+  `);
 
-await
-pool.query(CREATE TABLE IF NOT EXISTS employees (       id UUID PRIMARY KEY,       name TEXT NOT NULL,       username TEXT NOT NULL,       password_salt TEXT NOT NULL,       password_hash TEXT NOT NULL,       active BOOLEAN NOT NULL DEFAULT TRUE,       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()     ););
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id UUID PRIMARY KEY,
+      name TEXT NOT NULL,
+      username TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-await
-pool.query(CREATE UNIQUE INDEX IF NOT EXISTS employees_username_lower_unique ON employees (LOWER(username)););
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS employees_username_lower_unique ON employees (LOWER(username));`);
 
-await
-pool.query(CREATE TABLE IF NOT EXISTS employee_sessions (       id UUID PRIMARY KEY,       employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,       token_hash TEXT UNIQUE NOT NULL,       expires_at TIMESTAMPTZ NOT NULL,       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()     ););
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS employee_sessions (
+      id UUID PRIMARY KEY,
+      employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+      token_hash TEXT UNIQUE NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-await
-pool.query(CREATE INDEX IF NOT EXISTS employee_sessions_expires_at_idx ON employee_sessions (expires_at););
+  await pool.query(`CREATE INDEX IF NOT EXISTS employee_sessions_expires_at_idx ON employee_sessions (expires_at);`);
 
-await
-pool.query(CREATE TABLE IF NOT EXISTS checkins (       id UUID PRIMARY KEY,       ticket_id UUID UNIQUE NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,       employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,       employee_name TEXT NOT NULL,       employee_username TEXT NOT NULL,       seats_count INTEGER NOT NULL CHECK (seats_count > 0),       movie TEXT NOT NULL,       show_time TEXT NOT NULL,       seats TEXT[] NOT NULL,       scanned_at TIMESTAMPTZ NOT NULL DEFAULT NOW()     ););
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS checkins (
+      id UUID PRIMARY KEY,
+      ticket_id UUID UNIQUE NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+      employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,
+      employee_name TEXT NOT NULL,
+      employee_username TEXT NOT NULL,
+      seats_count INTEGER NOT NULL CHECK (seats_count > 0),
+      movie TEXT NOT NULL,
+      show_time TEXT NOT NULL,
+      seats TEXT[] NOT NULL,
+      scanned_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-await
-pool.query(CREATE INDEX IF NOT EXISTS checkins_employee_id_idx ON checkins (employee_id););
-await
-pool.query(CREATE INDEX IF NOT EXISTS checkins_scanned_at_idx ON checkins (scanned_at DESC););
+  await pool.query(`CREATE INDEX IF NOT EXISTS checkins_employee_id_idx ON checkins (employee_id);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS checkins_scanned_at_idx ON checkins (scanned_at DESC);`);
 
-await
-pool.query(CREATE TABLE IF NOT EXISTS admin_settings (       id INTEGER PRIMARY KEY CHECK (id = 1),       password_salt TEXT NOT NULL,       password_hash TEXT NOT NULL,       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()     ););
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      password_salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-await
-pool.query(CREATE TABLE IF NOT EXISTS ticket_prices (       id INTEGER PRIMARY KEY CHECK (id = 1),       adult_price NUMERIC(10, 2) NOT NULL CHECK (adult_price >= 0),       child_price NUMERIC(10, 2) NOT NULL CHECK (child_price >= 0),       senior_price NUMERIC(10, 2) NOT NULL CHECK (senior_price >= 0),       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()     ););
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ticket_prices (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      adult_price NUMERIC(10, 2) NOT NULL CHECK (adult_price >= 0),
+      child_price NUMERIC(10, 2) NOT NULL CHECK (child_price >= 0),
+      senior_price NUMERIC(10, 2) NOT NULL CHECK (senior_price >= 0),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-await
-pool.query(INSERT INTO ticket_prices (id, adult_price, child_price, senior_price)     VALUES (1, 8.25, 6.00, 6.00)     ON CONFLICT (id) DO NOTHING;);
+  await pool.query(`
+    INSERT INTO ticket_prices (id, adult_price, child_price, senior_price)
+    VALUES (1, 8.25, 6.00, 6.00)
+    ON CONFLICT (id) DO NOTHING;
+  `);
 
-const adminResult = await
-pool.query(SELECT id     FROM admin_settings     WHERE id = 1;);
+  const adminResult = await pool.query(`
+    SELECT id
+    FROM admin_settings
+    WHERE id = 1;
+  `);
 
-if (adminResult.rowCount === 0) { const initialCredentials = await
-hashPassword(INITIAL_ADMIN_PASSWORD);
+  if (adminResult.rowCount === 0) {
+    const initialCredentials =
+      await hashPassword(INITIAL_ADMIN_PASSWORD);
 
     await pool.query(
       `
@@ -567,49 +900,66 @@ hashPassword(INITIAL_ADMIN_PASSWORD);
     );
 
     console.log("ContraseÃ±a administrativa inicial creada.");
+  }
 
+  console.log("Base de datos preparada correctamente.");
 }
 
-console.log(“Base de datos preparada correctamente.”); }
-
 /*
-
-REINICIO DIARIO A LAS 3:00 A. M. HORA DE PUERTO RICO
+==================================================
+REINICIO DIARIO A LAS 3:00 A. M.
+HORA DE PUERTO RICO
 ==================================================
 
-Solo elimina reservaciones y taquillas. No elimina pelÃ­culas, tandas ni
-contraseÃ±a. */
+Solo elimina reservaciones y taquillas.
+No elimina pelÃ­culas, tandas ni contraseÃ±a.
+*/
 
-async function cleanupPreviousBusinessDay() { await
-pool.query(DELETE FROM employee_sessions WHERE expires_at <= NOW(););
+async function cleanupPreviousBusinessDay() {
+  await pool.query(`DELETE FROM employee_sessions WHERE expires_at <= NOW();`);
 
-const result = await
-pool.query(DELETE FROM tickets   WHERE payment_status = 'pending'     AND created_at < NOW() - INTERVAL '30 minutes';);
+  const result = await pool.query(`
+  DELETE FROM tickets
+  WHERE payment_status = 'pending'
+    AND created_at < NOW() - INTERVAL '30 minutes';
+`);
 
-if (result.rowCount > 0) { console.log(
-Reinicio diario completado: ${result.rowCount} reservaciones eliminadas.
-); } }
+  if (result.rowCount > 0) {
+    console.log(
+      `Reinicio diario completado: ${result.rowCount} reservaciones eliminadas.`
+    );
+  }
+}
 
 let lastCleanupCheck = 0;
 
-app.use(async (req, res, next) => { const now = Date.now();
+app.use(async (req, res, next) => {
+  const now = Date.now();
 
-if (now - lastCleanupCheck < 60_000) { return next(); }
+  if (now - lastCleanupCheck < 60_000) {
+    return next();
+  }
 
-lastCleanupCheck = now;
+  lastCleanupCheck = now;
 
-try { await cleanupPreviousBusinessDay(); } catch (error) {
-console.error(“Error realizando el reinicio diario:”, error); }
+  try {
+    await cleanupPreviousBusinessDay();
+  } catch (error) {
+    console.error("Error realizando el reinicio diario:", error);
+  }
 
-next(); });
+  next();
+});
 
 /*
-
+==================================================
 ESTADO DEL SERVIDOR
-
+==================================================
 */
 
-app.get(“/”, async (req, res) => { try { await pool.query(“SELECT 1”);
+app.get("/", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
 
     res.json({
       status: "online",
@@ -618,26 +968,30 @@ app.get(“/”, async (req, res) => { try { await pool.query(“SELECT 1”);
       app: "Cine Teatro Manuel Nieves Quintero",
       version: "5.0"
     });
-
-} catch (error) { console.error(“Error verificando la base de datos:”,
-error);
+  } catch (error) {
+    console.error("Error verificando la base de datos:", error);
 
     res.status(500).json({
       status: "error",
       database: "disconnected"
     });
-
-} });
+  }
+});
 
 /*
-
+==================================================
 CARTELERA PÃBLICA
-
+==================================================
 */
 
-app.get(“/api/movies”, async (req, res) => { try { const movieResult =
-await
-pool.query(SELECT *       FROM movies       WHERE active = TRUE       ORDER BY created_at DESC;);
+app.get("/api/movies", async (req, res) => {
+  try {
+    const movieResult = await pool.query(`
+      SELECT *
+      FROM movies
+      WHERE active = TRUE
+      ORDER BY created_at DESC;
+    `);
 
     const showtimeResult = await pool.query(`
       SELECT
@@ -671,46 +1025,64 @@ pool.query(SELECT *       FROM movies       WHERE active = TRUE       ORDER BY c
     });
 
     res.json(movies);
-
-} catch (error) { console.error(“Error obteniendo la cartelera:”,
-error);
+  } catch (error) {
+    console.error("Error obteniendo la cartelera:", error);
 
     res.status(500).json({
       error: "No se pudo obtener la cartelera."
     });
-
-} });
+  }
+});
 
 /*
-
+==================================================
 PRECIOS GENERALES DE TAQUILLAS
-
+==================================================
 */
 
-app.get(“/api/ticket-prices”, async (req, res) => { try { const result =
-await
-pool.query(SELECT adult_price, child_price, senior_price       FROM ticket_prices       WHERE id = 1;);
-const row = result.rows[0]; res.json({ adultPrice:
-Number(row.adult_price), childPrice: Number(row.child_price),
-seniorPrice: Number(row.senior_price) }); } catch (error) {
-console.error(“Error obteniendo precios generales:”, error);
-res.status(500).json({ error: “No se pudieron obtener los precios.” });
-} });
+app.get("/api/ticket-prices", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT adult_price, child_price, senior_price
+      FROM ticket_prices
+      WHERE id = 1;
+    `);
+    const row = result.rows[0];
+    res.json({
+      adultPrice: Number(row.adult_price),
+      childPrice: Number(row.child_price),
+      seniorPrice: Number(row.senior_price)
+    });
+  } catch (error) {
+    console.error("Error obteniendo precios generales:", error);
+    res.status(500).json({ error: "No se pudieron obtener los precios." });
+  }
+});
 
-app.get(“/api/admin/ticket-prices”, requireAdmin, async (req, res) => {
-try { const result = await
-pool.query(SELECT adult_price, child_price, senior_price       FROM ticket_prices       WHERE id = 1;);
-const row = result.rows[0]; res.json({ adultPrice:
-Number(row.adult_price), childPrice: Number(row.child_price),
-seniorPrice: Number(row.senior_price) }); } catch (error) {
-console.error(“Error obteniendo precios para administrador:”, error);
-res.status(500).json({ error: “No se pudieron obtener los precios.” });
-} });
+app.get("/api/admin/ticket-prices", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT adult_price, child_price, senior_price
+      FROM ticket_prices
+      WHERE id = 1;
+    `);
+    const row = result.rows[0];
+    res.json({
+      adultPrice: Number(row.adult_price),
+      childPrice: Number(row.child_price),
+      seniorPrice: Number(row.senior_price)
+    });
+  } catch (error) {
+    console.error("Error obteniendo precios para administrador:", error);
+    res.status(500).json({ error: "No se pudieron obtener los precios." });
+  }
+});
 
-app.put(“/api/admin/ticket-prices”, requireAdmin, async (req, res) => {
-try { const adultPrice = Number(req.body.adultPrice); const childPrice =
-Number(req.body.childPrice); const seniorPrice =
-Number(req.body.seniorPrice);
+app.put("/api/admin/ticket-prices", requireAdmin, async (req, res) => {
+  try {
+    const adultPrice = Number(req.body.adultPrice);
+    const childPrice = Number(req.body.childPrice);
+    const seniorPrice = Number(req.body.seniorPrice);
 
     if (
       !Number.isFinite(adultPrice) ||
@@ -742,19 +1114,21 @@ Number(req.body.seniorPrice);
       childPrice: Number(row.child_price),
       seniorPrice: Number(row.senior_price)
     });
-
-} catch (error) { console.error(“Error actualizando precios generales:”,
-error); res.status(500).json({ error: “No se pudieron actualizar los
-precios.” }); } });
+  } catch (error) {
+    console.error("Error actualizando precios generales:", error);
+    res.status(500).json({ error: "No se pudieron actualizar los precios." });
+  }
+});
 
 /*
-
+==================================================
 AUTENTICACIÃN DEL ADMINISTRADOR
-
+==================================================
 */
 
-app.post(“/api/admin/login”, async (req, res) => { try { const {
-password } = req.body;
+app.post("/api/admin/login", async (req, res) => {
+  try {
+    const { password } = req.body;
 
     const valid = await isValidAdminPassword(password);
 
@@ -768,17 +1142,24 @@ password } = req.body;
       success: true,
       message: "Acceso autorizado."
     });
-
-} catch (error) { console.error(“Error iniciando sesiÃ3n:”, error);
+  } catch (error) {
+    console.error("Error iniciando sesiÃ3n:", error);
 
     res.status(500).json({
       error: "No se pudo iniciar sesiÃ3n."
     });
+  }
+});
 
-} });
-
-app.put( “/api/admin/password”, requireAdmin, async (req, res) => { try
-{ const { currentPassword, newPassword } = req.body;
+app.put(
+  "/api/admin/password",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const {
+        currentPassword,
+        newPassword
+      } = req.body;
 
       const currentPasswordValid =
         await isValidAdminPassword(currentPassword);
@@ -837,137 +1218,158 @@ app.put( “/api/admin/password”, requireAdmin, async (req, res) => { try
         error: "No se pudo cambiar la contraseÃ±a."
       });
     }
+  }
+);
 
-} );
 
 /*
-
+==================================================
 CUENTAS Y SESIONES DE EMPLEADOS
-
+==================================================
 */
 
-app.post(“/api/employee/login”, async (req, res) => { try { const
-username = normalizeUsername(req.body?.username); const password =
-req.body?.password; if (!username || typeof password !== “string”) {
-return res.status(400).json({ error: “Escribe el usuario y la
-contraseÃ±a.” }); } const result = await
-pool.query(SELECT * FROM employees WHERE LOWER(username) = $1;,
-[username]); if (result.rowCount === 0) return res.status(401).json({
-error: “Usuario o contraseÃ±a incorrectos.” }); const employee =
-result.rows[0]; if (!employee.active) return res.status(403).json({
-error: “Esta cuenta estÃ¡ desactivada.” }); const valid = await
-verifyPassword(password, employee.password_salt,
-employee.password_hash); if (!valid) return res.status(401).json({
-error: “Usuario o contraseÃ±a incorrectos.” }); const token =
-crypto.randomBytes(32).toString(“hex”); await
-pool.query(INSERT INTO employee_sessions (id, employee_id, token_hash, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '12 hours');,
-[crypto.randomUUID(), employee.id, hashSessionToken(token)]); res.json({
-success: true, token, expiresInHours: 12, employee: { id: employee.id,
-name: employee.name, username: employee.username } }); } catch (error) {
-console.error(“Error iniciando sesiÃ3n de empleado:”, error);
-res.status(500).json({ error: “No se pudo iniciar la sesiÃ3n.” }); } });
-
-app.get(“/api/employee/me”, requireEmployee, async (req, res) => {
-res.json({ employee: { id: req.employee.id, name: req.employee.name,
-username: req.employee.username } }); });
-
-app.post(“/api/employee/logout”, requireEmployee, async (req, res) => {
-try { await
-pool.query(DELETE FROM employee_sessions WHERE token_hash = $1;,
-[req.employeeTokenHash]); res.json({ success: true, message: “SesiÃ3n
-cerrada correctamente.” }); } catch (error) { console.error(“Error
-cerrando sesiÃ3n de empleado:”, error); res.status(500).json({ error:
-“No se pudo cerrar la sesiÃ3n.” }); } });
-
-/*
-
-ADMINISTRACIÃN DE EMPLEADOS
-
-*/
-
-app.get(“/api/admin/employees”, requireAdmin, async (req, res) => { try
-{ const result = await
-pool.query(SELECT e.*, COUNT(c.id) AS scans, COALESCE(SUM(c.seats_count),0) AS tickets_scanned, MAX(c.scanned_at) AS last_scan       FROM employees e LEFT JOIN checkins c ON c.employee_id = e.id       GROUP BY e.id ORDER BY e.name ASC;);
-res.json(result.rows.map(formatEmployee)); } catch (error) {
-console.error(“Error obteniendo empleados:”, error);
-res.status(500).json({ error: “No se pudieron obtener los empleados.”
-}); } });
-
-app.post(“/api/admin/employees”, requireAdmin, async (req, res) => { try
-{ const name = String(req.body?.name || ““).trim(); const username =
-normalizeUsername(req.body?.username); const password =
-req.body?.password; const active = req.body?.active !== false; if
-(!name) return res.status(400).json({ error:”El nombre del empleado es
-obligatorio.” }); if (!/[1]{3,30}$/.test(username)) return
-res.status(400).json({ error: “El usuario debe tener entre 3 y 30
-caracteres y solo puede usar letras, nÃomeros, punto, guion o guion
-bajo.” }); if (typeof password !== “string” || password.length < 8)
-return res.status(400).json({ error: “La contraseÃ±a debe tener al menos
-8 caracteres.” }); const credentials = await hashPassword(password);
-const result = await
-pool.query(INSERT INTO employees (id,name,username,password_salt,password_hash,active) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;,
-[crypto.randomUUID(),name,username,credentials.salt,credentials.hash,Boolean(active)]);
-res.status(201).json(formatEmployee(result.rows[0])); } catch (error) {
-if (error?.code === “23505”) return res.status(409).json({ error: “Ese
-nombre de usuario ya estÃ¡ registrado.” }); console.error(“Error creando
-empleado:”, error); res.status(500).json({ error: “No se pudo crear el
-empleado.” }); } });
-
-app.put(“/api/admin/employees/:id”, requireAdmin, async (req, res) => {
-try { const { id } = req.params; const name = String(req.body?.name ||
-““).trim(); const username = normalizeUsername(req.body?.username);
-const password = req.body?.password; const active = req.body?.active !==
-false; if (!name) return res.status(400).json({ error:”El nombre del
-empleado es obligatorio.” }); if (!/[2]{3,30}$/.test(username)) return
-res.status(400).json({ error: “El nombre de usuario no es vÃ¡lido.” });
-let result; if (typeof password === “string” && password.length > 0) {
-if (password.length < 8) return res.status(400).json({ error: “La
-contraseÃ±a debe tener al menos 8 caracteres.” }); const credentials =
-await hashPassword(password); result = await
-pool.query(UPDATE employees SET name=$1,username=$2,password_salt=$3,password_hash=$4,active=$5,updated_at=NOW() WHERE id=$6 RETURNING *;,
-[name,username,credentials.salt,credentials.hash,Boolean(active),id]);
-await pool.query(DELETE FROM employee_sessions WHERE employee_id = $1;,
-[id]); } else { result = await
-pool.query(UPDATE employees SET name=$1,username=$2,active=$3,updated_at=NOW() WHERE id=$4 RETURNING *;,
-[name,username,Boolean(active),id]); if (!active) await
-pool.query(DELETE FROM employee_sessions WHERE employee_id = $1;, [id]);
-} if (result.rowCount === 0) return res.status(404).json({ error:
-“Empleado no encontrado.” }); res.json(formatEmployee(result.rows[0]));
-} catch (error) { if (error?.code === “23505”) return
-res.status(409).json({ error: “Ese nombre de usuario ya estÃ¡
-registrado.” }); console.error(“Error actualizando empleado:”, error);
-res.status(500).json({ error: “No se pudo actualizar el empleado.” }); }
+app.post("/api/employee/login", async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    if (!username || typeof password !== "string") {
+      return res.status(400).json({ error: "Escribe el usuario y la contraseÃ±a." });
+    }
+    const result = await pool.query(`SELECT * FROM employees WHERE LOWER(username) = $1;`, [username]);
+    if (result.rowCount === 0) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    const employee = result.rows[0];
+    if (!employee.active) return res.status(403).json({ error: "Esta cuenta estÃ¡ desactivada." });
+    const valid = await verifyPassword(password, employee.password_salt, employee.password_hash);
+    if (!valid) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    const token = crypto.randomBytes(32).toString("hex");
+    await pool.query(`INSERT INTO employee_sessions (id, employee_id, token_hash, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '12 hours');`, [crypto.randomUUID(), employee.id, hashSessionToken(token)]);
+    res.json({ success: true, token, expiresInHours: 12, employee: { id: employee.id, name: employee.name, username: employee.username } });
+  } catch (error) {
+    console.error("Error iniciando sesiÃ3n de empleado:", error);
+    res.status(500).json({ error: "No se pudo iniciar la sesiÃ3n." });
+  }
 });
 
-app.delete(“/api/admin/employees/:id”, requireAdmin, async (req, res) =>
-{ try { const result = await
-pool.query(DELETE FROM employees WHERE id=$1 RETURNING id;,
-[req.params.id]); if (result.rowCount === 0) return
-res.status(404).json({ error: “Empleado no encontrado.” }); res.json({
-success: true, message: “Empleado eliminado. Su historial de escaneos se
-conserva.” }); } catch (error) { console.error(“Error eliminando
-empleado:”, error); res.status(500).json({ error: “No se pudo eliminar
-el empleado.” }); } });
+app.get("/api/employee/me", requireEmployee, async (req, res) => {
+  res.json({ employee: { id: req.employee.id, name: req.employee.name, username: req.employee.username } });
+});
 
-app.get(“/api/admin/checkins”, requireAdmin, async (req, res) => { try {
-const limit = Math.min(Math.max(Number(req.query.limit)||200,1),1000);
-const result = await
-pool.query(SELECT * FROM checkins ORDER BY scanned_at DESC LIMIT $1;,
-[limit]); res.json(result.rows.map(formatCheckin)); } catch (error) {
-console.error(“Error obteniendo historial de escaneos:”, error);
-res.status(500).json({ error: “No se pudo obtener el historial de
-escaneos.” }); } });
+app.post("/api/employee/logout", requireEmployee, async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM employee_sessions WHERE token_hash = $1;`, [req.employeeTokenHash]);
+    res.json({ success: true, message: "SesiÃ3n cerrada correctamente." });
+  } catch (error) {
+    console.error("Error cerrando sesiÃ3n de empleado:", error);
+    res.status(500).json({ error: "No se pudo cerrar la sesiÃ3n." });
+  }
+});
 
 /*
-
-SUBIR AFICHE A SUPABASE STORAGE
-
+==================================================
+ADMINISTRACIÃN DE EMPLEADOS
+==================================================
 */
 
-app.post( “/api/admin/posters”, requireAdmin,
-posterUpload.single(“poster”), async (req, res) => { try { if
-(!req.file) { return res.status(400).json({ error: “Selecciona una
-imagen para el afiche.” }); }
+app.get("/api/admin/employees", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT e.*, COUNT(c.id) AS scans, COALESCE(SUM(c.seats_count),0) AS tickets_scanned, MAX(c.scanned_at) AS last_scan
+      FROM employees e LEFT JOIN checkins c ON c.employee_id = e.id
+      GROUP BY e.id ORDER BY e.name ASC;
+    `);
+    res.json(result.rows.map(formatEmployee));
+  } catch (error) {
+    console.error("Error obteniendo empleados:", error);
+    res.status(500).json({ error: "No se pudieron obtener los empleados." });
+  }
+});
+
+app.post("/api/admin/employees", requireAdmin, async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    const active = req.body?.active !== false;
+    if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, nÃomeros, punto, guion o guion bajo." });
+    if (typeof password !== "string" || password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+    const credentials = await hashPassword(password);
+    const result = await pool.query(`INSERT INTO employees (id,name,username,password_salt,password_hash,active) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`, [crypto.randomUUID(),name,username,credentials.salt,credentials.hash,Boolean(active)]);
+    res.status(201).json(formatEmployee(result.rows[0]));
+  } catch (error) {
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    console.error("Error creando empleado:", error);
+    res.status(500).json({ error: "No se pudo crear el empleado." });
+  }
+});
+
+app.put("/api/admin/employees/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const name = String(req.body?.name || "").trim();
+    const username = normalizeUsername(req.body?.username);
+    const password = req.body?.password;
+    const active = req.body?.active !== false;
+    if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El nombre de usuario no es vÃ¡lido." });
+    let result;
+    if (typeof password === "string" && password.length > 0) {
+      if (password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+      const credentials = await hashPassword(password);
+      result = await pool.query(`UPDATE employees SET name=$1,username=$2,password_salt=$3,password_hash=$4,active=$5,updated_at=NOW() WHERE id=$6 RETURNING *;`, [name,username,credentials.salt,credentials.hash,Boolean(active),id]);
+      await pool.query(`DELETE FROM employee_sessions WHERE employee_id = $1;`, [id]);
+    } else {
+      result = await pool.query(`UPDATE employees SET name=$1,username=$2,active=$3,updated_at=NOW() WHERE id=$4 RETURNING *;`, [name,username,Boolean(active),id]);
+      if (!active) await pool.query(`DELETE FROM employee_sessions WHERE employee_id = $1;`, [id]);
+    }
+    if (result.rowCount === 0) return res.status(404).json({ error: "Empleado no encontrado." });
+    res.json(formatEmployee(result.rows[0]));
+  } catch (error) {
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    console.error("Error actualizando empleado:", error);
+    res.status(500).json({ error: "No se pudo actualizar el empleado." });
+  }
+});
+
+app.delete("/api/admin/employees/:id", requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`DELETE FROM employees WHERE id=$1 RETURNING id;`, [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "Empleado no encontrado." });
+    res.json({ success: true, message: "Empleado eliminado. Su historial de escaneos se conserva." });
+  } catch (error) {
+    console.error("Error eliminando empleado:", error);
+    res.status(500).json({ error: "No se pudo eliminar el empleado." });
+  }
+});
+
+app.get("/api/admin/checkins", requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit)||200,1),1000);
+    const result = await pool.query(`SELECT * FROM checkins ORDER BY scanned_at DESC LIMIT $1;`, [limit]);
+    res.json(result.rows.map(formatCheckin));
+  } catch (error) {
+    console.error("Error obteniendo historial de escaneos:", error);
+    res.status(500).json({ error: "No se pudo obtener el historial de escaneos." });
+  }
+});
+
+/*
+==================================================
+SUBIR AFICHE A SUPABASE STORAGE
+==================================================
+*/
+
+app.post(
+  "/api/admin/posters",
+  requireAdmin,
+  posterUpload.single("poster"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Selecciona una imagen para el afiche."
+        });
+      }
 
       const extension =
         extensionFromMimeType(req.file.mimetype);
@@ -1026,18 +1428,25 @@ imagen para el afiche.” }); }
         error: "No se pudo subir el afiche."
       });
     }
-
-} );
+  }
+);
 
 /*
-
+==================================================
 ADMINISTRACIÃN DE PELÃCULAS
-
+==================================================
 */
 
-app.get( “/api/admin/movies”, requireAdmin, async (req, res) => { try {
-const result = await
-pool.query(SELECT *         FROM movies         ORDER BY created_at DESC;);
+app.get(
+  "/api/admin/movies",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT *
+        FROM movies
+        ORDER BY created_at DESC;
+      `);
 
       res.json(result.rows.map(formatMovie));
     } catch (error) {
@@ -1050,13 +1459,24 @@ pool.query(SELECT *         FROM movies         ORDER BY created_at DESC;);
         error: "No se pudieron obtener las pelÃ­culas."
       });
     }
+  }
+);
 
-} );
-
-app.post( “/api/admin/movies”, requireAdmin, async (req, res) => { try {
-const { title, description = ““, posterUrl =”“, trailerUrl =”“,
-durationMinutes = null, rating =”“, active = true, comingSoon = false }
-= req.body;
+app.post(
+  "/api/admin/movies",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const {
+        title,
+        description = "",
+        posterUrl = "",
+        trailerUrl = "",
+        durationMinutes = null,
+        rating = "",
+        active = true, 
+        comingSoon = false
+      } = req.body;
 
       if (
         typeof title !== "string" ||
@@ -1124,11 +1544,15 @@ durationMinutes = null, rating =”“, active = true, comingSoon = false }
         error: "No se pudo crear la pelÃ­cula."
       });
     }
+  }
+);
 
-} );
-
-app.put( “/api/admin/movies/:id”, requireAdmin, async (req, res) => {
-try { const { id } = req.params;
+app.put(
+  "/api/admin/movies/:id",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
       const {
         title,
@@ -1210,11 +1634,15 @@ try { const { id } = req.params;
         error: "No se pudo actualizar la pelÃ­cula."
       });
     }
+  }
+);
 
-} );
-
-app.delete( “/api/admin/movies/:id”, requireAdmin, async (req, res) => {
-try { const { id } = req.params;
+app.delete(
+  "/api/admin/movies/:id",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
       const result = await pool.query(
         `
@@ -1245,18 +1673,34 @@ try { const { id } = req.params;
         error: "No se pudo eliminar la pelÃ­cula."
       });
     }
-
-} );
+  }
+);
 
 /*
-
+==================================================
 ADMINISTRACIÃN DE TANDAS
-
+==================================================
 */
 
-app.get( “/api/admin/showtimes”, requireAdmin, async (req, res) => { try
-{ const result = await
-pool.query(SELECT           s.*,           m.title AS movie_title,           tp.adult_price AS global_adult_price,           tp.child_price AS global_child_price,           tp.senior_price AS global_senior_price         FROM showtimes s         JOIN movies m ON m.id = s.movie_id         CROSS JOIN ticket_prices tp         ORDER BY           s.show_date ASC,           s.show_time ASC;);
+app.get(
+  "/api/admin/showtimes",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+          s.*,
+          m.title AS movie_title,
+          tp.adult_price AS global_adult_price,
+          tp.child_price AS global_child_price,
+          tp.senior_price AS global_senior_price
+        FROM showtimes s
+        JOIN movies m ON m.id = s.movie_id
+        CROSS JOIN ticket_prices tp
+        ORDER BY
+          s.show_date ASC,
+          s.show_time ASC;
+      `);
 
       res.json(result.rows.map(formatShowtime));
     } catch (error) {
@@ -1269,12 +1713,21 @@ pool.query(SELECT           s.*,           m.title AS movie_title,           tp.
         error: "No se pudieron obtener las tandas."
       });
     }
+  }
+);
 
-} );
-
-app.post( “/api/admin/showtimes”, requireAdmin, async (req, res) => {
-try { const { movieId, showDate, showTime, language = “spanish”, active
-= true } = req.body;
+app.post(
+  "/api/admin/showtimes",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const {
+        movieId,
+        showDate,
+        showTime,
+        language = "spanish",
+        active = true
+      } = req.body;
 
       if (
         typeof movieId !== "string" ||
@@ -1421,11 +1874,15 @@ try { const { movieId, showDate, showTime, language = “spanish”, active
         error: "No se pudo crear la tanda."
       });
     }
+  }
+);
 
-} );
-
-app.put( “/api/admin/showtimes/:id”, requireAdmin, async (req, res) => {
-try { const { id } = req.params;
+app.put(
+  "/api/admin/showtimes/:id",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
       const {
         movieId,
@@ -1585,11 +2042,17 @@ try { const { id } = req.params;
         error: "No se pudo actualizar la tanda."
       });
     }
+  }
+);
 
-} );
-
-app.delete( “/api/admin/showtimes”, requireAdmin, async (req, res) => {
-try { const result = await pool.query(DELETE FROM showtimes;);
+app.delete(
+  "/api/admin/showtimes",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        DELETE FROM showtimes;
+      `);
 
       res.json({
         success: true,
@@ -1606,11 +2069,15 @@ try { const result = await pool.query(DELETE FROM showtimes;);
         error: "No se pudieron eliminar todas las tandas."
       });
     }
+  }
+);
 
-} );
-
-app.delete( “/api/admin/showtimes/:id”, requireAdmin, async (req, res)
-=> { try { const { id } = req.params;
+app.delete(
+  "/api/admin/showtimes/:id",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
       const result = await pool.query(
         `
@@ -1641,30 +2108,32 @@ app.delete( “/api/admin/showtimes/:id”, requireAdmin, async (req, res)
         error: "No se pudo eliminar la tanda."
       });
     }
+  }
+);
 
-} );
 
-const OFFICIAL_SEAT_IDS = (() => { const ids = new Set([“A1-WC”,
-“A10-WC”, “M1-WC”, “M11-WC”]);
+const OFFICIAL_SEAT_IDS = (() => {
+  const ids = new Set(["A1-WC", "A10-WC", "M1-WC", "M11-WC"]);
 
-for (let position = 2; position <= 9; position += 1)
-ids.add(A${position}); for (const rowName of
-[“B”,“C”,“D”,“E”,“F”,“G”,“H”,“I”,“J”,“K”]) { for (let position = 1;
-position <= 16; position += 1) ids.add(${rowName}${position}); } for
-(let position = 1; position <= 15; position += 1) ids.add(L${position});
-for (let position = 2; position <= 11; position += 1)
-ids.add(M${position});
+  for (let position = 2; position <= 9; position += 1) ids.add(`A${position}`);
+  for (const rowName of ["B","C","D","E","F","G","H","I","J","K"]) {
+    for (let position = 1; position <= 16; position += 1) ids.add(`${rowName}${position}`);
+  }
+  for (let position = 1; position <= 15; position += 1) ids.add(`L${position}`);
+  for (let position = 2; position <= 11; position += 1) ids.add(`M${position}`);
 
-return ids; })();
+  return ids;
+})();
 
 /*
-
+==================================================
 ASIENTOS OCUPADOS
-
+==================================================
 */
 
-app.get(“/api/seats”, async (req, res) => { try { const { showtimeId } =
-req.query;
+app.get("/api/seats", async (req, res) => {
+  try {
+    const { showtimeId } = req.query;
 
     if (
       typeof showtimeId !== "string" ||
@@ -1721,36 +2190,48 @@ req.query;
       showtimeId,
       occupiedSeats
     });
-
-} catch (error) { console.error( “Error obteniendo los asientos
-ocupados:”, error );
+  } catch (error) {
+    console.error(
+      "Error obteniendo los asientos ocupados:",
+      error
+    );
 
     res.status(500).json({
       error:
         "No se pudieron obtener los asientos ocupados."
     });
-
-} });
+  }
+});
 
 /*
-
+==================================================
 CREAR RESERVACIÃN
-
+==================================================
 */
 
-app.post(“/api/reservations”, async (req, res) => { const client = await
-pool.connect();
+app.post("/api/reservations", async (req, res) => {
+  const client = await pool.connect();
 
-try {
+  try {
 
     const {
+  showtimeId,
+  seats,
+  ticketTypes,
+  paymentMethod = "",
+  athTestApproved = false,
+  customer
+} = req.body;
 
-showtimeId, seats, ticketTypes, paymentMethod = ““, athTestApproved =
-false, customer } = req.body;
-
-if ( paymentMethod === “ath_movil” && ATH_TEST_MODE && athTestApproved
-!== true ) { return res.status(400).json({ error: “El pago de prueba de
-ATH Móvil no fue aprobado.” }); }
+if (
+  paymentMethod === "ath_movil" &&
+  ATH_TEST_MODE &&
+  athTestApproved !== true
+) {
+  return res.status(400).json({
+    error: "El pago de prueba de ATH Móvil no fue aprobado."
+  });
+}
 
     if (
       typeof showtimeId !== "string" ||
@@ -1940,8 +2421,12 @@ ATH Móvil no fue aprobado.” }); }
       normalizedTicketTypes.child * childPrice +
       normalizedTicketTypes.senior * seniorPrice;
 
-const initialPaymentStatus = paymentMethod === “ath_movil” &&
-ATH_TEST_MODE && athTestApproved === true ? “paid” : “pending”;
+const initialPaymentStatus =
+  paymentMethod === "ath_movil" &&
+  ATH_TEST_MODE &&
+  athTestApproved === true
+    ? "paid"
+    : "pending";
 
     const storedCustomer = {
       ...customer,
@@ -2001,9 +2486,11 @@ ATH_TEST_MODE && athTestApproved === true ? “paid” : “pending”;
     await client.query("COMMIT");
 
     res.status(201).json({
-
-success: true, reservation: formatTicket(result.rows[0]) }); } catch
-(error) { await client.query(“ROLLBACK”);
+  success: true,
+  reservation: formatTicket(result.rows[0])
+});
+  } catch (error) {
+    await client.query("ROLLBACK");
 
     console.error(
       "Error creando la reservaciÃ3n:",
@@ -2013,22 +2500,33 @@ success: true, reservation: formatTicket(result.rows[0]) }); } catch
     res.status(500).json({
       error: "No se pudo crear la reservaciÃ3n."
     });
-
-} finally { client.release(); } });
+  } finally {
+    client.release();
+  }
+});
 
 /*
-
+==================================================
 PAYPAL CHECKOUT
-
+==================================================
 */
 
-app.get(“/api/paypal/config”, (req, res) => { res.json({ enabled:
-paypalIsConfigured(), clientId: paypalIsConfigured() ? PAYPAL_CLIENT_ID
-: ““, currency: PAYPAL_CURRENCY, mode: PAYPAL_MODE }); });
+app.get("/api/paypal/config", (req, res) => {
+  res.json({
+    enabled: paypalIsConfigured(),
+    clientId: paypalIsConfigured() ? PAYPAL_CLIENT_ID : "",
+    currency: PAYPAL_CURRENCY,
+    mode: PAYPAL_MODE
+  });
+});
 
-app.post(“/api/paypal/orders”, async (req, res) => { try { if
-(!paypalIsConfigured()) { return res.status(503).json({ error: “PayPal
-todavía no está configurado en Render.” }); }
+app.post("/api/paypal/orders", async (req, res) => {
+  try {
+    if (!paypalIsConfigured()) {
+      return res.status(503).json({
+        error: "PayPal todavía no está configurado en Render."
+      });
+    }
 
     const reservationId = String(req.body?.reservationId || "").trim();
     if (!reservationId) {
@@ -2085,16 +2583,20 @@ todavía no está configurado en Render.” }); }
     });
 
     res.status(201).json({ orderId: order.id });
+  } catch (error) {
+    console.error("Error creando orden de PayPal:", error);
+    res.status(502).json({
+      error: error.message || "No se pudo crear la orden de PayPal."
+    });
+  }
+});
 
-} catch (error) { console.error(“Error creando orden de PayPal:”,
-error); res.status(502).json({ error: error.message || “No se pudo crear
-la orden de PayPal.” }); } });
+app.post("/api/paypal/orders/:orderId/capture", async (req, res) => {
+  const client = await pool.connect();
 
-app.post(“/api/paypal/orders/:orderId/capture”, async (req, res) => {
-const client = await pool.connect();
-
-try { const orderId = String(req.params.orderId || ““).trim(); const
-reservationId = String(req.body?.reservationId ||”“).trim();
+  try {
+    const orderId = String(req.params.orderId || "").trim();
+    const reservationId = String(req.body?.reservationId || "").trim();
 
     if (!orderId || !reservationId) {
       return res.status(400).json({
@@ -2117,11 +2619,16 @@ reservationId = String(req.body?.reservationId ||”“).trim();
     const capturedPayment = purchaseUnit?.payments?.captures?.[0];
     const capturedAmount = capturedPayment?.amount;
     const paypalReservationId = String(
+  capturedPayment?.custom_id ||
+  capturedPayment?.invoice_id ||
+  purchaseUnit?.custom_id ||
+  purchaseUnit?.invoice_id ||
+  ""
+).trim();
 
-capturedPayment?.custom_id || capturedPayment?.invoice_id ||
-purchaseUnit?.custom_id || purchaseUnit?.invoice_id || “” ).trim();
-
-const requestedReservationId = String( reservationId || “” ).trim();
+const requestedReservationId = String(
+  reservationId || ""
+).trim();
 
     if (capture.status !== "COMPLETED" || capturedPayment?.status !== "COMPLETED") {
       return res.status(400).json({
@@ -2130,10 +2637,13 @@ const requestedReservationId = String( reservationId || “” ).trim();
     }
 
     if (
-
-!paypalReservationId || paypalReservationId !== requestedReservationId )
-{ return res.status(400).json({ error: “La orden de PayPal no
-corresponde a esta reservación.” }); }
+  !paypalReservationId ||
+  paypalReservationId !== requestedReservationId
+) {
+      return res.status(400).json({
+        error: "La orden de PayPal no corresponde a esta reservación."
+      });
+    }
 
     await client.query("BEGIN");
 
@@ -2161,41 +2671,72 @@ corresponde a esta reservación.” }); }
     }
 
     if (
+  ticket.payment_status === "paid" ||
+  ticket.payment_status === "approved"
+) {
+  await client.query("COMMIT");
 
-ticket.payment_status === “paid” || ticket.payment_status === “approved”
-) { await client.query(“COMMIT”);
+  return res.json({
+    success: true,
+    reservation: formatTicket(ticket)
+  });
+}
 
-return res.json({ success: true, reservation: formatTicket(ticket) }); }
-
-const updatedCustomer = { …(ticket.customer || {}), paymentMethod:
-“paypal”, paypalOrderId: orderId, paypalCaptureId: capturedPayment.id ||
-““, paypalPayerEmail: capture.payer?.email_address ||”” }; const
-updateResult = await client.query(
-UPDATE tickets         SET payment_status = 'paid', customer = $2         WHERE id = $1         RETURNING *;,
-[reservationId, JSON.stringify(updatedCustomer)] );
+const updatedCustomer = {
+  ...(ticket.customer || {}),
+  paymentMethod: "paypal",
+  paypalOrderId: orderId,
+  paypalCaptureId: capturedPayment.id || "",
+  paypalPayerEmail: capture.payer?.email_address || ""
+};
+    const updateResult = await client.query(
+      `
+        UPDATE tickets
+        SET payment_status = 'paid', customer = $2
+        WHERE id = $1
+        RETURNING *;
+      `,
+      [reservationId, JSON.stringify(updatedCustomer)]
+    );
 
     await client.query("COMMIT");
 
 const reservation = formatTicket(updateResult.rows[0]);
 
-try { await sendTicketEmail(reservation); } catch (emailError) {
-console.error(“Error enviando correo:”, emailError); }
+try {
+  await sendTicketEmail(reservation);
+} catch (emailError) {
+  console.error("Error enviando correo:", emailError);
+}
 
-res.json({ success: true, reservation }); } catch (error) { await
-client.query(“ROLLBACK”).catch(() => {}); console.error(“Error
-capturando pago de PayPal:”, error); res.status(502).json({ error:
-error.message || “No se pudo confirmar el pago de PayPal.” }); } finally
-{ client.release(); } });
+res.json({
+  success: true,
+  reservation
+});
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("Error capturando pago de PayPal:", error);
+    res.status(502).json({
+      error: error.message || "No se pudo confirmar el pago de PayPal."
+    });
+  } finally {
+    client.release();
+  }
+});
 
 /*
-
+==================================================
 ATH MÓVIL MANUAL
-
+==================================================
 */
 
-app.post(“/api/reservations/:id/ath-movil/submit”, async (req, res) => {
-try { const id = String(req.params.id || ““).trim(); const result =
-await pool.query( SELECT * FROM tickets WHERE id = $1;, [id] );
+app.post("/api/reservations/:id/ath-movil/submit", async (req, res) => {
+  try {
+    const id = String(req.params.id || "").trim();
+    const result = await pool.query(
+      `SELECT * FROM tickets WHERE id = $1;`,
+      [id]
+    );
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Reservación no encontrada." });
@@ -2219,19 +2760,25 @@ await pool.query( SELECT * FROM tickets WHERE id = $1;, [id] );
       athMovilPhone: ATH_MOVIL_PHONE,
       reservation: formatTicket(ticket)
     });
-
-} catch (error) { console.error(“Error registrando pago ATH Móvil:”,
-error); res.status(500).json({ error: “No se pudo registrar el pago
-enviado por ATH Móvil.” }); } });
+  } catch (error) {
+    console.error("Error registrando pago ATH Móvil:", error);
+    res.status(500).json({
+      error: "No se pudo registrar el pago enviado por ATH Móvil."
+    });
+  }
+});
 
 /*
-
+==================================================
 PAGO SIMULADO
-
+==================================================
 */
 
-app.post( “/api/reservations/:id/pay”, async (req, res) => { try { const
-{ id } = req.params;
+app.post(
+  "/api/reservations/:id/pay",
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
       const result = await pool.query(
         `
@@ -2282,17 +2829,18 @@ app.post( “/api/reservations/:id/pay”, async (req, res) => { try { const
         error: "No se pudo procesar el pago."
       });
     }
-
-} );
+  }
+);
 
 /*
-
+==================================================
 CONSULTAR BOLETO
-
+==================================================
 */
 
-app.get(“/api/tickets/:id”, async (req, res) => { try { const { id } =
-req.params;
+app.get("/api/tickets/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
     const result = await pool.query(
       `
@@ -2310,24 +2858,34 @@ req.params;
     }
 
     res.json(formatTicket(result.rows[0]));
-
-} catch (error) { console.error( “Error obteniendo el boleto:”, error );
+  } catch (error) {
+    console.error(
+      "Error obteniendo el boleto:",
+      error
+    );
 
     res.status(500).json({
       error: "No se pudo obtener el boleto."
     });
-
-} });
+  }
+});
 
 /*
-
+==================================================
 RESERVACIONES DEL PANEL ADMINISTRATIVO
-
+==================================================
 */
 
-app.get( “/api/admin/reservations”, requireAdmin, async (req, res) => {
-try { const result = await
-pool.query(SELECT *         FROM tickets         ORDER BY created_at DESC;);
+app.get(
+  "/api/admin/reservations",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT *
+        FROM tickets
+        ORDER BY created_at DESC;
+      `);
 
       res.json(result.rows.map(formatTicket));
     } catch (error) {
@@ -2341,17 +2899,18 @@ pool.query(SELECT *         FROM tickets         ORDER BY created_at DESC;);
           "No se pudieron obtener las reservaciones."
       });
     }
-
-} );
+  }
+);
 
 /*
-
+==================================================
 VALIDAR CÃDIGO QR
-
+==================================================
 */
 
-app.get(“/api/qr/:qr”, async (req, res) => { try { const { qr } =
-req.params;
+app.get("/api/qr/:qr", async (req, res) => {
+  try {
+    const { qr } = req.params;
 
     const result = await pool.query(
       `
@@ -2395,26 +2954,34 @@ req.params;
       message: "Boleto vÃ¡lido.",
       ticket
     });
-
-} catch (error) { console.error( “Error validando el cÃ3digo QR:”, error
-);
+  } catch (error) {
+    console.error(
+      "Error validando el cÃ3digo QR:",
+      error
+    );
 
     res.status(500).json({
       valid: false,
       error: "No se pudo validar el boleto."
     });
-
-} });
+  }
+});
 
 /*
-
+==================================================
 CHECK-IN DEL EMPLEADO
-
+==================================================
 */
 
-app.post(“/api/employee/checkin”, requireEmployee, async (req, res) => {
-const client = await pool.connect(); try { const code = String(
-req.body?.manualCode || req.body?.qr || req.body?.code || “” ).trim();
+app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const code = String(
+      req.body?.manualCode ||
+      req.body?.qr ||
+      req.body?.code ||
+      ""
+    ).trim();
 
     if (!code) {
       return res.status(400).json({
@@ -2447,20 +3014,24 @@ req.body?.manualCode || req.body?.qr || req.body?.code || “” ).trim();
     await client.query(`INSERT INTO checkins (id,ticket_id,employee_id,employee_name,employee_username,seats_count,movie,show_time,seats) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);`, [crypto.randomUUID(),ticket.id,req.employee.id,req.employee.name,req.employee.username,seatsCount,ticket.movie,ticket.show_time,ticket.seats]);
     await client.query("COMMIT");
     res.json({ success: true, message: `Entrada registrada por ${req.employee.name}. ${seatsCount} taquilla${seatsCount===1?"":"s"} contabilizada${seatsCount===1?"":"s"}.`, employee: { id:req.employee.id,name:req.employee.name,username:req.employee.username }, seatsCount, ticket: formatTicket(updateResult.rows[0]) });
-
-} catch (error) { await client.query(“ROLLBACK”); console.error(“Error
-registrando check-in de empleado:”, error); res.status(500).json({
-error: “No se pudo registrar la entrada.” }); } finally {
-client.release(); } });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error registrando check-in de empleado:", error);
+    res.status(500).json({ error: "No se pudo registrar la entrada." });
+  } finally { client.release(); }
+});
 
 /*
-
+==================================================
 CHECK-IN DEL BOLETO
-
+==================================================
 */
 
-app.post( “/api/admin/checkin”, requireAdmin, async (req, res) => {
-const client = await pool.connect();
+app.post(
+  "/api/admin/checkin",
+  requireAdmin,
+  async (req, res) => {
+    const client = await pool.connect();
 
     try {
       const code = String(
@@ -2551,19 +3122,26 @@ const client = await pool.connect();
     } finally {
       client.release();
     }
-
-} );
+  }
+);
 
 /*
-
+==================================================
 SUBIR TRÃILER A SUPABASE STORAGE
-
+==================================================
 */
 
-app.post( “/api/admin/trailers”, requireAdmin,
-trailerUpload.single(“trailer”), async (req, res) => { try { if
-(!req.file) { return res.status(400).json({ error: “Selecciona un video
-para el trÃ¡iler.” }); }
+app.post(
+  "/api/admin/trailers",
+  requireAdmin,
+  trailerUpload.single("trailer"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Selecciona un video para el trÃ¡iler."
+        });
+      }
 
       const extension =
         trailerExtensionFromMimeType(
@@ -2631,31 +3209,38 @@ para el trÃ¡iler.” }); }
           "No se pudo subir el trÃ¡iler."
       });
     }
-
-} );
+  }
+);
 
 /*
-
+==================================================
 RUTA NO ENCONTRADA
-
+==================================================
 */
 
-app.use((req, res) => { res.status(404).json({ error: “Ruta no
-encontrada.” }); });
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Ruta no encontrada."
+  });
+});
 
 /*
-
+==================================================
 MANEJO GENERAL DE ERRORES
-
+==================================================
 */
 
-app.use((error, req, res, next) => { console.error(“Error inesperado:”,
-error);
+app.use((error, req, res, next) => {
+  console.error("Error inesperado:", error);
 
-if (res.headersSent) { return next(error); }
+  if (res.headersSent) {
+    return next(error);
+  }
 
-if (error instanceof multer.MulterError) { if (error.code ===
-“LIMIT_FILE_SIZE”) { const isTrailer = req.path.includes(“/trailers”);
+  if (error instanceof multer.MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      const isTrailer =
+        req.path.includes("/trailers");
 
       return res.status(413).json({
         error: isTrailer
@@ -2667,39 +3252,48 @@ if (error instanceof multer.MulterError) { if (error.code ===
     return res.status(400).json({
       error: "No se pudo procesar el archivo."
     });
+  }
 
-}
+  if (
+    error?.message ===
+      "El afiche debe ser JPG, PNG o WEBP." ||
+    error?.message ===
+      "El trÃ¡iler debe ser MP4, WEBM o MOV."
+  ) {
+    return res.status(400).json({
+      error: error.message
+    });
+  }
 
-if ( error?.message === “El afiche debe ser JPG, PNG o WEBP.” ||
-error?.message === “El trÃ¡iler debe ser MP4, WEBM o MOV.” ) { return
-res.status(400).json({ error: error.message }); }
-
-res.status(500).json({ error: “OcurriÃ3 un error inesperado.” }); });
+  res.status(500).json({
+    error: "OcurriÃ3 un error inesperado."
+  });
+});
 
 /*
-
+==================================================
 INICIAR SERVIDOR
-
+==================================================
 */
 
-async function startServer() { try { await initializeDatabase(); await
-cleanupPreviousBusinessDay();
+async function startServer() {
+  try {
+    await initializeDatabase();
+    await cleanupPreviousBusinessDay();
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(
         `Servidor iniciado correctamente en el puerto ${PORT}.`
       );
     });
-
-} catch (error) { console.error( “No se pudo iniciar el servidor:”,
-error );
+  } catch (error) {
+    console.error(
+      "No se pudo iniciar el servidor:",
+      error
+    );
 
     process.exit(1);
-
-} }
+  }
+}
 
 startServer();
-
-[1] a-z0-9._-
-
-[2] a-z0-9._-
