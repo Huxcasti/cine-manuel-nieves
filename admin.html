@@ -1158,6 +1158,327 @@
   transform: scale(0.98);
 }
 
+  
+
+    /* =========================================================
+       REDISEÑO VISUAL DEL DASHBOARD DE RESERVACIONES
+       Mantiene intacta toda la lógica JavaScript y los IDs.
+    ========================================================= */
+
+    #reservationsSection {
+      --dashboard-card-bg: rgba(10, 18, 32, 0.97);
+      --dashboard-card-border: #334766;
+    }
+
+    .dashboard-header,
+    .navigation,
+    .sales-filter-card,
+    .stat-modern {
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.018);
+    }
+
+    .dashboard-header {
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(37, 99, 235, 0.08), transparent 30%),
+        linear-gradient(180deg, rgba(17, 27, 47, 0.98), rgba(10, 18, 32, 0.98));
+    }
+
+    .dashboard-action-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 58px !important;
+      border-radius: 15px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .dashboard-action-button .action-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      font-size: 25px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .dashboard-action-button .logout-icon {
+      transform: rotate(180deg);
+    }
+
+    .btn-update {
+      background: linear-gradient(135deg, #ffd43b 0%, #ffc21c 55%, #f5b700 100%);
+      color: #1d1700;
+      box-shadow: 0 15px 32px rgba(245, 183, 0, 0.28);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ff4d55, #ef3f46);
+      box-shadow: 0 15px 32px rgba(239, 68, 68, 0.18);
+    }
+
+    .navigation {
+      min-height: 72px;
+      padding: 10px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(15, 24, 42, 0.98), rgba(10, 17, 31, 0.98));
+    }
+
+    .navigation button {
+      min-height: 52px;
+      border-radius: 14px;
+      font-size: 15px;
+    }
+
+    .navigation button.active {
+      background: linear-gradient(135deg, #49cbc5, #2fb5b4);
+      box-shadow: 0 10px 26px rgba(73, 203, 197, 0.19);
+    }
+
+    .sales-filter-card {
+      gap: 18px;
+      padding: 24px;
+      border-color: var(--dashboard-card-border);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 88% 10%, rgba(73, 203, 197, 0.035), transparent 34%),
+        var(--dashboard-card-bg);
+    }
+
+    .sales-filter-card label {
+      margin-bottom: 0;
+      color: #f3f7ff;
+      font-size: clamp(18px, 2.5vw, 22px);
+      font-weight: 900;
+    }
+
+    .sales-date-control {
+      position: relative;
+      width: 100%;
+    }
+
+    .sales-calendar-icon {
+      position: absolute;
+      top: 50%;
+      left: 22px;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 2px solid #aebbd2;
+      border-radius: 5px;
+      color: transparent;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .sales-calendar-icon::before,
+    .sales-calendar-icon::after {
+      content: "";
+      position: absolute;
+      background: #aebbd2;
+    }
+
+    .sales-calendar-icon::before {
+      top: 6px;
+      left: 2px;
+      width: 18px;
+      height: 2px;
+    }
+
+    .sales-calendar-icon::after {
+      top: -5px;
+      left: 5px;
+      width: 12px;
+      height: 6px;
+      border-left: 2px solid #aebbd2;
+      border-right: 2px solid #aebbd2;
+      background: transparent;
+    }
+
+    .sales-date-input {
+      width: 100%;
+      min-height: 72px;
+      margin: 0;
+      padding: 18px 64px;
+      border: 2px solid #3b506f;
+      border-radius: 20px;
+      background: #091221;
+      color: #ffffff;
+      font-size: clamp(19px, 3vw, 24px);
+      text-align: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+
+    .sales-date-input::-webkit-calendar-picker-indicator {
+      width: 26px;
+      height: 26px;
+      opacity: 0.7;
+      filter: invert(82%) sepia(8%) saturate(600%) hue-rotate(180deg);
+      cursor: pointer;
+    }
+
+    .sales-date-input::-webkit-date-and-time-value {
+      min-height: 32px;
+      text-align: center;
+    }
+
+    .dashboard-stats {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .stat-modern {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      min-height: 116px;
+      padding: 20px 22px;
+      border-color: var(--dashboard-card-border);
+      border-radius: 22px;
+      background:
+        linear-gradient(90deg, rgba(73, 203, 197, 0.02), transparent 45%),
+        var(--dashboard-card-bg);
+    }
+
+    .stat-modern .stat-icon {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      border: 1px solid rgba(73, 203, 197, 0.7);
+      border-radius: 50%;
+      background: rgba(5, 18, 29, 0.92);
+      font-size: 26px;
+      line-height: 1;
+      box-shadow: inset 0 0 18px rgba(73, 203, 197, 0.04);
+    }
+
+    .stat-modern .stat-icon-money {
+      color: #32d26e;
+      font-family: Arial, sans-serif;
+      font-size: 34px;
+      font-weight: 900;
+    }
+
+    .stat-modern .stat-label {
+      margin: 0;
+      color: #aeb8cc;
+      font-size: clamp(17px, 2.4vw, 22px);
+      line-height: 1.3;
+    }
+
+    .stat-modern .stat-value {
+      min-width: 72px;
+      color: #ffffff;
+      font-size: clamp(31px, 5vw, 42px);
+      line-height: 1;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 850px) {
+      .dashboard-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .dashboard-header {
+        border-radius: 20px;
+      }
+
+      .dashboard-brand {
+        align-items: flex-start;
+      }
+
+      .dashboard-logo {
+        width: 72px;
+        height: 72px;
+        flex-basis: 72px;
+        border-radius: 18px;
+      }
+
+      .dashboard-brand h1 {
+        font-size: 25px;
+        line-height: 1.08;
+      }
+
+      .dashboard-brand .subtitle {
+        margin-top: 6px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .header-actions {
+        gap: 10px;
+      }
+
+      .dashboard-action-button {
+        min-height: 58px !important;
+        padding: 13px 10px;
+        font-size: 15px;
+      }
+
+      .navigation {
+        gap: 7px;
+      }
+
+      .navigation button {
+        padding: 11px 10px;
+        font-size: 14px;
+      }
+
+      .sales-filter-card {
+        padding: 20px;
+      }
+
+      .sales-date-input {
+        min-height: 68px;
+        padding-right: 54px;
+        padding-left: 54px;
+        font-size: 20px;
+      }
+
+      .sales-calendar-icon {
+        left: 18px;
+        transform: translateY(-50%) scale(0.9);
+      }
+
+      .stat-modern {
+        grid-template-columns: 54px minmax(0, 1fr) auto;
+        gap: 14px;
+        min-height: 106px;
+        padding: 17px 18px;
+      }
+
+      .stat-modern .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+      }
+
+      .stat-modern .stat-icon-money {
+        font-size: 30px;
+      }
+
+      .stat-modern .stat-label {
+        font-size: 17px;
+      }
+
+      .stat-modern .stat-value {
+        min-width: 54px;
+        font-size: 31px;
+      }
+    }
+
   </style>
 </head>
 
@@ -1243,12 +1564,13 @@
         </div>
 
         <div class="header-actions">
-          <button class="btn btn-update"
-           type="button" onclick="refreshCurrentSection()">
-            Actualizar
+          <button class="btn btn-update dashboard-action-button" type="button" onclick="refreshCurrentSection()">
+            <span class="action-icon" aria-hidden="true">↻</span>
+            <span>Actualizar</span>
           </button>
-          <button class="btn btn-danger" type="button" onclick="logout()">
-            Cerrar sesión
+          <button class="btn btn-danger dashboard-action-button" type="button" onclick="logout()">
+            <span class="action-icon logout-icon" aria-hidden="true">⇥</span>
+            <span>Cerrar sesión</span>
           </button>
         </div>
       </header>
@@ -1281,30 +1603,37 @@
     Ver ventas de la fecha:
   </label>
 
-  <input
-    id="salesDateFilter"
-    class="sales-date-input"
-    type="date"
-    onchange="applySalesDateFilter()"
-  />
+  <div class="sales-date-control">
+    <span class="sales-calendar-icon" aria-hidden="true">▣</span>
+    <input
+      id="salesDateFilter"
+      class="sales-date-input"
+      type="date"
+      onchange="applySalesDateFilter()"
+    />
+  </div>
 </div>
-        <div class="stats">
-          <article class="stat">
+        <div class="stats dashboard-stats">
+          <article class="stat stat-modern">
+            <span class="stat-icon stat-icon-ticket" aria-hidden="true">🎟️</span>
             <span class="stat-label">Reservaciones</span>
             <strong class="stat-value" id="reservationCount">0</strong>
           </article>
 
-          <article class="stat">
+          <article class="stat stat-modern">
+            <span class="stat-icon stat-icon-seats" aria-hidden="true">🎫</span>
             <span class="stat-label">Taquillas vendidas</span>
             <strong class="stat-value" id="ticketCount">0</strong>
           </article>
 
-          <article class="stat">
+          <article class="stat stat-modern">
+            <span class="stat-icon stat-icon-money" aria-hidden="true">$</span>
             <span class="stat-label">Ventas pagadas</span>
             <strong class="stat-value" id="salesTotal">$0.00</strong>
           </article>
 
-          <article class="stat">
+          <article class="stat stat-modern">
+            <span class="stat-icon stat-icon-used" aria-hidden="true">👥</span>
             <span class="stat-label">Entradas utilizadas</span>
             <strong class="stat-value" id="usedCount">0</strong>
           </article>
