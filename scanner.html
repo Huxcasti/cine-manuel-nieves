@@ -1801,44 +1801,19 @@
           return;
         }
 
-        const cameras = await Html5Qrcode.getCameras();
-        let cameraId = null;
-
-        if (Array.isArray(cameras) && cameras.length > 0) {
-          const preferredCamera = cameras.find((camera) =>
-            /back|rear|environment|trasera/i.test(camera.label || "")
-          );
-          cameraId = preferredCamera?.id || cameras[cameras.length - 1].id;
-        }
-
-        const cameraConfig = cameraId
-          ? {
-              deviceId: { exact: cameraId },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 }
-            }
-          : {
-              facingMode: { ideal: "environment" },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 }
-            };
-
         await html5QrScanner.start(
-          cameraConfig,
+          { facingMode: "environment" },
           {
             fps: 12,
             disableFlip: true,
-            experimentalFeatures: {
-              useBarCodeDetectorIfSupported: true
-            },
             qrbox: (viewfinderWidth, viewfinderHeight) => {
               const size = Math.floor(
-                Math.min(viewfinderWidth, viewfinderHeight) * 0.78
+                Math.min(viewfinderWidth, viewfinderHeight) * 0.75
               );
 
               return {
-                width: Math.max(220, size),
-                height: Math.max(220, size)
+                width: Math.max(210, size),
+                height: Math.max(210, size)
               };
             }
           },
@@ -1913,9 +1888,6 @@
         scannerStarted = true;
         hideScannerPlaceholder();
 
-        window.setTimeout(() => {
-          configureActiveCamera();
-        }, 500);
       } catch (error) {
         resetScannerPlaceholder();
         alert(
