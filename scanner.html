@@ -12,6 +12,17 @@
   <script src="https://unpkg.com/html5-qrcode" defer></script>
 
   <style>
+
+  .session-status {
+  padding: 10px 14px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #86efac;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -427,7 +438,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
@@ -442,6 +453,16 @@
       color: #dcfdfb;
       font-weight: 700;
     }
+
+    .session-status {
+  padding: 10px 14px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #86efac;
+  font-weight: 800;
+  white-space: nowrap;
+}
 
     .session-badge strong {
       color: var(--green-soft);
@@ -886,11 +907,15 @@
 
       <section class="card">
         <div class="employee-strip">
-          <div class="session-badge">
-            <span>👤 Sesión de</span>
-            <strong id="sessionEmployeeName">Empleado</strong>
-          </div>
-        </div>
+  <div class="session-badge">
+    <span>👤 Sesión de</span>
+    <strong id="sessionEmployeeName">Empleado</strong>
+  </div>
+
+  <div class="session-status">
+    🟢 En línea
+  </div>
+</div>
       </section>
 
       <div class="scanner-grid">
