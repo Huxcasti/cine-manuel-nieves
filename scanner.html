@@ -1730,8 +1730,14 @@
             scanCooldown = true;
 
             try {
-              await validateTicket(decodedText, "camera");
-              hideScannerPlaceholder();
+  await validateTicket(decodedText, "camera");
+
+  if (html5QrScanner && scannerStarted) {
+    html5QrScanner.pause(true);
+  }
+
+  hideScannerPlaceholder();
+}
             } catch (error) {
               renderResult(
                 {
