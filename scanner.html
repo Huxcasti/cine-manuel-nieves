@@ -1047,6 +1047,8 @@
     let html5QrScanner = null;
     let scannerStarted = false;
     let scanCooldown = false;
+    let lastScannedCode = "";
+    let lastScanAt = 0;
     let recentHistory = [];
     let sessionScans = 0;
     let sessionTickets = 0;
@@ -1678,6 +1680,107 @@
       document.getElementById("scannerPlaceholder").classList.add("hidden");
     }
 
+    function playScannerTone(success = true) {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        const audioContext = new AudioContextClass();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = success ? "sine" : "square";
+        oscillator.frequency.setValueAtTime(
+          success ? 880 : 220,
+          audioContext.currentTime
+        );
+
+        gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(
+          0.16,
+          audioContext.currentTime + 0.01
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          audioContext.currentTime + (success ? 0.18 : 0.28)
+        );
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + (success ? 0.2 : 0.3));
+
+        oscillator.addEventListener("ended", () => {
+          audioContext.close().catch(() => {});
+        });
+      } catch (error) {
+        // El sonido es opcional; no debe interrumpir la validación.
+      }
+    }
+
+    function vibrateScanner(success = true) {
+      if (!navigator.vibrate) return;
+      navigator.vibrate(success ? [120] : [180, 80, 180]);
+    }
+
+    async function configureActiveCamera() {
+      try {
+        const video = document.querySelector("#reader video");
+        const stream = video?.srcObject;
+        const track = stream?.getVideoTracks?.()[0];
+
+        if (!track) return;
+
+        const capabilities = track.getCapabilities?.() || {};
+        const advanced = [];
+
+        if (
+          Array.isArray(capabilities.focusMode) &&
+          capabilities.focusMode.includes("continuous")
+        ) {
+          advanced.push({ focusMode: "continuous" });
+        }
+
+        if (
+          capabilities.zoom &&
+          Number.isFinite(capabilities.zoom.min) &&
+          Number.isFinite(capabilities.zoom.max)
+        ) {
+          const desiredZoom = Math.min(
+            capabilities.zoom.max,
+            Math.max(capabilities.zoom.min, 1)
+          );
+          advanced.push({ zoom: desiredZoom });
+        }
+
+        if (advanced.length > 0) {
+          await track.applyConstraints({ advanced });
+        }
+      } catch (error) {
+        console.warn("La cámara no permitió ajustar enfoque o zoom:", error);
+      }
+    }
+
+    async function temporarilyPauseScanner(milliseconds = 1400) {
+      if (!html5QrScanner || !scannerStarted) return;
+
+      try {
+        html5QrScanner.pause(true);
+      } catch (error) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        if (!html5QrScanner || !scannerStarted) return;
+
+        try {
+          html5QrScanner.resume();
+        } catch (error) {
+          console.warn("No se pudo reanudar el escáner:", error);
+        }
+      }, milliseconds);
+    }
+
     async function startScanner() {
       if (!window.Html5Qrcode) {
         alert("No se pudo cargar el escáner QR.");
@@ -1705,43 +1808,75 @@
           const preferredCamera = cameras.find((camera) =>
             /back|rear|environment|trasera/i.test(camera.label || "")
           );
-          cameraId = preferredCamera?.id || cameras[0].id;
+          cameraId = preferredCamera?.id || cameras[cameras.length - 1].id;
         }
 
+        const cameraConfig = cameraId
+          ? {
+              deviceId: { exact: cameraId },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            }
+          : {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            };
+
         await html5QrScanner.start(
-          cameraId || { facingMode: "environment" },
+          cameraConfig,
           {
-            fps: 15,
+            fps: 12,
+            disableFlip: true,
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+            },
             qrbox: (viewfinderWidth, viewfinderHeight) => {
               const size = Math.floor(
-                Math.min(viewfinderWidth, viewfinderHeight) * 0.8
+                Math.min(viewfinderWidth, viewfinderHeight) * 0.78
               );
 
               return {
-                width: size,
-                height: size
+                width: Math.max(220, size),
+                height: Math.max(220, size)
               };
             }
           },
           async (decodedText) => {
-            if (scanCooldown) return;
+            const normalizedCode = String(decodedText || "").trim();
+            const now = Date.now();
+
+            if (!normalizedCode || scanCooldown) return;
+
+            if (
+              normalizedCode === lastScannedCode &&
+              now - lastScanAt < 4000
+            ) {
+              return;
+            }
+
             scanCooldown = true;
+            lastScannedCode = normalizedCode;
+            lastScanAt = now;
 
             try {
-              await validateTicket(decodedText, "camera");
+              const result = await validateTicket(normalizedCode, "camera");
 
-              // Detiene nuevas lecturas después de una validación exitosa.
-              // El servidor marca este boleto como usado, por lo que no podrá
-              // validarse nuevamente aunque se intente desde otro dispositivo.
-              if (html5QrScanner && scannerStarted) {
-                html5QrScanner.pause(true);
-              }
+              playScannerTone(true);
+              vibrateScanner(true);
+              temporarilyPauseScanner(1700);
 
-              hideScannerPlaceholder();
-              document
-                .getElementById("resultContent")
-                .scrollIntoView({ behavior: "smooth", block: "center" });
+              document.getElementById("resultContent")?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+              });
+
+              return result;
             } catch (error) {
+              playScannerTone(false);
+              vibrateScanner(false);
+              temporarilyPauseScanner(1200);
+
               renderResult(
                 {
                   message: error.message,
@@ -1749,6 +1884,7 @@
                 },
                 false
               );
+
               pushHistory(
                 {
                   movie: "Error de validación",
@@ -1760,10 +1896,15 @@
                 },
                 false
               );
+
+              document.getElementById("resultContent")?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+              });
             } finally {
-              setTimeout(() => {
+              window.setTimeout(() => {
                 scanCooldown = false;
-              }, 1800);
+              }, 1500);
             }
           },
           () => {}
@@ -1771,11 +1912,15 @@
 
         scannerStarted = true;
         hideScannerPlaceholder();
+
+        window.setTimeout(() => {
+          configureActiveCamera();
+        }, 500);
       } catch (error) {
         resetScannerPlaceholder();
         alert(
           error?.message ||
-          "No se pudo acceder a la cámara."
+          "No se pudo acceder a la cámara. Revisa los permisos del navegador."
         );
       } finally {
         button.disabled = false;
