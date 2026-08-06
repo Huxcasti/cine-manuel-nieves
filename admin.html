@@ -1161,29 +1161,27 @@
   
 
     /* =========================================================
-       REDISEÑO VISUAL DEL DASHBOARD DE RESERVACIONES
-       Mantiene intacta toda la lógica JavaScript y los IDs.
+       DISEÑO DEL PANEL IGUAL A LA REFERENCIA MÓVIL
+       Solo modifica la presentación; no toca la lógica.
     ========================================================= */
-
     #reservationsSection {
-      --dashboard-card-bg: rgba(10, 18, 32, 0.97);
-      --dashboard-card-border: #334766;
+      --dash-bg: #0b1424;
+      --dash-border: #314563;
     }
 
     .dashboard-header,
     .navigation,
     .sales-filter-card,
     .stat-modern {
-      box-shadow:
-        0 18px 40px rgba(0, 0, 0, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.018);
+      border-color: var(--dash-border);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(40, 104, 205, 0.06), transparent 34%),
+        linear-gradient(180deg, #0e182a 0%, #091220 100%);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.20);
     }
 
     .dashboard-header {
       border-radius: 22px;
-      background:
-        radial-gradient(circle at 15% 0%, rgba(37, 99, 235, 0.08), transparent 30%),
-        linear-gradient(180deg, rgba(17, 27, 47, 0.98), rgba(10, 18, 32, 0.98));
     }
 
     .dashboard-action-button {
@@ -1199,12 +1197,12 @@
 
     .dashboard-action-button .action-icon {
       display: inline-grid;
-      place-items: center;
       width: 25px;
       height: 25px;
-      font-size: 25px;
-      line-height: 1;
+      place-items: center;
+      font-size: 27px;
       font-weight: 900;
+      line-height: 1;
     }
 
     .dashboard-action-button .logout-icon {
@@ -1212,49 +1210,51 @@
     }
 
     .btn-update {
-      background: linear-gradient(135deg, #ffd43b 0%, #ffc21c 55%, #f5b700 100%);
-      color: #1d1700;
-      box-shadow: 0 15px 32px rgba(245, 183, 0, 0.28);
+      background: linear-gradient(135deg, #ffd63f 0%, #ffc51d 58%, #f4b400 100%);
+      color: #171300;
+      box-shadow: 0 15px 32px rgba(245, 183, 0, 0.27);
     }
 
     .btn-danger {
-      background: linear-gradient(135deg, #ff4d55, #ef3f46);
-      box-shadow: 0 15px 32px rgba(239, 68, 68, 0.18);
+      background: linear-gradient(135deg, #ff4f57 0%, #ef3e46 100%);
+      color: #fff;
+      box-shadow: 0 15px 30px rgba(239, 62, 70, 0.16);
     }
 
     .navigation {
       min-height: 72px;
       padding: 10px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(15, 24, 42, 0.98), rgba(10, 17, 31, 0.98));
+      gap: 8px;
+      border-radius: 19px;
     }
 
     .navigation button {
       min-height: 52px;
+      padding: 11px 14px;
       border-radius: 14px;
       font-size: 15px;
     }
 
     .navigation button.active {
-      background: linear-gradient(135deg, #49cbc5, #2fb5b4);
-      box-shadow: 0 10px 26px rgba(73, 203, 197, 0.19);
+      background: linear-gradient(135deg, #4ed5ce, #2cb4b1);
+      color: #071817;
+      box-shadow: 0 10px 26px rgba(73, 203, 197, 0.20);
     }
 
     .sales-filter-card {
       gap: 18px;
       padding: 24px;
-      border-color: var(--dashboard-card-border);
+      margin-bottom: 24px;
       border-radius: 24px;
-      background:
-        radial-gradient(circle at 88% 10%, rgba(73, 203, 197, 0.035), transparent 34%),
-        var(--dashboard-card-bg);
+      overflow: hidden;
     }
 
     .sales-filter-card label {
-      margin-bottom: 0;
-      color: #f3f7ff;
-      font-size: clamp(18px, 2.5vw, 22px);
+      margin: 0;
+      color: #f4f7ff;
+      font-size: 21px;
       font-weight: 900;
+      line-height: 1.2;
     }
 
     .sales-date-control {
@@ -1262,108 +1262,114 @@
       width: 100%;
     }
 
-    .sales-calendar-icon {
-      position: absolute;
-      top: 50%;
-      left: 22px;
-      z-index: 2;
-      display: grid;
-      place-items: center;
-      width: 26px;
-      height: 26px;
-      border: 2px solid #aebbd2;
-      border-radius: 5px;
-      color: transparent;
-      pointer-events: none;
-      transform: translateY(-50%);
-    }
-
-    .sales-calendar-icon::before,
-    .sales-calendar-icon::after {
-      content: "";
-      position: absolute;
-      background: #aebbd2;
-    }
-
-    .sales-calendar-icon::before {
-      top: 6px;
-      left: 2px;
-      width: 18px;
-      height: 2px;
-    }
-
-    .sales-calendar-icon::after {
-      top: -5px;
-      left: 5px;
-      width: 12px;
-      height: 6px;
-      border-left: 2px solid #aebbd2;
-      border-right: 2px solid #aebbd2;
-      background: transparent;
-    }
-
     .sales-date-input {
+      display: block;
       width: 100%;
       min-height: 72px;
       margin: 0;
-      padding: 18px 64px;
-      border: 2px solid #3b506f;
+      padding: 18px 62px;
+      border: 2px solid #3a506f;
       border-radius: 20px;
-      background: #091221;
-      color: #ffffff;
-      font-size: clamp(19px, 3vw, 24px);
+      background: #091220;
+      color: #fff;
+      font-size: 22px;
       text-align: center;
+      box-sizing: border-box;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
     }
 
-    .sales-date-input::-webkit-calendar-picker-indicator {
-      width: 26px;
-      height: 26px;
-      opacity: 0.7;
-      filter: invert(82%) sepia(8%) saturate(600%) hue-rotate(180deg);
-      cursor: pointer;
-    }
-
     .sales-date-input::-webkit-date-and-time-value {
-      min-height: 32px;
+      min-height: 30px;
       text-align: center;
     }
 
+    .sales-date-input::-webkit-calendar-picker-indicator {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .sales-calendar-icon {
+      position: absolute;
+      top: 50%;
+      left: 24px;
+      z-index: 2;
+      width: 24px;
+      height: 22px;
+      border: 2px solid #aebbd2;
+      border-radius: 4px;
+      pointer-events: none;
+      transform: translateY(-45%);
+    }
+
+    .sales-calendar-icon::before {
+      content: "";
+      position: absolute;
+      top: 5px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: #aebbd2;
+    }
+
+    .sales-calendar-icon::after {
+      content: "";
+      position: absolute;
+      top: -6px;
+      left: 4px;
+      width: 12px;
+      height: 7px;
+      border-left: 2px solid #aebbd2;
+      border-right: 2px solid #aebbd2;
+    }
+
+    .sales-date-control::after {
+      content: "◇";
+      position: absolute;
+      top: 50%;
+      right: 23px;
+      color: #8ca0bf;
+      font-size: 18px;
+      pointer-events: none;
+      transform: translateY(-52%);
+    }
+
     .dashboard-stats {
+      display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
+      margin-bottom: 20px;
     }
 
     .stat-modern {
       display: grid;
-      grid-template-columns: 64px minmax(0, 1fr) auto;
+      grid-template-columns: 62px minmax(0, 1fr) auto;
       align-items: center;
       gap: 18px;
-      min-height: 116px;
-      padding: 20px 22px;
-      border-color: var(--dashboard-card-border);
+      min-height: 112px;
+      padding: 19px 22px;
       border-radius: 22px;
-      background:
-        linear-gradient(90deg, rgba(73, 203, 197, 0.02), transparent 45%),
-        var(--dashboard-card-bg);
     }
 
     .stat-modern .stat-icon {
       display: grid;
-      place-items: center;
       width: 58px;
       height: 58px;
-      border: 1px solid rgba(73, 203, 197, 0.7);
+      place-items: center;
+      border: 1px solid rgba(34, 211, 196, 0.65);
       border-radius: 50%;
-      background: rgba(5, 18, 29, 0.92);
+      background: #071421;
       font-size: 26px;
       line-height: 1;
-      box-shadow: inset 0 0 18px rgba(73, 203, 197, 0.04);
+      box-shadow: inset 0 0 18px rgba(73,203,197,0.035);
     }
 
     .stat-modern .stat-icon-money {
-      color: #32d26e;
-      font-family: Arial, sans-serif;
+      color: #28ce68;
+      font-family: Arial, Helvetica, sans-serif;
       font-size: 34px;
       font-weight: 900;
     }
@@ -1371,14 +1377,14 @@
     .stat-modern .stat-label {
       margin: 0;
       color: #aeb8cc;
-      font-size: clamp(17px, 2.4vw, 22px);
-      line-height: 1.3;
+      font-size: 21px;
+      line-height: 1.25;
     }
 
     .stat-modern .stat-value {
       min-width: 72px;
-      color: #ffffff;
-      font-size: clamp(31px, 5vw, 42px);
+      color: #fff;
+      font-size: 39px;
       line-height: 1;
       text-align: right;
       white-space: nowrap;
@@ -1391,48 +1397,61 @@
     }
 
     @media (max-width: 520px) {
+      body {
+        padding: 12px;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+
       .dashboard-header {
+        padding: 18px;
         border-radius: 20px;
       }
 
       .dashboard-brand {
         align-items: flex-start;
+        gap: 14px;
       }
 
       .dashboard-logo {
-        width: 72px;
-        height: 72px;
-        flex-basis: 72px;
+        width: 76px;
+        height: 76px;
+        flex-basis: 76px;
         border-radius: 18px;
       }
 
       .dashboard-brand h1 {
+        margin-top: 2px;
         font-size: 25px;
-        line-height: 1.08;
+        line-height: 1.07;
       }
 
       .dashboard-brand .subtitle {
-        margin-top: 6px;
+        margin-top: 8px;
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.48;
       }
 
       .header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
       }
 
       .dashboard-action-button {
         min-height: 58px !important;
-        padding: 13px 10px;
+        padding: 12px 8px;
         font-size: 15px;
       }
 
       .navigation {
         gap: 7px;
+        padding: 9px;
       }
 
       .navigation button {
-        padding: 11px 10px;
+        min-height: 52px;
+        padding: 10px 12px;
         font-size: 14px;
       }
 
@@ -1440,22 +1459,29 @@
         padding: 20px;
       }
 
+      .sales-filter-card label {
+        font-size: 19px;
+      }
+
       .sales-date-input {
         min-height: 68px;
-        padding-right: 54px;
-        padding-left: 54px;
+        padding: 16px 54px;
         font-size: 20px;
       }
 
       .sales-calendar-icon {
         left: 18px;
-        transform: translateY(-50%) scale(0.9);
+        transform: translateY(-45%) scale(0.9);
+      }
+
+      .sales-date-control::after {
+        right: 18px;
       }
 
       .stat-modern {
-        grid-template-columns: 54px minmax(0, 1fr) auto;
+        grid-template-columns: 52px minmax(0, 1fr) auto;
         gap: 14px;
-        min-height: 106px;
+        min-height: 105px;
         padding: 17px 18px;
       }
 
@@ -1474,12 +1500,11 @@
       }
 
       .stat-modern .stat-value {
-        min-width: 54px;
+        min-width: 55px;
         font-size: 31px;
       }
     }
-
-  </style>
+</style>
 </head>
 
 <body>
@@ -1604,7 +1629,7 @@
   </label>
 
   <div class="sales-date-control">
-    <span class="sales-calendar-icon" aria-hidden="true">▣</span>
+    <span class="sales-calendar-icon" aria-hidden="true"></span>
     <input
       id="salesDateFilter"
       class="sales-date-input"
@@ -1615,13 +1640,13 @@
 </div>
         <div class="stats dashboard-stats">
           <article class="stat stat-modern">
-            <span class="stat-icon stat-icon-ticket" aria-hidden="true">🎟️</span>
+            <span class="stat-icon stat-icon-reservation" aria-hidden="true">🎟️</span>
             <span class="stat-label">Reservaciones</span>
             <strong class="stat-value" id="reservationCount">0</strong>
           </article>
 
           <article class="stat stat-modern">
-            <span class="stat-icon stat-icon-seats" aria-hidden="true">🎫</span>
+            <span class="stat-icon stat-icon-tickets" aria-hidden="true">🎫</span>
             <span class="stat-label">Taquillas vendidas</span>
             <strong class="stat-value" id="ticketCount">0</strong>
           </article>
