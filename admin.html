@@ -1360,6 +1360,56 @@
       }
     }
 
+
+    .reservation-search-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .reservation-date-picker {
+      display: block;
+    }
+
+    .reservation-date-picker.is-hidden {
+      display: none;
+    }
+
+    .reservation-history-date {
+      width: 190px;
+      height: 42px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid #3b506f;
+      border-radius: 10px;
+      background: #0b1322;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+      .reservation-search-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .reservation-date-picker {
+        grid-column: 1 / -1;
+      }
+
+      .reservation-history-date {
+        width: 100%;
+      }
+
+      .reservation-search-actions .btn {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 
@@ -1536,14 +1586,31 @@
               <p class="subtitle">Ventas y entradas registradas.</p>
             </div>
 
-            <input id="reservationDateFilter" type="date" style="position:absolute;opacity:0;pointer-events:none" onchange="applySalesDateFilter()">
-              <div class="section-actions">
+            <div class="reservation-search-actions">
               <button
                 class="btn scan-history-search"
                 type="button"
-                onclick="document.getElementById('reservationDateFilter').showPicker ? document.getElementById('reservationDateFilter').showPicker() : document.getElementById('reservationDateFilter').click()"
+                onclick="toggleReservationDatePicker()"
               >
                 🔎 Buscar por fecha
+              </button>
+
+              <div id="reservationDatePickerWrap" class="reservation-date-picker is-hidden">
+                <input
+                  id="reservationHistoryDate"
+                  class="reservation-history-date"
+                  type="date"
+                  aria-label="Buscar reservaciones por fecha de compra"
+                  onchange="filterReservationsByDate()"
+                />
+              </div>
+
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="clearReservationDateFilter()"
+              >
+                Ver todas
               </button>
 
               <button
@@ -2264,41 +2331,35 @@
     }
 
     async function loadReservations() {
-  setLoading(true);
+      setLoading(true);
 
-  try {
-    const reservations = await adminFetch(
-      "/api/admin/reservations"
-    );
+      try {
+        const reservations = await adminFetch(
+          "/api/admin/reservations"
+        );
 
-    reservationsCache = Array.isArray(reservations)
-      ? reservations
-      : [];
+        reservationsCache = Array.isArray(reservations)
+          ? reservations
+          : [];
 
-    renderReservations(reservationsCache);
+        // Los indicadores siempre muestran TODAS las compras,
+        // sin importar si la tabla está filtrada por fecha.
+        updateStatistics(reservationsCache);
 
-    const dateInput =
-  document.getElementById("salesDateFilter");
+        const reservationDateInput =
+          document.getElementById("reservationHistoryDate");
 
-if (dateInput && !dateInput.value) {
-  const todayInPuertoRico =
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Puerto_Rico",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).format(new Date());
-
-  dateInput.value = todayInPuertoRico;
-}
-
-    applySalesDateFilter();
-  } catch (error) {
-    alert(error.message);
-  } finally {
-    setLoading(false);
-  }
-}
+        if (reservationDateInput?.value) {
+          filterReservationsByDate(false);
+        } else {
+          renderReservations(reservationsCache);
+        }
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
 
     function renderReservations(reservations) {
       const rows = document.getElementById("reservationRows");
@@ -2311,6 +2372,7 @@ if (dateInput && !dateInput.value) {
       }
 
       emptyMessage.style.display = "none";
+      emptyMessage.textContent = "Todavía no hay reservaciones.";
 
       reservations.forEach((ticket) => {
         const row = document.createElement("tr");
@@ -2362,15 +2424,13 @@ if (dateInput && !dateInput.value) {
       document.getElementById("usedCount").textContent = usedCount;
     }
 
-    function focusReservationDateFilter() {
-      const input = document.getElementById("salesDateFilter");
+    function toggleReservationDatePicker() {
+      const wrap = document.getElementById("reservationDatePickerWrap");
+      const input = document.getElementById("reservationHistoryDate");
 
-      if (!input) return;
+      if (!wrap || !input) return;
 
-      input.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-      });
+      wrap.classList.remove("is-hidden");
 
       window.setTimeout(() => {
         input.focus();
@@ -2379,63 +2439,65 @@ if (dateInput && !dateInput.value) {
           try {
             input.showPicker();
           } catch (error) {
-            // Algunos navegadores móviles no permiten abrir el selector
-            // de forma programática; el foco queda activo igualmente.
+            // El selector queda visible aunque el navegador no permita
+            // abrirlo automáticamente.
           }
         }
-      }, 350);
+      }, 50);
     }
 
-    function applySalesDateFilter() {
-  const dateInput =
-    document.getElementById("salesDateFilter");
+    function filterReservationsByDate(showAlert = true) {
+      const input = document.getElementById("reservationHistoryDate");
+      const selectedDate = input?.value || "";
 
-  const selectedDate = dateInput?.value || "";
-
-  if (!selectedDate) {
-  updateStatistics([]);
-  return;
-}
-
-  const filteredReservations = reservationsCache.filter((ticket) => {
-    const rawTime = String(ticket.time || "").trim();
-
-    let showDate = "";
-
-    // Formato correcto: 2026-08-13 20:00
-    if (/^\d{4}-\d{2}-\d{2}/.test(rawTime)) {
-      showDate = rawTime.slice(0, 10);
-    } else {
-      // Formato actual: Thu Aug 13 2026...
-      const dateMatch = rawTime.match(
-        /^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/
-      );
-
-      if (dateMatch) {
-        const parsedDate = new Date(`${dateMatch[0]} 00:00:00 UTC`);
-
-        if (!Number.isNaN(parsedDate.getTime())) {
-          showDate = parsedDate.toISOString().slice(0, 10);
+      if (!selectedDate) {
+        if (showAlert) {
+          alert("Selecciona una fecha para buscar.");
+          input?.focus();
         }
+        return;
+      }
+
+      const filteredReservations = reservationsCache.filter((ticket) => {
+        return getPuertoRicoDateKey(ticket.created) === selectedDate;
+      });
+
+      // Solo se filtra la tabla. Los contadores de arriba siguen en vivo.
+      renderReservations(filteredReservations);
+
+      const emptyMessage =
+        document.getElementById("reservationEmptyMessage");
+
+      if (!filteredReservations.length && emptyMessage) {
+        const [year, month, day] = selectedDate.split("-");
+        emptyMessage.textContent =
+          `No hay compras registradas para ${month}/${day}/${year}.`;
       }
     }
 
-    return showDate === selectedDate;
-  });
+    function clearReservationDateFilter() {
+      const input = document.getElementById("reservationHistoryDate");
+      const wrap = document.getElementById("reservationDatePickerWrap");
+      const emptyMessage =
+        document.getElementById("reservationEmptyMessage");
 
-  updateStatistics(filteredReservations);
-}
+      if (input) {
+        input.value = "";
+      }
 
-function showAllSales() {
-  const dateInput =
-    document.getElementById("salesDateFilter");
+      if (wrap) {
+        wrap.classList.add("is-hidden");
+      }
 
-  if (dateInput) {
-    dateInput.value = "";
-  }
+      if (emptyMessage) {
+        emptyMessage.textContent = "Todavía no hay reservaciones.";
+      }
 
-  updateStatistics(reservationsCache);
-}
+      renderReservations(reservationsCache);
+
+      // Mantener las estadísticas con todas las compras.
+      updateStatistics(reservationsCache);
+    }
 
     async function loadMovies() {
       setLoading(true);
