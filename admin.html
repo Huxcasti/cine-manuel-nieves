@@ -1541,7 +1541,7 @@
 <div class="stats">
           <article class="stat">
             <span class="stat-icon stat-icon-ticket" aria-hidden="true">🎟️</span>
-            <span class="stat-label">Reservaciones de hoy</span>
+            <span class="stat-label" id="reservationStatLabel">Reservaciones de hoy</span>
             <strong class="stat-value" id="reservationCount">0</strong>
           </article>
 
@@ -1555,13 +1555,13 @@
                 <path d="M17 15v4"></path>
               </svg>
             </span>
-            <span class="stat-label">Taquillas vendidas hoy</span>
+            <span class="stat-label" id="ticketStatLabel">Taquillas vendidas hoy</span>
             <strong class="stat-value" id="ticketCount">0</strong>
           </article>
 
           <article class="stat">
             <span class="stat-icon stat-icon-money" aria-hidden="true">$</span>
-            <span class="stat-label">Ventas pagadas hoy</span>
+            <span class="stat-label" id="salesStatLabel">Ventas pagadas hoy</span>
             <strong class="stat-value" id="salesTotal">$0.00</strong>
           </article>
 
@@ -1574,7 +1574,7 @@
                 <path d="M13 14c3.2-.2 5.4 1.5 6.2 5"></path>
               </svg>
             </span>
-            <span class="stat-label">Entradas utilizadas hoy</span>
+            <span class="stat-label" id="usedStatLabel">Entradas utilizadas hoy</span>
             <strong class="stat-value" id="usedCount">0</strong>
           </article>
         </div>
@@ -2262,9 +2262,17 @@
       document.getElementById("loginWrapper").style.display = "none";
       document.getElementById("dashboard").style.display = "block";
       window.scrollTo({ top: 0, behavior: "instant" });
+
+      // Reservaciones es la sección inicial. Arrancamos aquí mismo
+      // la actualización automática para que funcione desde que el
+      // administrador abre el portal, sin tocar "Actualizar".
+      if (currentSection === "reservations") {
+        startReservationsLiveUpdates();
+      }
     }
 
     function logout() {
+      stopReservationsLiveUpdates();
       currentAdminKey = "";
       sessionStorage.removeItem("cineAdminKey");
       document.getElementById("dashboard").style.display = "none";
@@ -2328,8 +2336,17 @@
         clearInterval(reservationsLiveTimer);
       }
 
+      // Primera comprobación inmediata.
+      if (currentSection === "reservations") {
+        loadReservations();
+      }
+
+      // Luego vuelve a consultar cada 5 segundos.
       reservationsLiveTimer = window.setInterval(() => {
-        if (currentSection === "reservations") {
+        if (
+          currentSection === "reservations" &&
+          document.visibilityState === "visible"
+        ) {
           loadReservations();
         }
       }, 5000);
@@ -2341,6 +2358,16 @@
         reservationsLiveTimer = null;
       }
     }
+
+    document.addEventListener("visibilitychange", () => {
+      if (
+        document.visibilityState === "visible" &&
+        currentSection === "reservations" &&
+        currentAdminKey
+      ) {
+        loadReservations();
+      }
+    });
 
     async function refreshCurrentSection() {
       if (currentSection === "reservations") await loadReservations();
@@ -2375,7 +2402,42 @@
       return `${values.year}-${values.month}-${values.day}`;
     }
 
+    function setStatisticsLabels(mode = "today") {
+      const isToday = mode === "today";
+
+      const reservationLabel = document.getElementById("reservationStatLabel");
+      const ticketLabel = document.getElementById("ticketStatLabel");
+      const salesLabel = document.getElementById("salesStatLabel");
+      const usedLabel = document.getElementById("usedStatLabel");
+
+      if (reservationLabel) {
+        reservationLabel.textContent = isToday
+          ? "Reservaciones de hoy"
+          : "Reservaciones del día";
+      }
+
+      if (ticketLabel) {
+        ticketLabel.textContent = isToday
+          ? "Taquillas vendidas hoy"
+          : "Taquillas vendidas del día";
+      }
+
+      if (salesLabel) {
+        salesLabel.textContent = isToday
+          ? "Ventas pagadas hoy"
+          : "Ventas pagadas del día";
+      }
+
+      if (usedLabel) {
+        usedLabel.textContent = isToday
+          ? "Entradas utilizadas hoy"
+          : "Entradas utilizadas del día";
+      }
+    }
+
     function updateTodayStatistics() {
+      setStatisticsLabels("today");
+
       const todayKey = getTodayPuertoRicoDateKey();
 
       const todayReservations = reservationsCache.filter((ticket) => {
@@ -2397,16 +2459,17 @@
           ? reservations
           : [];
 
-        // El tablero superior muestra únicamente las compras de HOY
-        // usando la zona horaria de Puerto Rico.
-        updateTodayStatistics();
-
         const reservationDateInput =
           document.getElementById("reservationHistoryDate");
 
         if (reservationDateInput?.value) {
+          // Si el administrador está consultando una fecha específica,
+          // tanto la tabla como las tarjetas muestran ese día.
           filterReservationsByDate(false);
         } else {
+          // Sin filtro: las tarjetas muestran HOY y la tabla conserva
+          // todas las reservaciones.
+          updateTodayStatistics();
           renderReservations(reservationsCache);
         }
       } catch (error) {
@@ -2517,8 +2580,10 @@
         return getPuertoRicoDateKey(ticket.created) === selectedDate;
       });
 
-      // Solo se filtra la tabla. Los contadores de arriba siguen en vivo.
+      // La tabla y las tarjetas muestran exactamente la fecha elegida.
       renderReservations(filteredReservations);
+      setStatisticsLabels("selected");
+      updateStatistics(filteredReservations);
 
       const emptyMessage =
         document.getElementById("reservationEmptyMessage");
@@ -2550,7 +2615,7 @@
 
       renderReservations(reservationsCache);
 
-      // El tablero superior permanece mostrando solo la actividad de hoy.
+      // Al quitar el filtro, el tablero vuelve automáticamente a HOY.
       updateTodayStatistics();
     }
 
