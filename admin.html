@@ -1314,6 +1314,52 @@
       }
     }
 
+
+    .scan-history-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scan-history-date {
+      width: auto;
+      min-width: 175px;
+      height: 42px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid #3b506f;
+      border-radius: 10px;
+      background: #0b1322;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .scan-history-search {
+      background: linear-gradient(135deg, #ffd43b, #f5b700);
+      color: #1d1700;
+      box-shadow: 0 10px 24px rgba(245, 183, 0, 0.22);
+    }
+
+    @media (max-width: 520px) {
+      .scan-history-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .scan-history-date {
+        width: 100%;
+        grid-column: 1 / -1;
+      }
+
+      .scan-history-actions .btn {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 
@@ -1961,9 +2007,38 @@
               <p class="subtitle">Últimos 200 registros de entrada.</p>
             </div>
 
-            <button class="btn btn-primary" type="button" onclick="loadCheckins()">
-              Actualizar
-            </button>
+            <div class="scan-history-actions">
+              <input
+                id="scanHistoryDate"
+                class="scan-history-date"
+                type="date"
+                aria-label="Fecha del historial de escaneos"
+              />
+
+              <button
+                class="btn scan-history-search"
+                type="button"
+                onclick="filterCheckinsByDate()"
+              >
+                🔎 Buscar por fecha
+              </button>
+
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="clearCheckinDateFilter()"
+              >
+                Ver todos
+              </button>
+
+              <button
+                class="btn btn-primary"
+                type="button"
+                onclick="loadCheckins()"
+              >
+                Actualizar
+              </button>
+            </div>
           </div>
 
           <div class="table-wrapper">
@@ -2030,6 +2105,7 @@
     let showtimesCache = [];
     let employeesCache = [];
     let reservationsCache = [];
+    let checkinsCache = [];
 
     function setLoading(visible) {
       document.getElementById("loadingMessage").style.display = visible ? "block" : "none";
@@ -3190,10 +3266,82 @@ const durationValue =
     async function loadCheckins() {
       try {
         const checkins = await adminFetch("/api/admin/checkins?limit=200");
-        renderCheckins(Array.isArray(checkins) ? checkins : []);
+        checkinsCache = Array.isArray(checkins) ? checkins : [];
+
+        const selectedDate = document.getElementById("scanHistoryDate")?.value || "";
+
+        if (selectedDate) {
+          renderCheckins(
+            checkinsCache.filter((checkin) =>
+              getPuertoRicoDateKey(checkin.scannedAt) === selectedDate
+            )
+          );
+        } else {
+          renderCheckins(checkinsCache);
+        }
       } catch (error) {
         setMessage("employeeMessage", "error", error.message);
       }
+    }
+
+    function getPuertoRicoDateKey(value) {
+      if (!value) return "";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(date);
+
+      const values = {};
+
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          values[part.type] = part.value;
+        }
+      });
+
+      return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function filterCheckinsByDate() {
+      const input = document.getElementById("scanHistoryDate");
+      const selectedDate = input?.value || "";
+
+      if (!selectedDate) {
+        alert("Selecciona una fecha para buscar.");
+        input?.focus();
+        return;
+      }
+
+      const filtered = checkinsCache.filter(
+        (checkin) => getPuertoRicoDateKey(checkin.scannedAt) === selectedDate
+      );
+
+      renderCheckins(filtered);
+
+      const empty = document.getElementById("checkinEmptyMessage");
+      if (!filtered.length) {
+        const [year, month, day] = selectedDate.split("-");
+        empty.textContent = `No hay escaneos registrados para ${month}/${day}/${year}.`;
+      }
+    }
+
+    function clearCheckinDateFilter() {
+      const input = document.getElementById("scanHistoryDate");
+
+      if (input) {
+        input.value = "";
+      }
+
+      const empty = document.getElementById("checkinEmptyMessage");
+      empty.textContent = "Todavía no hay escaneos.";
+
+      renderCheckins(checkinsCache);
     }
 
     function renderCheckins(checkins) {
