@@ -2336,18 +2336,19 @@
         clearInterval(reservationsLiveTimer);
       }
 
-      // Primera comprobación inmediata.
+      // Primera comprobación inmediata y silenciosa.
       if (currentSection === "reservations") {
-        loadReservations();
+        loadReservations({ silent: true });
       }
 
-      // Luego vuelve a consultar cada 5 segundos.
+      // Luego vuelve a consultar cada 5 segundos sin mostrar
+      // "Cargando información..." ni mover el contenido.
       reservationsLiveTimer = window.setInterval(() => {
         if (
           currentSection === "reservations" &&
           document.visibilityState === "visible"
         ) {
-          loadReservations();
+          loadReservations({ silent: true });
         }
       }, 5000);
     }
@@ -2365,7 +2366,7 @@
         currentSection === "reservations" &&
         currentAdminKey
       ) {
-        loadReservations();
+        loadReservations({ silent: true });
       }
     });
 
@@ -2447,8 +2448,12 @@
       updateStatistics(todayReservations);
     }
 
-    async function loadReservations() {
-      setLoading(true);
+    async function loadReservations(options = {}) {
+      const silent = Boolean(options.silent);
+
+      if (!silent) {
+        setLoading(true);
+      }
 
       try {
         const reservations = await adminFetch(
@@ -2475,7 +2480,9 @@
       } catch (error) {
         alert(error.message);
       } finally {
-        setLoading(false);
+        if (!silent) {
+          setLoading(false);
+        }
       }
     }
 
