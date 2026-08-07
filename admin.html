@@ -1556,9 +1556,23 @@
               <p class="subtitle">Ventas y entradas registradas.</p>
             </div>
 
-            <button class="btn btn-primary" type="button" onclick="loadReservations()">
-              Actualizar
-            </button>
+            <div class="section-actions">
+              <button
+                class="btn scan-history-search"
+                type="button"
+                onclick="focusReservationDateFilter()"
+              >
+                🔎 Buscar por fecha
+              </button>
+
+              <button
+                class="btn btn-primary"
+                type="button"
+                onclick="loadReservations()"
+              >
+                Actualizar
+              </button>
+            </div>
           </div>
 
           <div class="table-wrapper">
@@ -2365,6 +2379,30 @@ if (dateInput && !dateInput.value) {
       document.getElementById("ticketCount").textContent = ticketCount;
       document.getElementById("salesTotal").textContent = `$${salesTotal.toFixed(2)}`;
       document.getElementById("usedCount").textContent = usedCount;
+    }
+
+    function focusReservationDateFilter() {
+      const input = document.getElementById("salesDateFilter");
+
+      if (!input) return;
+
+      input.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+
+      window.setTimeout(() => {
+        input.focus();
+
+        if (typeof input.showPicker === "function") {
+          try {
+            input.showPicker();
+          } catch (error) {
+            // Algunos navegadores móviles no permiten abrir el selector
+            // de forma programática; el foco queda activo igualmente.
+          }
+        }
+      }, 350);
     }
 
     function applySalesDateFilter() {
