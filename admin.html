@@ -1541,7 +1541,7 @@
 <div class="stats">
           <article class="stat">
             <span class="stat-icon stat-icon-ticket" aria-hidden="true">🎟️</span>
-            <span class="stat-label">Reservaciones</span>
+            <span class="stat-label">Reservaciones de hoy</span>
             <strong class="stat-value" id="reservationCount">0</strong>
           </article>
 
@@ -1555,13 +1555,13 @@
                 <path d="M17 15v4"></path>
               </svg>
             </span>
-            <span class="stat-label">Taquillas vendidas</span>
+            <span class="stat-label">Taquillas vendidas hoy</span>
             <strong class="stat-value" id="ticketCount">0</strong>
           </article>
 
           <article class="stat">
             <span class="stat-icon stat-icon-money" aria-hidden="true">$</span>
-            <span class="stat-label">Ventas pagadas</span>
+            <span class="stat-label">Ventas pagadas hoy</span>
             <strong class="stat-value" id="salesTotal">$0.00</strong>
           </article>
 
@@ -1574,7 +1574,7 @@
                 <path d="M13 14c3.2-.2 5.4 1.5 6.2 5"></path>
               </svg>
             </span>
-            <span class="stat-label">Entradas utilizadas</span>
+            <span class="stat-label">Entradas utilizadas hoy</span>
             <strong class="stat-value" id="usedCount">0</strong>
           </article>
         </div>
@@ -2163,6 +2163,7 @@
 
     let currentAdminKey = "";
     let currentSection = "reservations";
+    let reservationsLiveTimer = null;
     let moviesCache = [];
     let showtimesCache = [];
     let employeesCache = [];
@@ -2295,6 +2296,9 @@
     }
 
     function showSection(sectionName) {
+      if (sectionName !== "reservations") {
+        stopReservationsLiveUpdates();
+      }
       currentSection = sectionName;
       const names = ["reservations", "movies", "showtimes", "employees", "password"];
 
@@ -2303,7 +2307,10 @@
         document.getElementById(`nav${capitalize(name)}`).classList.toggle("active", name === sectionName);
       });
 
-      if (sectionName === "reservations") loadReservations();
+      if (sectionName === "reservations") {
+        loadReservations();
+        startReservationsLiveUpdates();
+      }
       if (sectionName === "movies") loadMovies();
       if (sectionName === "showtimes") {
         loadMoviesForSelect();
@@ -2313,6 +2320,25 @@
       if (sectionName === "employees") {
         loadEmployees();
         loadCheckins();
+      }
+    }
+
+    function startReservationsLiveUpdates() {
+      if (reservationsLiveTimer) {
+        clearInterval(reservationsLiveTimer);
+      }
+
+      reservationsLiveTimer = window.setInterval(() => {
+        if (currentSection === "reservations") {
+          loadReservations();
+        }
+      }, 15000);
+    }
+
+    function stopReservationsLiveUpdates() {
+      if (reservationsLiveTimer) {
+        clearInterval(reservationsLiveTimer);
+        reservationsLiveTimer = null;
       }
     }
 
@@ -2330,6 +2356,35 @@
       }
     }
 
+    function getTodayPuertoRicoDateKey() {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(new Date());
+
+      const values = {};
+
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          values[part.type] = part.value;
+        }
+      });
+
+      return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function updateTodayStatistics() {
+      const todayKey = getTodayPuertoRicoDateKey();
+
+      const todayReservations = reservationsCache.filter((ticket) => {
+        return getPuertoRicoDateKey(ticket.created) === todayKey;
+      });
+
+      updateStatistics(todayReservations);
+    }
+
     async function loadReservations() {
       setLoading(true);
 
@@ -2342,9 +2397,9 @@
           ? reservations
           : [];
 
-        // Los indicadores siempre muestran TODAS las compras,
-        // sin importar si la tabla está filtrada por fecha.
-        updateStatistics(reservationsCache);
+        // El tablero superior muestra únicamente las compras de HOY
+        // usando la zona horaria de Puerto Rico.
+        updateTodayStatistics();
 
         const reservationDateInput =
           document.getElementById("reservationHistoryDate");
@@ -2495,8 +2550,8 @@
 
       renderReservations(reservationsCache);
 
-      // Mantener las estadísticas con todas las compras.
-      updateStatistics(reservationsCache);
+      // El tablero superior permanece mostrando solo la actividad de hoy.
+      updateTodayStatistics();
     }
 
     async function loadMovies() {
