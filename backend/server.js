@@ -9,6 +9,10 @@ const { Resend } = require("resend");
 const QRCode = require("qrcode");
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PENDING_RESERVATION_MINUTES = Math.max(
+  2,
+  Number(process.env.PENDING_RESERVATION_MINUTES || 5)
+);
 
 /*
 ==================================================
@@ -918,15 +922,18 @@ No elimina pelÃ­culas, tandas ni contraseÃ±a.
 async function cleanupPreviousBusinessDay() {
   await pool.query(`DELETE FROM employee_sessions WHERE expires_at <= NOW();`);
 
-  const result = await pool.query(`
-  DELETE FROM tickets
-  WHERE payment_status = 'pending'
-    AND created_at < NOW() - INTERVAL '30 minutes';
-`);
+  const result = await pool.query(
+    `
+      DELETE FROM tickets
+      WHERE payment_status = 'pending'
+        AND created_at < NOW() - ($1 * INTERVAL '1 minute');
+    `,
+    [PENDING_RESERVATION_MINUTES]
+  );
 
   if (result.rowCount > 0) {
     console.log(
-      `Reinicio diario completado: ${result.rowCount} reservaciones eliminadas.`
+      `Limpieza automática: ${result.rowCount} reservaciones pendientes expiradas eliminadas.`
     );
   }
 }
@@ -2502,6 +2509,75 @@ const initialPaymentStatus =
     });
   } finally {
     client.release();
+  }
+});
+
+
+/*
+==================================================
+CANCELAR RESERVACIÓN PENDIENTE
+==================================================
+
+Este endpoint SOLO elimina reservaciones que todavía estén
+en estado "pending". Una reservación pagada nunca se borra aquí.
+*/
+
+app.delete("/api/reservations/:id/cancel", async (req, res) => {
+  try {
+    const reservationId = String(req.params.id || "").trim();
+
+    if (!reservationId) {
+      return res.status(400).json({
+        error: "Falta la reservación."
+      });
+    }
+
+    const result = await pool.query(
+      `
+        DELETE FROM tickets
+        WHERE id = $1
+          AND payment_status = 'pending'
+        RETURNING id;
+      `,
+      [reservationId]
+    );
+
+    if (result.rowCount > 0) {
+      return res.json({
+        success: true,
+        removed: true
+      });
+    }
+
+    const existing = await pool.query(
+      `
+        SELECT payment_status
+        FROM tickets
+        WHERE id = $1;
+      `,
+      [reservationId]
+    );
+
+    if (existing.rowCount === 0) {
+      return res.json({
+        success: true,
+        removed: false,
+        message: "La reservación ya no existe."
+      });
+    }
+
+    return res.status(409).json({
+      error: "La reservación ya fue pagada o no puede cancelarse."
+    });
+  } catch (error) {
+    console.error(
+      "Error cancelando reservación pendiente:",
+      error
+    );
+
+    res.status(500).json({
+      error: "No se pudo cancelar la reservación."
+    });
   }
 });
 
