@@ -4025,8 +4025,15 @@ filterMovieShowtimesByDate(movie.id, today);
 		    }
 		
 		    function selectPaymentMethod(method) {
+		      if (
+		        pendingReservation &&
+		        pendingReservation.paymentMethod &&
+		        pendingReservation.paymentMethod !== method
+		      ) {
+		        void cancelPendingReservation();
+		      }
+
 		      selectedPaymentMethod = method;
-		      pendingReservation = null;
 		
 		      document.querySelectorAll(".payment-option").forEach((button) => {
 		        button.classList.remove("selected");
@@ -4091,6 +4098,51 @@ filterMovieShowtimesByDate(movie.id, today);
 		      pendingReservation = data.reservation;
 		      return pendingReservation;
 		    }
+
+		    async function cancelPendingReservation(options = {}) {
+		      const reservationId = String(
+		        pendingReservation?.id || ""
+		      ).trim();
+
+		      if (!reservationId) {
+		        pendingReservation = null;
+		        return true;
+		      }
+
+		      try {
+		        const response = await fetch(
+		          `${API_URL}/api/reservations/${encodeURIComponent(
+		            reservationId
+		          )}/cancel`,
+		          {
+		            method: "DELETE",
+		            keepalive: Boolean(options.keepalive)
+		          }
+		        );
+
+		        if (!response.ok && response.status !== 404) {
+		          const data = await response.json().catch(() => ({}));
+
+		          if (response.status !== 409) {
+		            throw new Error(
+		              data.error ||
+		              "No se pudo cancelar la reservación pendiente."
+		            );
+		          }
+		        }
+
+		        return true;
+		      } catch (error) {
+		        console.warn(
+		          "No se pudo eliminar la reservación pendiente:",
+		          error
+		        );
+		        return false;
+		      } finally {
+		        pendingReservation = null;
+		      }
+		    }
+
 		
 		    function loadPayPalSdk(clientId, currency) {
 		      if (window.paypal) {
@@ -4142,14 +4194,30 @@ filterMovieShowtimesByDate(movie.id, today);
 		
 		          createOrder: async () => {
 		            showCustomerMessage("", "");
-		            const reservation = await createReservationRecord("paypal");
-		            const response = await fetch(`${API_URL}/api/paypal/orders`, {
-		              method: "POST",
-		              headers: { "Content-Type": "application/json" },
-		              body: JSON.stringify({ reservationId: reservation.id })
-		            });
-		            const order = await readResponse(response);
-		            return order.orderId;
+
+		            try {
+		              const reservation =
+		                await createReservationRecord("paypal");
+
+		              const response = await fetch(
+		                `${API_URL}/api/paypal/orders`,
+		                {
+		                  method: "POST",
+		                  headers: {
+		                    "Content-Type": "application/json"
+		                  },
+		                  body: JSON.stringify({
+		                    reservationId: reservation.id
+		                  })
+		                }
+		              );
+
+		              const order = await readResponse(response);
+		              return order.orderId;
+		            } catch (error) {
+		              await cancelPendingReservation();
+		              throw error;
+		            }
 		          },
 		
 		          onApprove: async (data) => {
@@ -4181,13 +4249,24 @@ filterMovieShowtimesByDate(movie.id, today);
     showCustomerMessage("error", error.message);
   }
 },
-		          onCancel: () => {
-		            showCustomerMessage("error", "El pago de PayPal fue cancelado. Tus asientos permanecen reservados temporalmente.");
+		          onCancel: async () => {
+		            await cancelPendingReservation();
+
+		            showCustomerMessage(
+		              "error",
+		              "El pago fue cancelado. La reservación pendiente fue eliminada y los asientos volvieron a estar disponibles."
+		            );
 		          },
 		
-		          onError: (error) => {
+		          onError: async (error) => {
 		            console.error("PayPal error:", error);
-		            showCustomerMessage("error", "PayPal no pudo procesar el pago. Inténtalo nuevamente.");
+
+		            await cancelPendingReservation();
+
+		            showCustomerMessage(
+		              "error",
+		              "PayPal no pudo procesar el pago. La reservación pendiente fue eliminada; puedes intentarlo nuevamente."
+		            );
 		          }
 		        }).render("#paypalButtonContainer");
 		
@@ -4758,5 +4837,18 @@ if (label && selectedDate) {
 		
 		loadMovies();
 	  </script>
-		</body>
+		
+		<script>
+		  window.addEventListener("pagehide", () => {
+		    if (
+		      typeof pendingReservation !== "undefined" &&
+		      pendingReservation?.id &&
+		      pendingReservation?.paymentStatus === "pending"
+		    ) {
+		      void cancelPendingReservation({ keepalive: true });
+		    }
+		  });
+		</script>
+
+</body>
 		</html>
