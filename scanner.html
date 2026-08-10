@@ -792,46 +792,108 @@
       }
     }
   
-    /* Fondo fotográfico lateral del cine */
-    body::before {
-      content: "";
+    /* =========================================================
+       FONDO DECORATIVO DEL CINE - LADOS
+       Igual al panel administrativo.
+    ========================================================= */
+
+    body {
+      position: relative;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+    }
+
+    .employee-background-logo {
       position: fixed;
-      inset: 0;
-      z-index: -2;
-      background:
-        linear-gradient(rgba(7, 11, 20, 0.68), rgba(7, 11, 20, 0.82)),
-        url("cine-fondo.jpg") center center / cover no-repeat;
+      z-index: 0;
+      top: 50%;
+      width: clamp(280px, 31vw, 540px);
+      aspect-ratio: 1 / 1;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      pointer-events: none;
+      opacity: 0.14;
+      filter:
+        saturate(1.04)
+        contrast(1.04);
     }
 
-    body::after {
-      content: "";
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 50%;
-      width: min(1040px, 100%);
-      transform: translateX(-50%);
-      z-index: -1;
-      background:
-        radial-gradient(circle at 8% 0%, rgba(73, 203, 197, 0.09), transparent 28%),
-        radial-gradient(circle at 92% 0%, rgba(255, 198, 42, 0.08), transparent 27%),
-        linear-gradient(180deg, rgba(10,16,32,.96), rgba(7,11,20,.96));
-      box-shadow: 0 0 70px rgba(0,0,0,.55);
+    .employee-background-logo-left {
+      left: clamp(24px, 5vw, 90px);
+      background-image: url("Cineteatroizquierdo.png");
+      transform: translateY(-42%);
     }
 
-    @media (max-width: 1080px) {
-      body::before {
-        opacity: 0.32;
+    .employee-background-logo-right {
+      right: clamp(28px, 7vw, 120px);
+      width: clamp(300px, 36vw, 620px);
+      background-image: url("Cineteatro.PNG");
+      transform: translateY(-42%);
+      opacity: 0.16;
+    }
+
+    @media (max-width: 1100px) {
+      .employee-background-logo-left {
+        left: 24px;
+        width: min(34vw, 390px);
+        opacity: 0.09;
       }
-      body::after {
-        width: 100%;
+
+      .employee-background-logo-right {
+        right: 24px;
+        width: min(40vw, 460px);
+        opacity: 0.10;
       }
     }
 
-  </style>
+    @media (max-width: 900px) {
+      .employee-background-logo-left {
+        top: 72%;
+        left: 50%;
+        width: min(72vw, 480px);
+        opacity: 0.05;
+        transform: translate(-50%, -50%);
+      }
+
+      .employee-background-logo-right {
+        top: 54%;
+        right: 50%;
+        width: min(76vw, 520px);
+        opacity: 0.07;
+        transform: translate(50%, -50%);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .employee-background-logo-left {
+        display: none;
+      }
+
+      .employee-background-logo-right {
+        top: 57%;
+        width: 82vw;
+        opacity: 0.055;
+      }
+    }
+
+</style>
 </head>
 
 <body>
+  <div
+    class="employee-background-logo employee-background-logo-left"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    class="employee-background-logo employee-background-logo-right"
+    aria-hidden="true"
+  ></div>
+
   <main>
     <!-- ======================================================
          LOGIN EMPLEADO
