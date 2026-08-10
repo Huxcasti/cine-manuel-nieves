@@ -6,7 +6,7 @@
 		  <meta charset="UTF-8" />
 		  <meta
 		    name="viewport"
-		    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+		    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
 		  />
 		  <meta name="theme-color" content="#070b14" />
 		  <title>Cine Teatro Manuel Nieves Quintero</title>
@@ -67,6 +67,15 @@
 		    button {
 		      cursor: pointer;
 		      -webkit-tap-highlight-color: transparent;
+		      touch-action: manipulation;
+		    }
+
+		    /* Evita el zoom de Safari al tocar rápidamente + / - en iPhone */
+		    .ticket-counter,
+		    .ticket-counter button {
+		      touch-action: manipulation;
+		      -webkit-user-select: none;
+		      user-select: none;
 		    }
 		
 		    button:active {
@@ -1989,17 +1998,18 @@
   background: #17294d;
   color: #9ff3ef;
   font-weight: 800;
-  overflow: hidden;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.more-dates-button input[type="date"] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
+.showtime-date-hidden-input {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0.01;
 }
 
 /* Evita que la página sea más ancha que el iPhone */
@@ -3292,15 +3302,20 @@ body {
 		    Mañana
 		  </button>
 		
-		  <label class="more-dates-button">
+		  <button
+  type="button"
+  class="more-dates-button"
+  onclick="openShowtimeCalendar('${movie.id}')"
+>
   <span>Más fechas</span>
+</button>
 
-  <input
-    id="showtimeDate-${movie.id}"
-    type="date"
-    onchange="filterMovieShowtimesByDate('${movie.id}', this.value)"
-  />
-</label>
+<input
+  id="showtimeDate-${movie.id}"
+  class="showtime-date-hidden-input"
+  type="date"
+  onchange="filterMovieShowtimesByDate('${movie.id}', this.value)"
+/>
 
 </div>
 		
