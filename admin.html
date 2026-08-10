@@ -644,11 +644,14 @@
 
     .poster-form-preview {
       display: none;
-      width: 120px;
-      height: 175px;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 320px;
       border: 1px solid var(--border);
       border-radius: 12px;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
       background: #070b14;
     }
 
@@ -1417,6 +1420,28 @@
 
     .native-picker-input::-webkit-calendar-picker-indicator {
       cursor: pointer;
+    }
+
+
+    .poster-upload-row {
+      align-items: flex-start;
+    }
+
+    #moviePosterPreview {
+      flex: 0 1 auto;
+    }
+
+    @media (min-width: 700px) {
+      #moviePosterPreview {
+        max-width: 420px;
+      }
+    }
+
+    @media (max-width: 699px) {
+      #moviePosterPreview {
+        max-width: 100%;
+        max-height: 260px;
+      }
     }
 
   </style>
