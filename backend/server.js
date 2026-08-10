@@ -23,6 +23,25 @@ VARIABLES DE ENTORNO
 const INITIAL_ADMIN_PASSWORD = process.env.ADMIN_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+const ADMIN_RECOVERY_EMAIL = String(
+  process.env.ADMIN_RECOVERY_EMAIL || ""
+).trim().toLowerCase();
+
+const ADMIN_RECOVERY_CODE_MINUTES = Math.max(
+  5,
+  Number(process.env.ADMIN_RECOVERY_CODE_MINUTES || 15)
+);
+
+const ADMIN_RECOVERY_MAX_ATTEMPTS = Math.max(
+  3,
+  Number(process.env.ADMIN_RECOVERY_MAX_ATTEMPTS || 5)
+);
+
+const RESEND_FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL ||
+  "Cine Manuel Nieves <onboarding@resend.dev>";
+
 const resend = RESEND_API_KEY
   ? new Resend(RESEND_API_KEY)
   : null;
@@ -218,6 +237,90 @@ async function verifyPassword(password, storedSalt, storedHash) {
   }
 
   return crypto.timingSafeEqual(storedBuffer, derivedKey);
+}
+
+
+function normalizeRecoveryEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function hashAdminRecoveryCode(email, code) {
+  const secret =
+    process.env.ADMIN_RECOVERY_SECRET ||
+    INITIAL_ADMIN_PASSWORD;
+
+  return crypto
+    .createHmac("sha256", secret)
+    .update(`${normalizeRecoveryEmail(email)}:${String(code || "")}`)
+    .digest("hex");
+}
+
+function safeEqualHex(left, right) {
+  try {
+    const leftBuffer = Buffer.from(String(left || ""), "hex");
+    const rightBuffer = Buffer.from(String(right || ""), "hex");
+
+    if (
+      leftBuffer.length === 0 ||
+      leftBuffer.length !== rightBuffer.length
+    ) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+  } catch {
+    return false;
+  }
+}
+
+async function sendAdminRecoveryEmail(code) {
+  if (!resend) {
+    throw new Error(
+      "El servicio de correo no está configurado."
+    );
+  }
+
+  if (!ADMIN_RECOVERY_EMAIL) {
+    throw new Error(
+      "Falta configurar ADMIN_RECOVERY_EMAIL."
+    );
+  }
+
+  const { error } = await resend.emails.send({
+    from: RESEND_FROM_EMAIL,
+    to: [ADMIN_RECOVERY_EMAIL],
+    subject: "Código para recuperar la contraseña del panel",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:#0f172a;color:#ffffff;border-radius:16px;">
+        <h1 style="margin-top:0;font-size:24px;">🔐 Recuperación del panel administrativo</h1>
+        <p style="color:#cbd5e1;line-height:1.6;">
+          Se solicitó restablecer la contraseña del panel administrativo
+          del Cine Teatro Manuel Nieves Quintero.
+        </p>
+        <div style="margin:24px 0;padding:20px;text-align:center;background:#111827;border:1px solid #334155;border-radius:14px;">
+          <div style="font-size:13px;color:#94a3b8;margin-bottom:8px;">
+            Código de recuperación
+          </div>
+          <div style="font-size:36px;font-weight:900;letter-spacing:8px;">
+            ${code}
+          </div>
+        </div>
+        <p style="color:#cbd5e1;line-height:1.6;">
+          Este código vence en ${ADMIN_RECOVERY_CODE_MINUTES} minutos
+          y solo puede utilizarse una vez.
+        </p>
+        <p style="color:#94a3b8;font-size:13px;line-height:1.5;">
+          Si tú no solicitaste este cambio, ignora este mensaje.
+        </p>
+      </div>
+    `
+  });
+
+  if (error) {
+    throw new Error(
+      error.message || "No se pudo enviar el correo de recuperación."
+    );
+  }
 }
 
 function hashSessionToken(token) {
@@ -577,7 +680,7 @@ const qrPublicUrl = qrPublicData.publicUrl;
   const ticketDateTime = formatTicketDateTime(ticket.time);
 
   const { error } = await resend.emails.send({
-    from: "Cine Manuel Nieves <onboarding@resend.dev>",
+    from: RESEND_FROM_EMAIL,
     to: [customerEmail],
     subject: `Tu boleto para ${ticket.movie}`,
     html: `
@@ -863,6 +966,30 @@ await pool.query(`
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_password_resets (
+      id UUID PRIMARY KEY,
+      email TEXT NOT NULL,
+      code_hash TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS admin_password_resets_email_idx
+    ON admin_password_resets (email, created_at DESC);
+  `);
+
+  await pool.query(`
+    DELETE FROM admin_password_resets
+    WHERE
+      used_at IS NOT NULL
+      OR expires_at < NOW() - INTERVAL '1 day';
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS ticket_prices (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       adult_price NUMERIC(10, 2) NOT NULL CHECK (adult_price >= 0),
@@ -1133,6 +1260,279 @@ AUTENTICACIÃN DEL ADMINISTRADOR
 ==================================================
 */
 
+
+app.post("/api/admin/password/forgot", async (req, res) => {
+  try {
+    if (!ADMIN_RECOVERY_EMAIL) {
+      return res.status(503).json({
+        error:
+          "La recuperación de contraseña todavía no está configurada."
+      });
+    }
+
+    if (!resend) {
+      return res.status(503).json({
+        error:
+          "El servicio de correo todavía no está configurado."
+      });
+    }
+
+    const email = normalizeRecoveryEmail(req.body?.email);
+
+    if (!email) {
+      return res.status(400).json({
+        error: "Escribe el correo del administrador."
+      });
+    }
+
+    // Respuesta genérica para no revelar públicamente cuál es
+    // el correo autorizado del administrador.
+    if (email !== ADMIN_RECOVERY_EMAIL) {
+      return res.json({
+        success: true,
+        message:
+          "Si el correo coincide con el administrador, recibirás un código."
+      });
+    }
+
+    // Evita generar códigos uno detrás de otro.
+    const recentResult = await pool.query(
+      `
+        SELECT created_at
+        FROM admin_password_resets
+        WHERE
+          email = $1
+          AND created_at > NOW() - INTERVAL '60 seconds'
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `,
+      [email]
+    );
+
+    if (recentResult.rowCount > 0) {
+      return res.status(429).json({
+        error:
+          "Espera un minuto antes de solicitar otro código."
+      });
+    }
+
+    const code = String(
+      crypto.randomInt(0, 1000000)
+    ).padStart(6, "0");
+
+    const resetId = crypto.randomUUID();
+    const codeHash = hashAdminRecoveryCode(email, code);
+
+    await pool.query(
+      `
+        UPDATE admin_password_resets
+        SET used_at = NOW()
+        WHERE
+          email = $1
+          AND used_at IS NULL;
+      `,
+      [email]
+    );
+
+    await pool.query(
+      `
+        INSERT INTO admin_password_resets (
+          id,
+          email,
+          code_hash,
+          expires_at
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          NOW() + ($4 * INTERVAL '1 minute')
+        );
+      `,
+      [
+        resetId,
+        email,
+        codeHash,
+        ADMIN_RECOVERY_CODE_MINUTES
+      ]
+    );
+
+    try {
+      await sendAdminRecoveryEmail(code);
+    } catch (emailError) {
+      await pool.query(
+        `
+          UPDATE admin_password_resets
+          SET used_at = NOW()
+          WHERE id = $1;
+        `,
+        [resetId]
+      );
+
+      throw emailError;
+    }
+
+    res.json({
+      success: true,
+      message:
+        "Si el correo coincide con el administrador, recibirás un código."
+    });
+  } catch (error) {
+    console.error(
+      "Error solicitando recuperación administrativa:",
+      error
+    );
+
+    res.status(500).json({
+      error:
+        error.message ||
+        "No se pudo enviar el código de recuperación."
+    });
+  }
+});
+
+app.post("/api/admin/password/reset", async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const email = normalizeRecoveryEmail(req.body?.email);
+    const code = String(req.body?.code || "").trim();
+    const newPassword = String(
+      req.body?.newPassword || ""
+    );
+
+    if (
+      !email ||
+      !/^\d{6}$/.test(code) ||
+      newPassword.length < 8
+    ) {
+      return res.status(400).json({
+        error:
+          "Revisa el correo, el código y la nueva contraseña."
+      });
+    }
+
+    if (
+      !ADMIN_RECOVERY_EMAIL ||
+      email !== ADMIN_RECOVERY_EMAIL
+    ) {
+      return res.status(400).json({
+        error:
+          "El código es inválido o ya venció."
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const resetResult = await client.query(
+      `
+        SELECT
+          id,
+          code_hash,
+          attempts,
+          expires_at,
+          used_at
+        FROM admin_password_resets
+        WHERE email = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+        FOR UPDATE;
+      `,
+      [email]
+    );
+
+    const reset = resetResult.rows[0];
+
+    if (
+      !reset ||
+      reset.used_at ||
+      new Date(reset.expires_at).getTime() <= Date.now() ||
+      Number(reset.attempts || 0) >= ADMIN_RECOVERY_MAX_ATTEMPTS
+    ) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error:
+          "El código es inválido o ya venció. Solicita uno nuevo."
+      });
+    }
+
+    const providedHash =
+      hashAdminRecoveryCode(email, code);
+
+    const validCode = safeEqualHex(
+      providedHash,
+      reset.code_hash
+    );
+
+    if (!validCode) {
+      await client.query(
+        `
+          UPDATE admin_password_resets
+          SET attempts = attempts + 1
+          WHERE id = $1;
+        `,
+        [reset.id]
+      );
+
+      await client.query("COMMIT");
+
+      return res.status(400).json({
+        error: "El código de recuperación es incorrecto."
+      });
+    }
+
+    const newCredentials =
+      await hashPassword(newPassword);
+
+    await client.query(
+      `
+        UPDATE admin_settings
+        SET
+          password_salt = $1,
+          password_hash = $2,
+          updated_at = NOW()
+        WHERE id = 1;
+      `,
+      [
+        newCredentials.salt,
+        newCredentials.hash
+      ]
+    );
+
+    await client.query(
+      `
+        UPDATE admin_password_resets
+        SET used_at = NOW()
+        WHERE email = $1
+          AND used_at IS NULL;
+      `,
+      [email]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Contraseña actualizada correctamente."
+    });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+
+    console.error(
+      "Error restableciendo contraseña administrativa:",
+      error
+    );
+
+    res.status(500).json({
+      error:
+        "No se pudo restablecer la contraseña."
+    });
+  } finally {
+    client.release();
+  }
+});
+
 app.post("/api/admin/login", async (req, res) => {
   try {
     const { password } = req.body;
@@ -1141,7 +1541,7 @@ app.post("/api/admin/login", async (req, res) => {
 
     if (!valid) {
       return res.status(401).json({
-        error: "ContraseÃ±a incorrecta."
+        error: "Contraseña incorrecta."
       });
     }
 
@@ -1173,7 +1573,7 @@ app.put(
 
       if (!currentPasswordValid) {
         return res.status(401).json({
-          error: "La contraseÃ±a actual es incorrecta."
+          error: "La contraseña actual es incorrecta."
         });
       }
 
@@ -1183,14 +1583,14 @@ app.put(
       ) {
         return res.status(400).json({
           error:
-            "La nueva contraseÃ±a debe tener al menos 8 caracteres."
+            "La nueva contraseña debe tener al menos 8 caracteres."
         });
       }
 
       if (newPassword === currentPassword) {
         return res.status(400).json({
           error:
-            "La nueva contraseÃ±a debe ser diferente a la actual."
+            "La nueva contraseña debe ser diferente a la actual."
         });
       }
 
@@ -1213,7 +1613,7 @@ app.put(
 
       res.json({
         success: true,
-        message: "ContraseÃ±a actualizada correctamente."
+        message: "Contraseña actualizada correctamente."
       });
     } catch (error) {
       console.error(
