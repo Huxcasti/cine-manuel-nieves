@@ -1444,6 +1444,57 @@
       }
     }
 
+
+    .employee-search-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .employee-date-picker {
+      display: block;
+    }
+
+    .employee-date-picker.is-hidden {
+      display: none;
+    }
+
+    .employee-history-date {
+      width: 190px;
+      height: 42px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid #3b506f;
+      border-radius: 10px;
+      background: #0b1322;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @media (max-width: 520px) {
+      .employee-search-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .employee-date-picker {
+        grid-column: 1 / -1;
+      }
+
+      .employee-history-date {
+        width: 100%;
+      }
+
+      .employee-search-actions .btn {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 
@@ -2068,9 +2119,41 @@
                 <p class="subtitle">Cada asiento validado cuenta como una taquilla.</p>
               </div>
 
-              <button class="btn btn-primary" type="button" onclick="loadEmployees()">
-                Actualizar
-              </button>
+              <div class="employee-search-actions">
+                <button
+                  class="btn scan-history-search"
+                  type="button"
+                  onclick="toggleEmployeeDatePicker()"
+                >
+                  🔎 Buscar por fecha
+                </button>
+
+                <div id="employeeDatePickerWrap" class="employee-date-picker is-hidden">
+                  <input
+                    id="employeeHistoryDate"
+                    class="employee-history-date"
+                    type="date"
+                    aria-label="Buscar actividad de empleados por fecha"
+                    onchange="filterEmployeesByDate()"
+                  />
+                </div>
+
+                <button
+                  class="btn btn-secondary"
+                  type="button"
+                  onclick="clearEmployeeDateFilter()"
+                >
+                  Ver todos
+                </button>
+
+                <button
+                  class="btn btn-primary"
+                  type="button"
+                  onclick="refreshEmployeeArea()"
+                >
+                  Actualizar
+                </button>
+              </div>
             </div>
 
             <div class="table-wrapper">
@@ -3387,6 +3470,130 @@ const durationValue =
       }
     }
 
+
+    function toggleEmployeeDatePicker() {
+      const wrap = document.getElementById("employeeDatePickerWrap");
+      const input = document.getElementById("employeeHistoryDate");
+
+      if (!wrap || !input) return;
+
+      wrap.classList.remove("is-hidden");
+
+      window.setTimeout(() => {
+        input.focus();
+
+        if (typeof input.showPicker === "function") {
+          try {
+            input.showPicker();
+          } catch (error) {
+            // El campo queda visible aunque el navegador no abra
+            // el selector automáticamente.
+          }
+        }
+      }, 50);
+    }
+
+    function buildEmployeesForSelectedDate(selectedDate) {
+      return employeesCache.map((employee) => {
+        const employeeUsername = String(employee.username || "").toLowerCase();
+        const employeeName = String(employee.name || "").trim().toLowerCase();
+
+        const employeeCheckins = checkinsCache.filter((checkin) => {
+          if (getPuertoRicoDateKey(checkin.scannedAt) !== selectedDate) {
+            return false;
+          }
+
+          const checkinUsername =
+            String(checkin.employeeUsername || "").toLowerCase();
+
+          const checkinName =
+            String(checkin.employeeName || "").trim().toLowerCase();
+
+          return (
+            (employeeUsername && checkinUsername === employeeUsername) ||
+            (!employeeUsername && employeeName && checkinName === employeeName)
+          );
+        });
+
+        const scans = employeeCheckins.length;
+
+        const ticketsScanned = employeeCheckins.reduce(
+          (sum, checkin) => sum + Number(checkin.seatsCount || 0),
+          0
+        );
+
+        const lastScan = employeeCheckins.reduce((latest, checkin) => {
+          if (!checkin.scannedAt) return latest;
+
+          const current = new Date(checkin.scannedAt);
+
+          if (Number.isNaN(current.getTime())) {
+            return latest;
+          }
+
+          if (!latest || current > latest) {
+            return current;
+          }
+
+          return latest;
+        }, null);
+
+        return {
+          ...employee,
+          scans,
+          ticketsScanned,
+          lastScan: lastScan ? lastScan.toISOString() : null
+        };
+      });
+    }
+
+    function filterEmployeesByDate(showAlert = true) {
+      const input = document.getElementById("employeeHistoryDate");
+      const selectedDate = input?.value || "";
+
+      if (!selectedDate) {
+        if (showAlert) {
+          alert("Selecciona una fecha para buscar.");
+          input?.focus();
+        }
+        return;
+      }
+
+      const filteredEmployees =
+        buildEmployeesForSelectedDate(selectedDate);
+
+      renderEmployees(filteredEmployees);
+    }
+
+    function clearEmployeeDateFilter() {
+      const input = document.getElementById("employeeHistoryDate");
+      const wrap = document.getElementById("employeeDatePickerWrap");
+
+      if (input) {
+        input.value = "";
+      }
+
+      if (wrap) {
+        wrap.classList.add("is-hidden");
+      }
+
+      renderEmployees(employeesCache);
+    }
+
+    async function refreshEmployeeArea() {
+      await Promise.all([
+        loadEmployees(),
+        loadCheckins()
+      ]);
+
+      const selectedDate =
+        document.getElementById("employeeHistoryDate")?.value || "";
+
+      if (selectedDate) {
+        filterEmployeesByDate(false);
+      }
+    }
+
     async function loadEmployees() {
       setLoading(true);
 
@@ -3540,6 +3747,13 @@ const durationValue =
           );
         } else {
           renderCheckins(checkinsCache);
+        }
+
+        const employeeSelectedDate =
+          document.getElementById("employeeHistoryDate")?.value || "";
+
+        if (employeeSelectedDate) {
+          filterEmployeesByDate(false);
         }
       } catch (error) {
         setMessage("employeeMessage", "error", error.message);
