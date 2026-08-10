@@ -3429,18 +3429,68 @@ const durationValue =
     }
 
     function editShowtime(id) {
-      const showtime = showtimesCache.find((item) => item.id === id);
-      if (!showtime) return;
+      const normalizedId = String(id || "");
 
-      document.getElementById("showtimeId").value = showtime.id;
-      document.getElementById("showtimeMovie").value = showtime.movieId;
-      document.getElementById("showtimeDate").value = normalizeDate(showtime.showDate);
-      document.getElementById("showtimeTime").value = normalizeTime(showtime.showTime);
-      document.getElementById("showtimeLanguage").value = showtime.language || "spanish";
-      document.getElementById("showtimeActive").checked = Boolean(showtime.active);
-      document.getElementById("showtimeFormTitle").textContent = "Editar tanda";
-      document.getElementById("saveShowtimeButton").textContent = "Actualizar tanda";
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const showtime = showtimesCache.find(
+        (item) => String(item.id || "") === normalizedId
+      );
+
+      if (!showtime) {
+        alert("No se pudo encontrar esta tanda. Pulsa Actualizar e inténtalo nuevamente.");
+        return;
+      }
+
+      const idInput = document.getElementById("showtimeId");
+      const movieInput = document.getElementById("showtimeMovie");
+      const dateInput = document.getElementById("showtimeDate");
+      const timeInput = document.getElementById("showtimeTime");
+      const languageInput = document.getElementById("showtimeLanguage");
+      const activeInput = document.getElementById("showtimeActive");
+      const title = document.getElementById("showtimeFormTitle");
+      const saveButton = document.getElementById("saveShowtimeButton");
+
+      if (
+        !idInput ||
+        !movieInput ||
+        !dateInput ||
+        !timeInput ||
+        !languageInput ||
+        !activeInput ||
+        !title ||
+        !saveButton
+      ) {
+        alert("No se encontró el formulario para editar la tanda.");
+        return;
+      }
+
+      idInput.value = showtime.id || "";
+      movieInput.value = showtime.movieId || "";
+      dateInput.value = normalizeDate(showtime.showDate);
+      timeInput.value = normalizeTime(showtime.showTime);
+      languageInput.value = showtime.language || "spanish";
+      activeInput.checked = Boolean(showtime.active);
+
+      title.textContent = "Editar tanda";
+      saveButton.textContent = "Actualizar tanda";
+
+      setMessage(
+        "showtimeMessage",
+        "success",
+        `Editando: ${showtime.movieTitle || "tanda seleccionada"}`
+      );
+
+      const formCard = title.closest(".card") || title;
+
+      window.setTimeout(() => {
+        formCard.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+
+        window.setTimeout(() => {
+          dateInput.focus({ preventScroll: true });
+        }, 450);
+      }, 50);
     }
 
     function resetShowtimeForm(clearMessage = true) {
