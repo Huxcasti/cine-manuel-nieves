@@ -1514,7 +1514,88 @@
       }
     }
 
-  </style>
+  
+    .forgot-password-button {
+      display: block;
+      margin: 14px auto 0;
+      padding: 8px 10px;
+      border: 0;
+      background: transparent;
+      color: #79e4df;
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+
+    .forgot-password-button:hover {
+      color: #ffffff;
+    }
+
+    .recovery-panel {
+      display: none;
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid rgba(73, 203, 197, 0.32);
+      border-radius: 16px;
+      background: rgba(7, 11, 20, 0.72);
+    }
+
+    .recovery-panel.active {
+      display: block;
+    }
+
+    .recovery-panel h2 {
+      margin-bottom: 8px;
+      font-size: 19px;
+    }
+
+    .recovery-panel .recovery-copy {
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .recovery-step {
+      display: none;
+    }
+
+    .recovery-step.active {
+      display: block;
+    }
+
+    .recovery-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .recovery-actions .btn {
+      flex: 1 1 160px;
+    }
+
+    .recovery-code-input {
+      letter-spacing: 0.28em;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    @media (max-width: 520px) {
+      .recovery-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .recovery-actions .btn {
+        width: 100%;
+      }
+    }
+
+</style>
 </head>
 
 <body>
@@ -1575,6 +1656,109 @@
         </button>
 
         <div class="message" id="loginMessage" aria-live="polite"></div>
+        <button
+          class="forgot-password-button"
+          type="button"
+          onclick="openPasswordRecovery()"
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
+
+        <section class="recovery-panel" id="passwordRecoveryPanel" aria-live="polite">
+          <div id="recoveryRequestStep" class="recovery-step active">
+            <h2>Recuperar contraseña</h2>
+            <p class="recovery-copy">
+              Escribe el correo autorizado del administrador. Te enviaremos un
+              código de 6 dígitos que vence en 15 minutos.
+            </p>
+
+            <label for="recoveryEmail">Correo del administrador</label>
+            <input
+              id="recoveryEmail"
+              type="email"
+              autocomplete="email"
+              placeholder="administrador@correo.com"
+            />
+
+            <div class="recovery-actions">
+              <button
+                id="sendRecoveryCodeButton"
+                class="btn btn-brand"
+                type="button"
+                onclick="requestPasswordRecoveryCode()"
+              >
+                Enviar código
+              </button>
+
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="closePasswordRecovery()"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          <div id="recoveryResetStep" class="recovery-step">
+            <h2>Escribe el código</h2>
+            <p class="recovery-copy">
+              Revisa el correo del administrador. El código solo puede usarse
+              una vez y vence en 15 minutos.
+            </p>
+
+            <label for="recoveryCode">Código de 6 dígitos</label>
+            <input
+              id="recoveryCode"
+              class="recovery-code-input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              placeholder="000000"
+            />
+
+            <label for="recoveryNewPassword">Nueva contraseña</label>
+            <input
+              id="recoveryNewPassword"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Mínimo 8 caracteres"
+            />
+
+            <label for="recoveryConfirmPassword">Confirmar nueva contraseña</label>
+            <input
+              id="recoveryConfirmPassword"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Repite la nueva contraseña"
+            />
+
+            <div class="recovery-actions">
+              <button
+                id="resetPasswordButton"
+                class="btn btn-success"
+                type="button"
+                onclick="completePasswordRecovery()"
+              >
+                Cambiar contraseña
+              </button>
+
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="backToRecoveryEmail()"
+              >
+                Volver
+              </button>
+            </div>
+          </div>
+
+          <div class="message" id="recoveryMessage"></div>
+        </section>
+
       </section>
     </div>
 
@@ -2362,6 +2546,203 @@
       return parseResponse(response);
     }
 
+
+    function setRecoveryStep(step) {
+      const requestStep = document.getElementById("recoveryRequestStep");
+      const resetStep = document.getElementById("recoveryResetStep");
+
+      requestStep.classList.toggle("active", step === "request");
+      resetStep.classList.toggle("active", step === "reset");
+    }
+
+    function openPasswordRecovery() {
+      const panel = document.getElementById("passwordRecoveryPanel");
+      panel.classList.add("active");
+      setRecoveryStep("request");
+      setMessage("recoveryMessage", "", "");
+
+      window.setTimeout(() => {
+        document.getElementById("recoveryEmail")?.focus();
+      }, 50);
+    }
+
+    function closePasswordRecovery() {
+      const panel = document.getElementById("passwordRecoveryPanel");
+
+      panel.classList.remove("active");
+      setRecoveryStep("request");
+      setMessage("recoveryMessage", "", "");
+
+      document.getElementById("recoveryCode").value = "";
+      document.getElementById("recoveryNewPassword").value = "";
+      document.getElementById("recoveryConfirmPassword").value = "";
+    }
+
+    function backToRecoveryEmail() {
+      setRecoveryStep("request");
+      setMessage("recoveryMessage", "", "");
+      document.getElementById("recoveryCode").value = "";
+      document.getElementById("recoveryNewPassword").value = "";
+      document.getElementById("recoveryConfirmPassword").value = "";
+      document.getElementById("recoveryEmail")?.focus();
+    }
+
+    async function requestPasswordRecoveryCode() {
+      const emailInput = document.getElementById("recoveryEmail");
+      const button = document.getElementById("sendRecoveryCodeButton");
+      const email = emailInput.value.trim().toLowerCase();
+
+      if (!email || !emailInput.checkValidity()) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "Escribe un correo electrónico válido."
+        );
+        emailInput.focus();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Enviando...";
+      setMessage("recoveryMessage", "", "");
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/admin/password/forgot`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email })
+          }
+        );
+
+        await parseResponse(response);
+
+        setRecoveryStep("reset");
+        setMessage(
+          "recoveryMessage",
+          "success",
+          "Si el correo coincide con el administrador, recibirás un código de recuperación."
+        );
+
+        window.setTimeout(() => {
+          document.getElementById("recoveryCode")?.focus();
+        }, 100);
+      } catch (error) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          error.message || "No se pudo enviar el código."
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent = "Enviar código";
+      }
+    }
+
+    async function completePasswordRecovery() {
+      const email = document
+        .getElementById("recoveryEmail")
+        .value
+        .trim()
+        .toLowerCase();
+
+      const codeInput = document.getElementById("recoveryCode");
+      const newPasswordInput =
+        document.getElementById("recoveryNewPassword");
+      const confirmPasswordInput =
+        document.getElementById("recoveryConfirmPassword");
+      const button = document.getElementById("resetPasswordButton");
+
+      const code = codeInput.value.replace(/\D/g, "").slice(0, 6);
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      codeInput.value = code;
+
+      if (!/^\d{6}$/.test(code)) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "Escribe el código de 6 dígitos."
+        );
+        codeInput.focus();
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "La nueva contraseña debe tener al menos 8 caracteres."
+        );
+        newPasswordInput.focus();
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "Las contraseñas nuevas no coinciden."
+        );
+        confirmPasswordInput.focus();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Cambiando...";
+      setMessage("recoveryMessage", "", "");
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/admin/password/reset`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              email,
+              code,
+              newPassword
+            })
+          }
+        );
+
+        await parseResponse(response);
+
+        document.getElementById("adminKey").value = newPassword;
+
+        setMessage(
+          "recoveryMessage",
+          "success",
+          "Contraseña actualizada. Ya puedes entrar con la nueva contraseña."
+        );
+
+        window.setTimeout(() => {
+          closePasswordRecovery();
+          setMessage(
+            "loginMessage",
+            "success",
+            "Contraseña actualizada. Presiona “Entrar al panel”."
+          );
+          document.getElementById("adminKey")?.focus();
+        }, 1400);
+      } catch (error) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          error.message || "No se pudo cambiar la contraseña."
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent = "Cambiar contraseña";
+      }
+    }
+
     async function login() {
       const keyInput = document.getElementById("adminKey");
       const loginButton = document.getElementById("loginButton");
@@ -2390,7 +2771,7 @@
         await loadReservations();
       } catch (error) {
         currentAdminKey = "";
-        setMessage("loginMessage", "error", "Contraseña incorrecta.");
+        setMessage("loginMessage", "error", error.message);
       } finally {
         loginButton.disabled = false;
         loginButton.textContent = "Entrar al panel";
@@ -4138,6 +4519,16 @@ movieDurationSelect.addEventListener("change", () => {
   }
 });
 
-  </script>
+  
+    document.getElementById("recoveryCode")?.addEventListener(
+      "input",
+      (event) => {
+        event.target.value = event.target.value
+          .replace(/\D/g, "")
+          .slice(0, 6);
+      }
+    );
+
+</script>
 </body>
 </html>
