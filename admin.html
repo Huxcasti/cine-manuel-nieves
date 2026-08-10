@@ -1410,6 +1410,15 @@
       }
     }
 
+
+    .native-picker-input {
+      cursor: pointer;
+    }
+
+    .native-picker-input::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+    }
+
   </style>
 </head>
 
@@ -1899,10 +1908,10 @@
             </select>
 
             <label for="showtimeDate">Fecha</label>
-            <input id="showtimeDate" type="date" />
+            <input id="showtimeDate" class="native-picker-input" type="date" onclick="openNativePicker(this)" />
 
             <label for="showtimeTime">Hora</label>
-            <input id="showtimeTime" type="time" />
+            <input id="showtimeTime" class="native-picker-input" type="time" onclick="openNativePicker(this)" />
 
             <div class="notice" style="margin-top: 16px;">
               Esta tanda utilizará automáticamente los precios generales del cine.
@@ -3216,6 +3225,26 @@ const durationValue =
 
         rows.appendChild(row);
       });
+    }
+
+
+    function openNativePicker(input) {
+      if (!input) return;
+
+      try {
+        input.focus({ preventScroll: true });
+      } catch (error) {
+        input.focus();
+      }
+
+      if (typeof input.showPicker === "function") {
+        try {
+          input.showPicker();
+        } catch (error) {
+          // Si el navegador no permite showPicker(),
+          // el campo queda enfocado y mantiene su selector nativo.
+        }
+      }
     }
 
     async function saveShowtime() {
