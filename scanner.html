@@ -791,6 +791,43 @@
         flex: 1;
       }
     }
+  
+    /* Fondo fotográfico lateral del cine */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        linear-gradient(rgba(7, 11, 20, 0.68), rgba(7, 11, 20, 0.82)),
+        url("cine-fondo.jpg") center center / cover no-repeat;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: min(1040px, 100%);
+      transform: translateX(-50%);
+      z-index: -1;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(73, 203, 197, 0.09), transparent 28%),
+        radial-gradient(circle at 92% 0%, rgba(255, 198, 42, 0.08), transparent 27%),
+        linear-gradient(180deg, rgba(10,16,32,.96), rgba(7,11,20,.96));
+      box-shadow: 0 0 70px rgba(0,0,0,.55);
+    }
+
+    @media (max-width: 1080px) {
+      body::before {
+        opacity: 0.32;
+      }
+      body::after {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 
