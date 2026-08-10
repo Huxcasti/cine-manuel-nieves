@@ -1495,6 +1495,25 @@
       }
     }
 
+
+    .scan-history-date-picker {
+      display: block;
+    }
+
+    .scan-history-date-picker.is-hidden {
+      display: none;
+    }
+
+    .scan-history-date {
+      cursor: pointer;
+    }
+
+    @media (max-width: 520px) {
+      .scan-history-date-picker {
+        grid-column: 1 / -1;
+      }
+    }
+
   </style>
 </head>
 
@@ -2187,20 +2206,23 @@
             </div>
 
             <div class="scan-history-actions">
-              <input
-                id="scanHistoryDate"
-                class="scan-history-date"
-                type="date"
-                aria-label="Fecha del historial de escaneos"
-              />
-
               <button
                 class="btn scan-history-search"
                 type="button"
-                onclick="filterCheckinsByDate()"
+                onclick="toggleScanHistoryDatePicker()"
               >
                 🔎 Buscar por fecha
               </button>
+
+              <div id="scanHistoryDatePickerWrap" class="scan-history-date-picker is-hidden">
+                <input
+                  id="scanHistoryDate"
+                  class="scan-history-date"
+                  type="date"
+                  aria-label="Fecha del historial de escaneos"
+                  onchange="filterCheckinsByDate()"
+                />
+              </div>
 
               <button
                 class="btn btn-secondary"
@@ -3784,6 +3806,31 @@ const durationValue =
       return `${values.year}-${values.month}-${values.day}`;
     }
 
+
+    function toggleScanHistoryDatePicker() {
+      const wrap =
+        document.getElementById("scanHistoryDatePickerWrap");
+      const input =
+        document.getElementById("scanHistoryDate");
+
+      if (!wrap || !input) return;
+
+      wrap.classList.remove("is-hidden");
+
+      window.setTimeout(() => {
+        input.focus();
+
+        if (typeof input.showPicker === "function") {
+          try {
+            input.showPicker();
+          } catch (error) {
+            // Si el navegador no permite abrirlo automáticamente,
+            // el selector queda visible y listo para tocar.
+          }
+        }
+      }, 50);
+    }
+
     function filterCheckinsByDate() {
       const input = document.getElementById("scanHistoryDate");
       const selectedDate = input?.value || "";
@@ -3809,12 +3856,20 @@ const durationValue =
 
     function clearCheckinDateFilter() {
       const input = document.getElementById("scanHistoryDate");
+      const wrap =
+        document.getElementById("scanHistoryDatePickerWrap");
 
       if (input) {
         input.value = "";
       }
 
-      const empty = document.getElementById("checkinEmptyMessage");
+      if (wrap) {
+        wrap.classList.add("is-hidden");
+      }
+
+      const empty =
+        document.getElementById("checkinEmptyMessage");
+
       empty.textContent = "Todavía no hay escaneos.";
 
       renderCheckins(checkinsCache);
