@@ -2195,7 +2195,20 @@ body {
   font-size: 16px;
 }
 		
-		  </style>
+		  
+		    .email-confirm-note {
+		      margin: -6px 0 18px;
+		      color: var(--muted);
+		      font-size: 13px;
+		      line-height: 1.45;
+		    }
+
+		    #customerEmailConfirm.email-mismatch {
+		      border-color: var(--danger);
+		      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+		    }
+
+</style>
 		</head>
 		
 		<body>
@@ -2460,14 +2473,19 @@ body {
 		              autocomplete="email"
 		              required
 		            />
-		
-		            <label for="customerPhone">Número de teléfono</label>
+
+		            <label for="customerEmailConfirm">Confirmar correo electrónico</label>
 		            <input
-		              id="customerPhone"
-		              type="tel"
-		              autocomplete="tel"
+		              id="customerEmailConfirm"
+		              type="email"
+		              autocomplete="email"
 		              required
+		              onpaste="return false"
 		            />
+
+		            <p class="email-confirm-note">
+		              Verifica que ambos correos sean iguales. Tu boleto y código QR se enviarán a esta dirección.
+		            </p>
 		
 		
 		
@@ -4000,28 +4018,72 @@ filterMovieShowtimesByDate(movie.id, today);
 		      showPage("customerPage");
 		    }
 		
-		    function getCustomerData() {
+		    
+		    function validateEmailConfirmationLive() {
+		      const email = document.getElementById("customerEmail");
+		      const confirm = document.getElementById("customerEmailConfirm");
+
+		      if (!email || !confirm) return;
+
+		      const first = email.value.trim().toLowerCase();
+		      const second = confirm.value.trim().toLowerCase();
+
+		      const mismatch = Boolean(first && second && first !== second);
+
+		      confirm.classList.toggle("email-mismatch", mismatch);
+		      confirm.setCustomValidity(
+		        mismatch ? "Los correos electrónicos no coinciden." : ""
+		      );
+		    }
+
+function getCustomerData() {
 		      return {
 		        name: document.getElementById("customerName").value.trim(),
 		        email: document.getElementById("customerEmail").value.trim(),
-		        phone: document.getElementById("customerPhone").value.trim()
+		        emailConfirm: document.getElementById("customerEmailConfirm").value.trim()
 		      };
 		    }
 		
 		    function validateCustomerAndPayment(requirePayment = true) {
 		      const customer = getCustomerData();
-		
-		      if (!customer.name || !customer.email || !customer.phone) {
-		        showCustomerMessage("error", "Completa todos los datos del cliente.");
+
+		      if (!customer.name || !customer.email || !customer.emailConfirm) {
+		        showCustomerMessage(
+		          "error",
+		          "Completa tu nombre y ambos campos de correo electrónico."
+		        );
 		        return null;
 		      }
-		
+
+		      const normalizedEmail = customer.email.toLowerCase();
+		      const normalizedEmailConfirm = customer.emailConfirm.toLowerCase();
+
+		      if (normalizedEmail !== normalizedEmailConfirm) {
+		        showCustomerMessage("error", "Los correos electrónicos no coinciden.");
+		        document.getElementById("customerEmailConfirm")?.focus();
+		        return null;
+		      }
+
+		      const emailField = document.getElementById("customerEmail");
+		      const confirmField = document.getElementById("customerEmailConfirm");
+
+		      if (
+		        (emailField && !emailField.checkValidity()) ||
+		        (confirmField && !confirmField.checkValidity())
+		      ) {
+		        showCustomerMessage("error", "Escribe un correo electrónico válido.");
+		        return null;
+		      }
+
 		      if (requirePayment && !selectedPaymentMethod) {
 		        showCustomerMessage("error", "Selecciona un método de pago.");
 		        return null;
 		      }
-		
-		      return customer;
+
+		      return {
+		        name: customer.name,
+		        email: customer.email
+		      };
 		    }
 		
 		    function selectPaymentMethod(method) {
@@ -4331,9 +4393,6 @@ filterMovieShowtimesByDate(movie.id, today);
 		      const customerEmail =
 		        ticket.customer?.email || "—";
 		
-		      const customerPhone =
-		        ticket.customer?.phone || "—";
-		
 		      const seats =
 		        Array.isArray(ticket.seats)
 		          ? ticket.seats.join(", ")
@@ -4362,15 +4421,6 @@ filterMovieShowtimesByDate(movie.id, today);
 		          <strong>
 		            ${escapeHtml(
 		              customerEmail
-		            )}
-		          </strong>
-		        </div>
-		
-		        <div class="ticket-detail">
-		          <span>Teléfono</span>
-		          <strong>
-		            ${escapeHtml(
-		              customerPhone
 		            )}
 		          </strong>
 		        </div>
@@ -4535,9 +4585,7 @@ filterMovieShowtimesByDate(movie.id, today);
 		        "customerEmail"
 		      ).value = "";
 		
-		      document.getElementById(
-		        "customerPhone"
-		      ).value = "";
+		      document.getElementById("customerEmailConfirm").value = "";
 		
 		      showPage("catalogPage");
 		      loadMovies();
@@ -4848,7 +4896,18 @@ if (label && selectedDate) {
 		      void cancelPendingReservation({ keepalive: true });
 		    }
 		  });
-		</script>
+		
+		    document.getElementById("customerEmail")?.addEventListener(
+		      "input",
+		      validateEmailConfirmationLive
+		    );
+
+		    document.getElementById("customerEmailConfirm")?.addEventListener(
+		      "input",
+		      validateEmailConfirmationLive
+		    );
+
+</script>
 
 </body>
 		</html>
