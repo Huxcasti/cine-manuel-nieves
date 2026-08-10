@@ -2390,7 +2390,7 @@
         await loadReservations();
       } catch (error) {
         currentAdminKey = "";
-        setMessage("loginMessage", "error", error.message);
+        setMessage("loginMessage", "error", "Contraseña incorrecta.");
       } finally {
         loginButton.disabled = false;
         loginButton.textContent = "Entrar al panel";
