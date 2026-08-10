@@ -14,6 +14,21 @@ const PENDING_RESERVATION_MINUTES = Math.max(
   Number(process.env.PENDING_RESERVATION_MINUTES || 5)
 );
 
+const QR_STORAGE_RETENTION_DAYS = Math.max(
+  1,
+  Number(process.env.QR_STORAGE_RETENTION_DAYS || 30)
+);
+
+const PASSWORD_RESET_RETENTION_DAYS = Math.max(
+  1,
+  Number(process.env.PASSWORD_RESET_RETENTION_DAYS || 7)
+);
+
+const CLEANUP_INTERVAL_MS = Math.max(
+  60_000,
+  Number(process.env.CLEANUP_INTERVAL_MS || 15 * 60_000)
+);
+
 /*
 ==================================================
 VARIABLES DE ENTORNO
@@ -197,6 +212,138 @@ function trailerExtensionFromMimeType(mimeType) {
   };
 
   return extensions[mimeType] || "mp4";
+}
+
+
+function extractSupabaseObjectPath(publicUrl, bucketName) {
+  const value = String(publicUrl || "").trim();
+
+  if (!value || !bucketName) {
+    return "";
+  }
+
+  try {
+    const url = new URL(value);
+    const marker = `/storage/v1/object/public/${bucketName}/`;
+    const index = url.pathname.indexOf(marker);
+
+    if (index === -1) {
+      return "";
+    }
+
+    return decodeURIComponent(
+      url.pathname.slice(index + marker.length)
+    );
+  } catch {
+    return "";
+  }
+}
+
+async function removeSupabaseObjects(bucketName, paths) {
+  const uniquePaths = [
+    ...new Set(
+      (Array.isArray(paths) ? paths : [])
+        .map((path) => String(path || "").trim())
+        .filter(Boolean)
+    )
+  ];
+
+  if (uniquePaths.length === 0) {
+    return 0;
+  }
+
+  const { data, error } = await supabase.storage
+    .from(bucketName)
+    .remove(uniquePaths);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return Array.isArray(data) ? data.length : uniquePaths.length;
+}
+
+async function deleteMovieStorageFiles(movie) {
+  if (!movie) {
+    return;
+  }
+
+  const posterPath = extractSupabaseObjectPath(
+    movie.poster_url,
+    SUPABASE_POSTERS_BUCKET
+  );
+
+  const trailerPath = extractSupabaseObjectPath(
+    movie.trailer_url,
+    SUPABASE_TRAILERS_BUCKET
+  );
+
+  if (SUPABASE_POSTERS_BUCKET === SUPABASE_TRAILERS_BUCKET) {
+    await removeSupabaseObjects(
+      SUPABASE_POSTERS_BUCKET,
+      [posterPath, trailerPath]
+    );
+    return;
+  }
+
+  await Promise.all([
+    removeSupabaseObjects(SUPABASE_POSTERS_BUCKET, [posterPath]),
+    removeSupabaseObjects(SUPABASE_TRAILERS_BUCKET, [trailerPath])
+  ]);
+}
+
+async function cleanupOldQrFiles() {
+  const cutoff = new Date(
+    Date.now() - QR_STORAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000
+  );
+
+  let offset = 0;
+  let deletedCount = 0;
+
+  while (true) {
+    const { data, error } = await supabase.storage
+      .from(SUPABASE_POSTERS_BUCKET)
+      .list("tickets", {
+        limit: 100,
+        offset,
+        sortBy: { column: "created_at", order: "asc" }
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const files = Array.isArray(data) ? data : [];
+
+    if (files.length === 0) {
+      break;
+    }
+
+    const oldPaths = files
+      .filter((file) => {
+        const createdAt = file?.created_at || file?.updated_at;
+        if (!createdAt) return false;
+        const fileDate = new Date(createdAt);
+        return Number.isFinite(fileDate.getTime()) && fileDate < cutoff;
+      })
+      .map((file) => `tickets/${file.name}`)
+      .filter(Boolean);
+
+    if (oldPaths.length > 0) {
+      deletedCount += await removeSupabaseObjects(
+        SUPABASE_POSTERS_BUCKET,
+        oldPaths
+      );
+    }
+
+    if (files.length < 100) {
+      break;
+    }
+
+    offset += 100;
+  }
+
+  return deletedCount;
 }
 
 /*
@@ -1047,9 +1194,12 @@ No elimina pelÃ­culas, tandas ni contraseÃ±a.
 */
 
 async function cleanupPreviousBusinessDay() {
-  await pool.query(`DELETE FROM employee_sessions WHERE expires_at <= NOW();`);
+  const expiredSessions = await pool.query(`
+    DELETE FROM employee_sessions
+    WHERE expires_at <= NOW();
+  `);
 
-  const result = await pool.query(
+  const pendingTickets = await pool.query(
     `
       DELETE FROM tickets
       WHERE payment_status = 'pending'
@@ -1058,10 +1208,39 @@ async function cleanupPreviousBusinessDay() {
     [PENDING_RESERVATION_MINUTES]
   );
 
-  if (result.rowCount > 0) {
-    console.log(
-      `Limpieza automática: ${result.rowCount} reservaciones pendientes expiradas eliminadas.`
+  const oldResetCodes = await pool.query(
+    `
+      DELETE FROM admin_password_resets
+      WHERE
+        used_at IS NOT NULL
+        OR expires_at < NOW() - ($1 * INTERVAL '1 day');
+    `,
+    [PASSWORD_RESET_RETENTION_DAYS]
+  );
+
+  let deletedQrFiles = 0;
+
+  try {
+    deletedQrFiles = await cleanupOldQrFiles();
+  } catch (error) {
+    console.error(
+      "No se pudieron limpiar QR antiguos de Supabase:",
+      error
     );
+  }
+
+  if (
+    expiredSessions.rowCount > 0 ||
+    pendingTickets.rowCount > 0 ||
+    oldResetCodes.rowCount > 0 ||
+    deletedQrFiles > 0
+  ) {
+    console.log("Limpieza automática completada:", {
+      employeeSessions: expiredSessions.rowCount,
+      pendingReservations: pendingTickets.rowCount,
+      passwordResetCodes: oldResetCodes.rowCount,
+      qrFiles: deletedQrFiles
+    });
   }
 }
 
@@ -1070,7 +1249,7 @@ let lastCleanupCheck = 0;
 app.use(async (req, res, next) => {
   const now = Date.now();
 
-  if (now - lastCleanupCheck < 60_000) {
+  if (now - lastCleanupCheck < CLEANUP_INTERVAL_MS) {
     return next();
   }
 
@@ -2051,7 +2230,24 @@ app.delete(
     try {
       const { id } = req.params;
 
-      const result = await pool.query(
+      const movieResult = await pool.query(
+        `
+          SELECT id, poster_url, trailer_url
+          FROM movies
+          WHERE id = $1;
+        `,
+        [id]
+      );
+
+      if (movieResult.rowCount === 0) {
+        return res.status(404).json({
+          error: "Película no encontrada."
+        });
+      }
+
+      const movie = movieResult.rows[0];
+
+      const deleteResult = await pool.query(
         `
           DELETE FROM movies
           WHERE id = $1
@@ -2060,24 +2256,31 @@ app.delete(
         [id]
       );
 
-      if (result.rowCount === 0) {
+      if (deleteResult.rowCount === 0) {
         return res.status(404).json({
-          error: "PelÃ­cula no encontrada."
+          error: "Película no encontrada."
         });
+      }
+
+      try {
+        await deleteMovieStorageFiles(movie);
+      } catch (storageError) {
+        console.error(
+          "La película se eliminó de la base de datos, pero no se pudieron borrar todos sus archivos de Supabase:",
+          storageError
+        );
       }
 
       res.json({
         success: true,
-        message: "PelÃ­cula eliminada correctamente."
+        message:
+          "Película eliminada correctamente. Sus archivos asociados también se limpiaron cuando fue posible."
       });
     } catch (error) {
-      console.error(
-        "Error eliminando pelÃ­cula:",
-        error
-      );
+      console.error("Error eliminando película:", error);
 
       res.status(500).json({
-        error: "No se pudo eliminar la pelÃ­cula."
+        error: "No se pudo eliminar la película."
       });
     }
   }
