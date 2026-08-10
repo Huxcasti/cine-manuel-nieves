@@ -3875,6 +3875,76 @@ const durationValue =
       renderCheckins(checkinsCache);
     }
 
+
+    function formatCheckinShowtime(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "—";
+
+      let year = null;
+      let month = null;
+      let day = null;
+
+      const isoMatch = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+
+      if (isoMatch) {
+        year = Number(isoMatch[1]);
+        month = Number(isoMatch[2]);
+        day = Number(isoMatch[3]);
+      } else {
+        const englishMatch = raw.match(
+          /\b(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/i
+        );
+
+        if (englishMatch) {
+          const months = {
+            jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+            jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
+          };
+
+          month = months[englishMatch[1].toLowerCase()];
+          day = Number(englishMatch[2]);
+          year = Number(englishMatch[3]);
+        }
+      }
+
+      const timeMatches = [
+        ...raw.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)
+      ];
+
+      const lastTime = timeMatches.length
+        ? timeMatches[timeMatches.length - 1]
+        : null;
+
+      let prettyTime = "";
+
+      if (lastTime) {
+        const hour24 = Number(lastTime[1]);
+        const minute = lastTime[2];
+        const suffix = hour24 >= 12 ? "p. m." : "a. m.";
+        const hour12 = hour24 % 12 || 12;
+        prettyTime = `${hour12}:${minute} ${suffix}`;
+      }
+
+      let prettyDate = "";
+
+      if (
+        Number.isInteger(year) &&
+        Number.isInteger(month) &&
+        Number.isInteger(day)
+      ) {
+        prettyDate =
+          `${String(day).padStart(2, "0")}/` +
+          `${String(month).padStart(2, "0")}/` +
+          `${year}`;
+      }
+
+      if (prettyDate && prettyTime) {
+        return `${prettyDate} • ${prettyTime}`;
+      }
+
+      return prettyDate || prettyTime || raw;
+    }
+
     function renderCheckins(checkins) {
       const rows = document.getElementById("checkinRows");
       const empty = document.getElementById("checkinEmptyMessage");
@@ -3901,7 +3971,7 @@ const durationValue =
             <span class="muted">${escapeHtml(checkin.employeeUsername || "—")}</span>
           </td>
           <td>${escapeHtml(checkin.movie || "—")}</td>
-          <td>${escapeHtml(checkin.showTime || "—")}</td>
+          <td>${escapeHtml(formatCheckinShowtime(checkin.showTime))}</td>
           <td>${escapeHtml(seats)}</td>
           <td><strong>${Number(checkin.seatsCount || 0)}</strong></td>
         `;
