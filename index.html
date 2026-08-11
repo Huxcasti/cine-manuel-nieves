@@ -4414,6 +4414,86 @@ function getCustomerData() {
 		      window.location.assign(ATH_MOVIL_PAYMENT_URL);
 		    }
 
+		    function formatTicketShowtime(value) {
+		      const raw = String(value || "").trim();
+
+		      if (!raw) {
+		        return "—";
+		      }
+
+		      let year = "";
+		      let month = "";
+		      let day = "";
+
+		      const isoMatch =
+		        raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+
+		      if (isoMatch) {
+		        year = isoMatch[1];
+		        month = isoMatch[2];
+		        day = isoMatch[3];
+		      } else {
+		        const englishMatch = raw.match(/\b(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})/i);
+
+		        if (englishMatch) {
+		          const months = {
+		            Jan: "01",
+		            Feb: "02",
+		            Mar: "03",
+		            Apr: "04",
+		            May: "05",
+		            Jun: "06",
+		            Jul: "07",
+		            Aug: "08",
+		            Sep: "09",
+		            Oct: "10",
+		            Nov: "11",
+		            Dec: "12"
+		          };
+
+		          const monthKey =
+		            englishMatch[1].charAt(0).toUpperCase() +
+		            englishMatch[1].slice(1).toLowerCase();
+
+		          month = months[monthKey] || "";
+		          day = String(englishMatch[2]).padStart(2, "0");
+		          year = englishMatch[3];
+		        }
+		      }
+
+		      const timeMatches = [
+		        ...raw.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)
+		      ];
+
+		      const timeMatch =
+		        timeMatches.length
+		          ? timeMatches[timeMatches.length - 1]
+		          : null;
+
+		      let formattedTime = "";
+
+		      if (timeMatch) {
+		        const hour24 = Number(timeMatch[1]);
+		        const minute = timeMatch[2];
+		        const suffix = hour24 >= 12 ? "PM" : "AM";
+		        const hour12 = hour24 % 12 || 12;
+
+		        formattedTime =
+		          `${hour12}:${minute} ${suffix}`;
+		      }
+
+		      const formattedDate =
+		        year && month && day
+		          ? `${day}/${month}/${year}`
+		          : "";
+
+		      if (formattedDate && formattedTime) {
+		        return `${formattedDate} · ${formattedTime}`;
+		      }
+
+		      return formattedDate || formattedTime || raw;
+		    }
+
 		    function renderTicket(ticket) {
 		      const details =
 		        document.getElementById(
@@ -4471,7 +4551,7 @@ function getCustomerData() {
 		          <span>Tanda</span>
 		          <strong>
 		            ${escapeHtml(
-		              ticket.time
+		              formatTicketShowtime(ticket.time)
 		            )}
 		          </strong>
 		        </div>
