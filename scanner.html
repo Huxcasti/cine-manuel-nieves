@@ -10,6 +10,7 @@
   <title>Portal del empleado | Cine Teatro Manuel Nieves Quintero</title>
   <link rel="icon" type="image/png" href="Logo.PNG" />
   <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
 
   <style>
 
@@ -1194,6 +1195,9 @@
 
     let employeeSession = null;
     let html5QrScanner = null;
+    let qrFallbackTimer = null;
+    let qrFallbackCanvas = null;
+    let qrFallbackContext = null;
     let scannerStarted = false;
     let scanCooldown = false;
     let lastScannedCode = "";
@@ -2124,6 +2128,183 @@
       }, milliseconds);
     }
 
+    async function handleDetectedQr(decodedText) {
+      const normalizedCode = String(decodedText || "").trim();
+      const now = Date.now();
+
+      if (!normalizedCode || scanCooldown) {
+        return;
+      }
+
+      if (
+        normalizedCode === lastScannedCode &&
+        now - lastScanAt < 4000
+      ) {
+        return;
+      }
+
+      scanCooldown = true;
+      lastScannedCode = normalizedCode;
+      lastScanAt = now;
+
+      try {
+        const result =
+          await validateTicket(
+            normalizedCode,
+            "camera"
+          );
+
+        playScannerTone(true);
+        vibrateScanner(true);
+        temporarilyPauseScanner(1700);
+
+        document
+          .getElementById("resultContent")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+
+        return result;
+      } catch (error) {
+        playScannerTone(false);
+        vibrateScanner(false);
+        temporarilyPauseScanner(1200);
+
+        renderResult(
+          {
+            message: error.message,
+            validatedAt:
+              new Date().toISOString()
+          },
+          false
+        );
+
+        pushHistory(
+          {
+            movie: "Error de validación",
+            time: "—",
+            seats: [],
+            seatsCount: 0,
+            message: error.message,
+            validatedAt:
+              new Date().toISOString()
+          },
+          false
+        );
+
+        document
+          .getElementById("resultContent")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+      } finally {
+        window.setTimeout(() => {
+          scanCooldown = false;
+        }, 1500);
+      }
+    }
+
+    function stopJsQrFallback() {
+      if (qrFallbackTimer) {
+        window.clearInterval(qrFallbackTimer);
+        qrFallbackTimer = null;
+      }
+    }
+
+    function startJsQrFallback() {
+      stopJsQrFallback();
+
+      if (typeof window.jsQR !== "function") {
+        console.warn("jsQR no está disponible como detector alterno.");
+        return;
+      }
+
+      if (!qrFallbackCanvas) {
+        qrFallbackCanvas = document.createElement("canvas");
+        qrFallbackContext = qrFallbackCanvas.getContext(
+          "2d",
+          {
+            willReadFrequently: true
+          }
+        );
+      }
+
+      qrFallbackTimer = window.setInterval(async () => {
+        if (
+          !scannerStarted ||
+          scanCooldown
+        ) {
+          return;
+        }
+
+        const video =
+          document.querySelector("#reader video");
+
+        if (
+          !video ||
+          video.readyState < 2 ||
+          !video.videoWidth ||
+          !video.videoHeight
+        ) {
+          return;
+        }
+
+        const maxWidth = 720;
+        const scale = Math.min(
+          1,
+          maxWidth / video.videoWidth
+        );
+
+        const width =
+          Math.max(
+            320,
+            Math.floor(video.videoWidth * scale)
+          );
+
+        const height =
+          Math.max(
+            240,
+            Math.floor(video.videoHeight * scale)
+          );
+
+        qrFallbackCanvas.width = width;
+        qrFallbackCanvas.height = height;
+
+        qrFallbackContext.drawImage(
+          video,
+          0,
+          0,
+          width,
+          height
+        );
+
+        const imageData =
+          qrFallbackContext.getImageData(
+            0,
+            0,
+            width,
+            height
+          );
+
+        const result =
+          window.jsQR(
+            imageData.data,
+            width,
+            height,
+            {
+              inversionAttempts:
+                "attemptBoth"
+            }
+          );
+
+        if (result?.data) {
+          await handleDetectedQr(result.data);
+        }
+      }, 220);
+    }
+
     async function ensureCameraPermission() {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error(
@@ -2286,89 +2467,14 @@
           cameraConfig,
           scannerConfig,
           async (decodedText) => {
-            const normalizedCode =
-              String(decodedText || "").trim();
-
-            const now = Date.now();
-
-            if (!normalizedCode || scanCooldown) {
-              return;
-            }
-
-            if (
-              normalizedCode === lastScannedCode &&
-              now - lastScanAt < 4000
-            ) {
-              return;
-            }
-
-            scanCooldown = true;
-            lastScannedCode = normalizedCode;
-            lastScanAt = now;
-
-            try {
-              const result =
-                await validateTicket(
-                  normalizedCode,
-                  "camera"
-                );
-
-              playScannerTone(true);
-              vibrateScanner(true);
-              temporarilyPauseScanner(1700);
-
-              document
-                .getElementById("resultContent")
-                ?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center"
-                });
-
-              return result;
-            } catch (error) {
-              playScannerTone(false);
-              vibrateScanner(false);
-              temporarilyPauseScanner(1200);
-
-              renderResult(
-                {
-                  message: error.message,
-                  validatedAt:
-                    new Date().toISOString()
-                },
-                false
-              );
-
-              pushHistory(
-                {
-                  movie: "Error de validación",
-                  time: "—",
-                  seats: [],
-                  seatsCount: 0,
-                  message: error.message,
-                  validatedAt:
-                    new Date().toISOString()
-                },
-                false
-              );
-
-              document
-                .getElementById("resultContent")
-                ?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center"
-                });
-            } finally {
-              window.setTimeout(() => {
-                scanCooldown = false;
-              }, 1500);
-            }
+            await handleDetectedQr(decodedText);
           },
           () => {}
         );
 
         scannerStarted = true;
         hideScannerPlaceholder();
+        startJsQrFallback();
 
         window.setTimeout(() => {
           const video =
@@ -2405,6 +2511,8 @@
     }
 
     async function stopScanner() {
+      stopJsQrFallback();
+
       if (!html5QrScanner || !scannerStarted) return;
 
       try {
