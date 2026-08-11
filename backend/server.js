@@ -2896,6 +2896,51 @@ CREAR RESERVACIÃN
 ==================================================
 */
 
+function normalizeTicketShowDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getUTCFullYear();
+    const month = String(value.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(value.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  const raw = String(value).trim();
+  const isoMatch = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const parsed = new Date(raw);
+
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getUTCFullYear();
+    const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(parsed.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  return raw;
+}
+
+function normalizeTicketShowTime(value) {
+  const raw = String(value || "").trim();
+  const matches = [
+    ...raw.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)
+  ];
+
+  if (matches.length === 0) {
+    return raw;
+  }
+
+  const match = matches[matches.length - 1];
+  return `${String(match[1]).padStart(2, "0")}:${match[2]}`;
+}
+
 app.post("/api/reservations", async (req, res) => {
   const client = await pool.connect();
 
@@ -3159,7 +3204,7 @@ const initialPaymentStatus =
       [
         ticketId,
         showtime.movie_title,
-        `${showtime.show_date} ${showtime.show_time}`,
+        `${normalizeTicketShowDate(showtime.show_date)} ${normalizeTicketShowTime(showtime.show_time)}`,
         normalizedSeats,
         total,
         JSON.stringify(storedCustomer),
