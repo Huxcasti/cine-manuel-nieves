@@ -1434,6 +1434,33 @@
       cursor: pointer;
     }
 
+    .showtime-picker-select {
+      width: 100%;
+      margin-bottom: 14px;
+      padding: 13px 44px 13px 13px;
+      border: 1px solid #394765;
+      border-radius: 11px;
+      outline: none;
+      background: #0c111d;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      appearance: auto;
+      -webkit-appearance: menulist;
+    }
+
+    .showtime-picker-select:focus {
+      border-color: var(--aqua);
+      background: #0a101b;
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+    }
+
+    .showtime-picker-select option {
+      background: #111827;
+      color: #ffffff;
+    }
+
 
     .poster-upload-row {
       align-items: flex-start;
@@ -2298,10 +2325,14 @@
             </select>
 
             <label for="showtimeDate">Fecha</label>
-            <input id="showtimeDate" class="native-picker-input" type="date" inputmode="none" onpointerdown="openNativePicker(this, event)" />
+            <select id="showtimeDate" class="showtime-picker-select">
+  <option value="">Selecciona una fecha</option>
+</select>
 
             <label for="showtimeTime">Hora</label>
-            <input id="showtimeTime" class="native-picker-input" type="time" inputmode="none" onpointerdown="openNativePicker(this, event)" />
+            <select id="showtimeTime" class="showtime-picker-select">
+  <option value="">Selecciona una hora</option>
+</select>
 
             <div class="notice" style="margin-top: 16px;">
               Esta tanda utilizará automáticamente los precios generales del cine.
@@ -3876,6 +3907,115 @@ const durationValue =
       input.click();
     }
 
+    function pad2(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function formatDateOptionLabel(date) {
+      return new Intl.DateTimeFormat("es-PR", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function formatTimeOptionLabel(value) {
+      const [hoursText, minutesText] = String(value || "").split(":");
+      const hours24 = Number(hoursText);
+      const minutes = Number(minutesText);
+
+      if (
+        !Number.isInteger(hours24) ||
+        !Number.isInteger(minutes)
+      ) {
+        return value;
+      }
+
+      const period = hours24 >= 12 ? "p. m." : "a. m.";
+      const hours12 = hours24 % 12 || 12;
+
+      return `${hours12}:${pad2(minutes)} ${period}`;
+    }
+
+    function ensureSelectOption(select, value, label) {
+      if (!select || !value) return;
+
+      const exists = Array.from(select.options)
+        .some((option) => option.value === value);
+
+      if (!exists) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label || value;
+        select.appendChild(option);
+      }
+    }
+
+    function populateShowtimePickers() {
+      const dateSelect = document.getElementById("showtimeDate");
+      const timeSelect = document.getElementById("showtimeTime");
+
+      if (dateSelect) {
+        const previousValue = dateSelect.value;
+
+        dateSelect.innerHTML =
+          '<option value="">Selecciona una fecha</option>';
+
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
+
+        for (let offset = 0; offset <= 365; offset += 1) {
+          const date = new Date(today);
+          date.setDate(today.getDate() + offset);
+
+          const value =
+            `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = formatDateOptionLabel(date);
+          dateSelect.appendChild(option);
+        }
+
+        if (previousValue) {
+          ensureSelectOption(
+            dateSelect,
+            previousValue,
+            previousValue
+          );
+          dateSelect.value = previousValue;
+        }
+      }
+
+      if (timeSelect) {
+        const previousValue = timeSelect.value;
+
+        timeSelect.innerHTML =
+          '<option value="">Selecciona una hora</option>';
+
+        for (let minutes = 0; minutes < 24 * 60; minutes += 5) {
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          const value = `${pad2(hours)}:${pad2(mins)}`;
+
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = formatTimeOptionLabel(value);
+          timeSelect.appendChild(option);
+        }
+
+        if (previousValue) {
+          ensureSelectOption(
+            timeSelect,
+            previousValue,
+            formatTimeOptionLabel(previousValue)
+          );
+          timeSelect.value = previousValue;
+        }
+      }
+    }
+
     async function saveShowtime() {
       const id = document.getElementById("showtimeId").value;
       const movieId = document.getElementById("showtimeMovie").value;
@@ -3964,8 +4104,23 @@ const durationValue =
 
       idInput.value = showtime.id || "";
       movieInput.value = showtime.movieId || "";
-      dateInput.value = normalizeDate(showtime.showDate);
-      timeInput.value = normalizeTime(showtime.showTime);
+      const normalizedDate = normalizeDate(showtime.showDate);
+      const normalizedTime = normalizeTime(showtime.showTime);
+
+      ensureSelectOption(
+        dateInput,
+        normalizedDate,
+        normalizedDate
+      );
+
+      ensureSelectOption(
+        timeInput,
+        normalizedTime,
+        formatTimeOptionLabel(normalizedTime)
+      );
+
+      dateInput.value = normalizedDate;
+      timeInput.value = normalizedTime;
       languageInput.value = showtime.language || "spanish";
       activeInput.checked = Boolean(showtime.active);
 
@@ -4646,6 +4801,10 @@ movieDurationSelect.addEventListener("change", () => {
           .slice(0, 6);
       }
     );
+
+    window.addEventListener("DOMContentLoaded", () => {
+      populateShowtimePickers();
+    });
 
 </script>
 </body>
