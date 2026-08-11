@@ -511,21 +511,37 @@
     .scanner-box {
       position: relative;
       width: 100%;
-      min-height: 360px;
+      aspect-ratio: 3 / 4;
+      min-height: 0;
       overflow: hidden;
       border: 1px solid rgba(174, 184, 204, 0.18);
       border-radius: 16px;
-      background:
-        radial-gradient(circle at top, rgba(73, 203, 197, 0.08), transparent 55%),
-        #0c111d;
+      background: #0c111d;
     }
 
     #reader {
-      width: 100%;
-      min-height: 360px;
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    #reader > div,
+    #reader__scan_region {
+      width: 100% !important;
+      height: 100% !important;
     }
 
     #reader video {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
       border-radius: 16px;
       object-fit: cover !important;
     }
@@ -554,12 +570,15 @@
 
     .camera-frame {
       position: absolute;
-      inset: 22px;
-      border: 2px solid rgba(73, 203, 197, 0.24);
+      left: 10%;
+      right: 10%;
+      top: 18%;
+      bottom: 18%;
+      border: 2px solid rgba(73, 203, 197, 0.34);
       border-radius: 18px;
       pointer-events: none;
       box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.08);
-      z-index: 1;
+      z-index: 3;
     }
 
     .scanner-helper {
@@ -2434,7 +2453,6 @@
         const scannerConfig = {
           fps: 15,
           disableFlip: false,
-          aspectRatio: 1.0,
           formatsToSupport:
             window.Html5QrcodeSupportedFormats
               ? [Html5QrcodeSupportedFormats.QR_CODE]
@@ -2451,7 +2469,7 @@
             const size = Math.max(
               180,
               Math.min(
-                Math.floor(minSide * 0.88),
+                Math.floor(minSide * 0.72),
                 340
               )
             );
