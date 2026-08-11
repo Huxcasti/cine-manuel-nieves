@@ -1080,7 +1080,8 @@
             </div>
 
             <p class="scanner-helper">
-              Si el escáner no funciona o el QR está dañado, usa la validación manual.
+              Acerca el QR hasta que ocupe buena parte del cuadro. Mantén la cámara estable
+              y evita reflejos fuertes. Si el QR está en otra pantalla, sube el brillo de esa pantalla.
             </p>
           </section>
 
@@ -2143,22 +2144,42 @@
           return;
         }
 
-        await html5QrScanner.start(
-          { facingMode: "environment" },
-          {
-            fps: 12,
-            disableFlip: true,
-            qrbox: (viewfinderWidth, viewfinderHeight) => {
-              const size = Math.floor(
-                Math.min(viewfinderWidth, viewfinderHeight) * 0.75
-              );
+        const cameraConfig = {
+          facingMode: { ideal: "environment" }
+        };
 
-              return {
-                width: Math.max(210, size),
-                height: Math.max(210, size)
-              };
-            }
-          },
+        const scannerConfig = {
+          fps: 15,
+          aspectRatio: 1.0,
+          disableFlip: false,
+          formatsToSupport:
+            window.Html5QrcodeSupportedFormats
+              ? [Html5QrcodeSupportedFormats.QR_CODE]
+              : undefined,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minSide = Math.min(
+              viewfinderWidth,
+              viewfinderHeight
+            );
+
+            const size = Math.max(
+              180,
+              Math.min(
+                Math.floor(minSide * 0.88),
+                340
+              )
+            );
+
+            return {
+              width: size,
+              height: size
+            };
+          }
+        };
+
+        await html5QrScanner.start(
+          cameraConfig,
+          scannerConfig,
           async (decodedText) => {
             const normalizedCode = String(decodedText || "").trim();
             const now = Date.now();
@@ -2229,6 +2250,16 @@
 
         scannerStarted = true;
         hideScannerPlaceholder();
+
+        window.setTimeout(() => {
+          const video = document.querySelector("#reader video");
+
+          if (video) {
+            video.setAttribute("playsinline", "true");
+            video.setAttribute("webkit-playsinline", "true");
+            video.muted = true;
+          }
+        }, 250);
 
       } catch (error) {
         resetScannerPlaceholder();
