@@ -1862,7 +1862,9 @@ app.get("/api/employee/session-summary", requireEmployee, async (req, res) => {
         FROM checkins
         WHERE
           employee_id = $1
-          AND scanned_at >= $2;
+          AND scanned_at >= $2
+          AND (scanned_at AT TIME ZONE 'America/Puerto_Rico')::date =
+              (NOW() AT TIME ZONE 'America/Puerto_Rico')::date;
       `,
       [req.employee.id, sessionStartedAt]
     );
@@ -1874,6 +1876,8 @@ app.get("/api/employee/session-summary", requireEmployee, async (req, res) => {
         WHERE
           employee_id = $1
           AND scanned_at >= $2
+          AND (scanned_at AT TIME ZONE 'America/Puerto_Rico')::date =
+              (NOW() AT TIME ZONE 'America/Puerto_Rico')::date
         ORDER BY scanned_at DESC
         LIMIT 8;
       `,
@@ -1923,9 +1927,18 @@ ADMINISTRACIÃN DE EMPLEADOS
 app.get("/api/admin/employees", requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT e.*, COUNT(c.id) AS scans, COALESCE(SUM(c.seats_count),0) AS tickets_scanned, MAX(c.scanned_at) AS last_scan
-      FROM employees e LEFT JOIN checkins c ON c.employee_id = e.id
-      GROUP BY e.id ORDER BY e.name ASC;
+      SELECT
+        e.*,
+        COUNT(c.id) AS scans,
+        COALESCE(SUM(c.seats_count), 0) AS tickets_scanned,
+        MAX(c.scanned_at) AS last_scan
+      FROM employees e
+      LEFT JOIN checkins c
+        ON c.employee_id = e.id
+        AND (c.scanned_at AT TIME ZONE 'America/Puerto_Rico')::date =
+            (NOW() AT TIME ZONE 'America/Puerto_Rico')::date
+      GROUP BY e.id
+      ORDER BY e.name ASC;
     `);
     res.json(result.rows.map(formatEmployee));
   } catch (error) {
