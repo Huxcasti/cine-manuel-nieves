@@ -535,10 +535,19 @@ async function requireEmployee(req, res, next) {
     }
     const tokenHash = hashSessionToken(token);
     const result = await pool.query(`
-      SELECT e.id, e.name, e.username, e.active
+      SELECT
+        e.id,
+        e.name,
+        e.username,
+        e.active,
+        s.created_at AS session_created_at,
+        s.expires_at AS session_expires_at
       FROM employee_sessions s
       JOIN employees e ON e.id = s.employee_id
-      WHERE s.token_hash = $1 AND s.expires_at > NOW() AND e.active = TRUE;
+      WHERE
+        s.token_hash = $1
+        AND s.expires_at > NOW()
+        AND e.active = TRUE;
     `, [tokenHash]);
     if (result.rowCount === 0) {
       return res.status(401).json({ error: "La sesiÃ3n del empleado expirÃ3 o no es vÃ¡lida." });
@@ -1838,6 +1847,61 @@ app.post("/api/employee/login", async (req, res) => {
 
 app.get("/api/employee/me", requireEmployee, async (req, res) => {
   res.json({ employee: { id: req.employee.id, name: req.employee.name, username: req.employee.username } });
+});
+
+app.get("/api/employee/session-summary", requireEmployee, async (req, res) => {
+  try {
+    const sessionStartedAt = req.employee.session_created_at;
+
+    const summaryResult = await pool.query(
+      `
+        SELECT
+          COUNT(*)::int AS scans,
+          COALESCE(SUM(seats_count), 0)::int AS tickets_scanned,
+          MAX(scanned_at) AS last_scan
+        FROM checkins
+        WHERE
+          employee_id = $1
+          AND scanned_at >= $2;
+      `,
+      [req.employee.id, sessionStartedAt]
+    );
+
+    const historyResult = await pool.query(
+      `
+        SELECT *
+        FROM checkins
+        WHERE
+          employee_id = $1
+          AND scanned_at >= $2
+        ORDER BY scanned_at DESC
+        LIMIT 8;
+      `,
+      [req.employee.id, sessionStartedAt]
+    );
+
+    const summary = summaryResult.rows[0] || {};
+
+    res.json({
+      success: true,
+      sessionStartedAt,
+      sessionExpiresAt: req.employee.session_expires_at,
+      employee: {
+        id: req.employee.id,
+        name: req.employee.name,
+        username: req.employee.username
+      },
+      scans: Number(summary.scans || 0),
+      ticketsScanned: Number(summary.tickets_scanned || 0),
+      lastScan: summary.last_scan || null,
+      history: historyResult.rows.map(formatCheckin)
+    });
+  } catch (error) {
+    console.error("Error obteniendo resumen de sesión del empleado:", error);
+    res.status(500).json({
+      error: "No se pudo obtener el resumen de la sesión."
+    });
+  }
 });
 
 app.post("/api/employee/logout", requireEmployee, async (req, res) => {
