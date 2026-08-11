@@ -2124,19 +2124,113 @@
       }, milliseconds);
     }
 
+    async function ensureCameraPermission() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Este navegador no permite usar la cámara desde esta página."
+        );
+      }
+
+      let permissionStream = null;
+
+      try {
+        permissionStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" }
+          },
+          audio: false
+        });
+
+        return true;
+      } catch (error) {
+        const name = String(error?.name || "");
+
+        if (
+          name === "NotAllowedError" ||
+          name === "PermissionDeniedError"
+        ) {
+          throw new Error(
+            "Safari bloqueó la cámara. En iPhone abre la configuración de esta página y cambia Cámara a Permitir."
+          );
+        }
+
+        if (
+          name === "NotFoundError" ||
+          name === "DevicesNotFoundError"
+        ) {
+          throw new Error(
+            "No se encontró una cámara disponible en este dispositivo."
+          );
+        }
+
+        if (
+          name === "NotReadableError" ||
+          name === "TrackStartError"
+        ) {
+          throw new Error(
+            "La cámara está siendo usada por otra aplicación. Cierra otras apps que usen la cámara e inténtalo otra vez."
+          );
+        }
+
+        throw error;
+      } finally {
+        if (permissionStream) {
+          permissionStream
+            .getTracks()
+            .forEach((track) => track.stop());
+        }
+      }
+    }
+
+    async function getPreferredCameraId() {
+      try {
+        const cameras =
+          await Html5Qrcode.getCameras();
+
+        if (!Array.isArray(cameras) || cameras.length === 0) {
+          return null;
+        }
+
+        const backCamera =
+          cameras.find((camera) =>
+            /back|rear|environment|trasera/i.test(
+              String(camera?.label || "")
+            )
+          ) ||
+          cameras[cameras.length - 1];
+
+        return backCamera?.id || null;
+      } catch (error) {
+        console.warn(
+          "No se pudo identificar la cámara trasera:",
+          error
+        );
+        return null;
+      }
+    }
+
     async function startScanner() {
       if (!window.Html5Qrcode) {
         alert("No se pudo cargar el escáner QR.");
         return;
       }
 
-      const button = document.getElementById("startScannerButton");
+      const button =
+        document.getElementById("startScannerButton");
+
       button.disabled = true;
       button.textContent = "Activando cámara...";
 
       try {
+        await ensureCameraPermission();
+
         if (!html5QrScanner) {
-          html5QrScanner = new Html5Qrcode("reader");
+          html5QrScanner = new Html5Qrcode(
+            "reader",
+            {
+              verbose: false
+            }
+          );
         }
 
         if (scannerStarted) {
@@ -2144,19 +2238,30 @@
           return;
         }
 
-        const cameraConfig = {
-          facingMode: { ideal: "environment" }
-        };
+        const preferredCameraId =
+          await getPreferredCameraId();
+
+        const cameraConfig =
+          preferredCameraId
+            ? preferredCameraId
+            : {
+                facingMode: {
+                  ideal: "environment"
+                }
+              };
 
         const scannerConfig = {
           fps: 15,
-          aspectRatio: 1.0,
           disableFlip: false,
+          aspectRatio: 1.0,
           formatsToSupport:
             window.Html5QrcodeSupportedFormats
               ? [Html5QrcodeSupportedFormats.QR_CODE]
               : undefined,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
+          qrbox: (
+            viewfinderWidth,
+            viewfinderHeight
+          ) => {
             const minSide = Math.min(
               viewfinderWidth,
               viewfinderHeight
@@ -2181,10 +2286,14 @@
           cameraConfig,
           scannerConfig,
           async (decodedText) => {
-            const normalizedCode = String(decodedText || "").trim();
+            const normalizedCode =
+              String(decodedText || "").trim();
+
             const now = Date.now();
 
-            if (!normalizedCode || scanCooldown) return;
+            if (!normalizedCode || scanCooldown) {
+              return;
+            }
 
             if (
               normalizedCode === lastScannedCode &&
@@ -2198,16 +2307,22 @@
             lastScanAt = now;
 
             try {
-              const result = await validateTicket(normalizedCode, "camera");
+              const result =
+                await validateTicket(
+                  normalizedCode,
+                  "camera"
+                );
 
               playScannerTone(true);
               vibrateScanner(true);
               temporarilyPauseScanner(1700);
 
-              document.getElementById("resultContent")?.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-              });
+              document
+                .getElementById("resultContent")
+                ?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center"
+                });
 
               return result;
             } catch (error) {
@@ -2218,7 +2333,8 @@
               renderResult(
                 {
                   message: error.message,
-                  validatedAt: new Date().toISOString()
+                  validatedAt:
+                    new Date().toISOString()
                 },
                 false
               );
@@ -2230,15 +2346,18 @@
                   seats: [],
                   seatsCount: 0,
                   message: error.message,
-                  validatedAt: new Date().toISOString()
+                  validatedAt:
+                    new Date().toISOString()
                 },
                 false
               );
 
-              document.getElementById("resultContent")?.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-              });
+              document
+                .getElementById("resultContent")
+                ?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center"
+                });
             } finally {
               window.setTimeout(() => {
                 scanCooldown = false;
@@ -2252,24 +2371,36 @@
         hideScannerPlaceholder();
 
         window.setTimeout(() => {
-          const video = document.querySelector("#reader video");
+          const video =
+            document.querySelector("#reader video");
 
           if (video) {
-            video.setAttribute("playsinline", "true");
-            video.setAttribute("webkit-playsinline", "true");
+            video.setAttribute(
+              "playsinline",
+              "true"
+            );
+
+            video.setAttribute(
+              "webkit-playsinline",
+              "true"
+            );
+
             video.muted = true;
           }
         }, 250);
 
       } catch (error) {
         resetScannerPlaceholder();
-        alert(
+
+        const message =
           error?.message ||
-          "No se pudo acceder a la cámara. Revisa los permisos del navegador."
-        );
+          "No se pudo acceder a la cámara.";
+
+        alert(message);
       } finally {
         button.disabled = false;
-        button.textContent = "Solicitar permiso y activar cámara";
+        button.textContent =
+          "Solicitar permiso y activar cámara";
       }
     }
 
