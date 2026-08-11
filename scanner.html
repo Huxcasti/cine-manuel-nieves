@@ -1188,6 +1188,9 @@
       "/api/employee/checkin"
     ];
 
+    const SESSION_SUMMARY_ENDPOINT =
+      "/api/employee/session-summary";
+
     let employeeSession = null;
     let html5QrScanner = null;
     let scannerStarted = false;
@@ -1396,6 +1399,60 @@
       return headers;
     }
 
+    async function loadSessionSummary() {
+      if (!employeeSession) {
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}${SESSION_SUMMARY_ENDPOINT}`,
+        {
+          method: "GET",
+          headers: {
+            ...buildAuthHeaders()
+          }
+        }
+      );
+
+      const data = await safeJson(response);
+
+      if (!response.ok) {
+        throw new Error(
+          extractErrorMessage(data) ||
+          "No se pudo cargar el resumen de sesión."
+        );
+      }
+
+      sessionScans = Number(data?.scans || 0);
+      sessionTickets = Number(data?.ticketsScanned || 0);
+
+      const history = Array.isArray(data?.history)
+        ? data.history
+        : [];
+
+      recentHistory = history.map((item) => {
+        const seatsArray = Array.isArray(item?.seats)
+          ? item.seats
+          : [];
+
+        return {
+          ok: true,
+          title: item?.movie || "Validación",
+          subtitle: formatShowtime(item?.showTime || "—"),
+          seats: seatsArray.join(", ") || "—",
+          seatsCount: Number(item?.seatsCount || seatsArray.length || 0),
+          time: formatDateTime(item?.scannedAt),
+          message: "Entrada validada."
+        };
+      });
+
+      updateSessionSummary({
+        validatedAt: data?.lastScan || null
+      });
+
+      renderHistory();
+    }
+
     function showPortal() {
       document.getElementById("authSection").classList.add("hidden");
       document.getElementById("portalSection").classList.remove("hidden");
@@ -1488,6 +1545,15 @@
         renderHistory();
         renderResultPlaceholder();
         showPortal();
+
+        try {
+          await loadSessionSummary();
+        } catch (summaryError) {
+          console.error(
+            "No se pudo cargar el resumen inicial de la sesión:",
+            summaryError
+          );
+        }
       } catch (error) {
         setMessage("loginMessage", "error", error.message);
       } finally {
@@ -1519,7 +1585,7 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function restoreEmployeeSession() {
+    async function restoreEmployeeSession() {
       const savedSession = sessionStorage.getItem("cineEmployeeSession");
       if (!savedSession) return;
 
@@ -1529,8 +1595,21 @@
         renderHistory();
         renderResultPlaceholder();
         showPortal();
+
+        await loadSessionSummary();
       } catch (error) {
-        sessionStorage.removeItem("cineEmployeeSession");
+        console.error(
+          "No se pudo restaurar la sesión del empleado:",
+          error
+        );
+
+        if (
+          String(error?.message || "")
+            .toLowerCase()
+            .includes("sesión")
+        ) {
+          sessionStorage.removeItem("cineEmployeeSession");
+        }
       }
     }
 
@@ -1867,6 +1946,15 @@
 
       renderResult(data, true);
       pushHistory(data, true);
+
+      try {
+        await loadSessionSummary();
+      } catch (summaryError) {
+        console.error(
+          "El escaneo se registró, pero no se pudo refrescar el resumen:",
+          summaryError
+        );
+      }
 
       if (source === "manual") {
         setMessage(
