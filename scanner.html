@@ -1891,7 +1891,13 @@
       const data = await safeJson(response);
 
       if (!response.ok) {
-        throw new Error(extractErrorMessage(data));
+        const validationError =
+          new Error(extractErrorMessage(data));
+
+        validationError.data = data;
+        validationError.status = response.status;
+
+        throw validationError;
       }
 
       return data;
@@ -1930,19 +1936,20 @@
       }
 
       let data = null;
-      let lastError = "No se pudo validar la entrada.";
+      let lastError =
+        new Error("No se pudo validar la entrada.");
 
       for (const endpoint of VALIDATE_ENDPOINTS) {
         try {
           data = await tryValidateOnEndpoint(endpoint, rawCode);
           break;
         } catch (error) {
-          lastError = error.message;
+          lastError = error;
         }
       }
 
       if (!data) {
-        throw new Error(lastError);
+        throw lastError;
       }
 
       const seatsArray =
@@ -1991,6 +1998,58 @@
       return data;
     }
 
+    function buildValidationFailureData(error) {
+      const responseData =
+        error?.data && typeof error.data === "object"
+          ? error.data
+          : {};
+
+      const checkin = responseData?.checkin || null;
+      const ticket = responseData?.ticket || null;
+
+      let message =
+        responseData?.error ||
+        responseData?.message ||
+        error?.message ||
+        "No se pudo validar la entrada.";
+
+      if (
+        Number(error?.status) === 409 &&
+        /ya fue utilizado/i.test(message)
+      ) {
+        const employeeName =
+          checkin?.employee_name ||
+          checkin?.employeeName ||
+          "";
+
+        const scannedAt =
+          checkin?.scanned_at ||
+          checkin?.scannedAt ||
+          "";
+
+        message = "Este boleto ya fue utilizado.";
+
+        if (employeeName) {
+          message += ` Fue validado por ${employeeName}.`;
+        }
+
+        if (scannedAt) {
+          message +=
+            ` Primera validación: ${formatDateTime(scannedAt)}.`;
+        }
+      }
+
+      return {
+        ...responseData,
+        ticket,
+        message,
+        validatedAt:
+          checkin?.scanned_at ||
+          checkin?.scannedAt ||
+          new Date().toISOString()
+      };
+    }
+
     async function validateManualCode() {
       const input = document.getElementById("manualCode");
       const button = document.getElementById("manualValidateButton");
@@ -2013,25 +2072,17 @@
         await validateTicket(code, "manual");
         input.value = "";
       } catch (error) {
-        renderResult(
-          {
-            message: error.message,
-            validatedAt: new Date().toISOString()
-          },
-          false
+        const failureData =
+          buildValidationFailureData(error);
+
+        renderResult(failureData, false);
+        pushHistory(failureData, false);
+
+        setMessage(
+          "manualMessage",
+          "error",
+          failureData.message
         );
-        pushHistory(
-          {
-            movie: "Error de validación",
-            time: "—",
-            seats: [],
-            seatsCount: 0,
-            message: error.message,
-            validatedAt: new Date().toISOString()
-          },
-          false
-        );
-        setMessage("manualMessage", "error", error.message);
       } finally {
         button.disabled = false;
         button.textContent = "Validar entrada";
@@ -2190,27 +2241,11 @@
         vibrateScanner(false);
         temporarilyPauseScanner(1200);
 
-        renderResult(
-          {
-            message: error.message,
-            validatedAt:
-              new Date().toISOString()
-          },
-          false
-        );
+        const failureData =
+          buildValidationFailureData(error);
 
-        pushHistory(
-          {
-            movie: "Error de validación",
-            time: "—",
-            seats: [],
-            seatsCount: 0,
-            message: error.message,
-            validatedAt:
-              new Date().toISOString()
-          },
-          false
-        );
+        renderResult(failureData, false);
+        pushHistory(failureData, false);
 
         document
           .getElementById("resultContent")
