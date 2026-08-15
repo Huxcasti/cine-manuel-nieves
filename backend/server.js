@@ -131,7 +131,6 @@ app.use((req, res, next) => {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()"
   );
-  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
 
   const forwardedProto =
     String(req.headers["x-forwarded-proto"] || "")
