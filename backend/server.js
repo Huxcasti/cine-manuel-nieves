@@ -131,6 +131,7 @@ app.use((req, res, next) => {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()"
   );
+  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
 
   const forwardedProto =
     String(req.headers["x-forwarded-proto"] || "")
@@ -3891,38 +3892,6 @@ CONSULTAR BOLETO
 ==================================================
 */
 
-app.get("/api/tickets/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await pool.query(
-      `
-        SELECT *
-        FROM tickets
-        WHERE id = $1;
-      `,
-      [id]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        error: "Boleto no encontrado."
-      });
-    }
-
-    res.json(formatTicket(result.rows[0]));
-  } catch (error) {
-    console.error(
-      "Error obteniendo el boleto:",
-      error
-    );
-
-    res.status(500).json({
-      error: "No se pudo obtener el boleto."
-    });
-  }
-});
-
 /*
 ==================================================
 RESERVACIONES DEL PANEL ADMINISTRATIVO
@@ -3960,65 +3929,6 @@ app.get(
 VALIDAR CÃDIGO QR
 ==================================================
 */
-
-app.get("/api/qr/:qr", async (req, res) => {
-  try {
-    const { qr } = req.params;
-
-    const result = await pool.query(
-      `
-        SELECT *
-        FROM tickets
-        WHERE qr = $1 OR manual_code = $1;
-      `,
-      [qr]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        valid: false,
-        error: "Boleto no encontrado."
-      });
-    }
-
-    const ticket = formatTicket(result.rows[0]);
-
-    if (
-      ticket.paymentStatus !== "paid" &&
-      ticket.paymentStatus !== "approved"
-    ) {
-      return res.status(400).json({
-        valid: false,
-        error: "Este boleto no ha sido pagado.",
-        ticket
-      });
-    }
-
-    if (ticket.used) {
-      return res.status(409).json({
-        valid: false,
-        error: "Este boleto ya fue utilizado.",
-        ticket
-      });
-    }
-
-    res.json({
-      valid: true,
-      message: "Boleto vÃ¡lido.",
-      ticket
-    });
-  } catch (error) {
-    console.error(
-      "Error validando el cÃ3digo QR:",
-      error
-    );
-
-    res.status(500).json({
-      valid: false,
-      error: "No se pudo validar el boleto."
-    });
-  }
-});
 
 /*
 ==================================================
