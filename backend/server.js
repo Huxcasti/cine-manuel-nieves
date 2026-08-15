@@ -2979,12 +2979,18 @@ app.get("/api/seats", async (req, res) => {
         FROM tickets
         WHERE
           customer->>'showtimeId' = $1
-          AND payment_status IN (
-            'paid',
-            'approved'
+          AND (
+            payment_status IN (
+              'paid',
+              'approved'
+            )
+            OR (
+              payment_status = 'pending'
+              AND created_at >= NOW() - ($2 * INTERVAL '1 minute')
+            )
           );
       `,
-      [showtimeId]
+      [showtimeId, PENDING_RESERVATION_MINUTES]
     );
 
     const occupiedSeats = [
@@ -3233,13 +3239,19 @@ if (
         FROM tickets
         WHERE
           customer->>'showtimeId' = $1
-          AND payment_status IN (
-            'paid',
-            'approved'
+          AND (
+            payment_status IN (
+              'paid',
+              'approved'
+            )
+            OR (
+              payment_status = 'pending'
+              AND created_at >= NOW() - ($2 * INTERVAL '1 minute')
+            )
           )
         FOR UPDATE;
       `,
-      [showtimeId]
+      [showtimeId, PENDING_RESERVATION_MINUTES]
     );
 
     const occupiedSeats = new Set(
@@ -3258,7 +3270,7 @@ if (
 
       return res.status(409).json({
         error:
-          "Uno o mÃ¡s asientos ya fueron reservados.",
+          "Uno o más asientos ya están ocupados o temporalmente reservados.",
         unavailableSeats
       });
     }
@@ -3693,67 +3705,13 @@ app.post("/api/reservations/:id/ath-movil/submit", async (req, res) => {
 
 /*
 ==================================================
-PAGO SIMULADO
+PAGO SIMULADO DESHABILITADO
 ==================================================
+
+La ruta pública /api/reservations/:id/pay fue eliminada.
+Los pagos reales deben confirmarse únicamente mediante el flujo
+del proveedor correspondiente.
 */
-
-app.post(
-  "/api/reservations/:id/pay",
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      const result = await pool.query(
-        `
-          UPDATE tickets
-          SET payment_status = 'paid'
-          WHERE
-            id = $1
-            AND payment_status = 'pending'
-          RETURNING *;
-        `,
-        [id]
-      );
-
-      if (result.rowCount === 0) {
-        const existingResult = await pool.query(
-          `
-            SELECT *
-            FROM tickets
-            WHERE id = $1;
-          `,
-          [id]
-        );
-
-        if (existingResult.rowCount === 0) {
-          return res.status(404).json({
-            error: "ReservaciÃ3n no encontrada."
-          });
-        }
-
-        return res.status(400).json({
-          error:
-            "La reservaciÃ3n ya fue pagada o no puede procesarse."
-        });
-      }
-
-      res.json({
-        success: true,
-        message: "Pago aprobado.",
-        reservation: formatTicket(result.rows[0])
-      });
-    } catch (error) {
-      console.error(
-        "Error procesando el pago:",
-        error
-      );
-
-      res.status(500).json({
-        error: "No se pudo procesar el pago."
-      });
-    }
-  }
-);
 
 /*
 ==================================================
