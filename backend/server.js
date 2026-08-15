@@ -508,18 +508,43 @@ async function isValidAdminPassword(password) {
 
 async function requireAdmin(req, res, next) {
   try {
-    const providedPassword = req.headers["x-admin-key"];
-    const valid = await isValidAdminPassword(providedPassword);
+    const token = req.headers["x-admin-token"];
 
-    if (!valid) {
+    if (!token || typeof token !== "string") {
       return res.status(401).json({
-        error: "Acceso denegado."
+        error: "Debes iniciar sesión como administrador."
       });
     }
 
+    const tokenHash = hashSessionToken(token);
+
+    const result = await pool.query(
+      `
+        SELECT id, created_at, expires_at
+        FROM admin_sessions
+        WHERE
+          token_hash = $1
+          AND expires_at > NOW()
+        LIMIT 1;
+      `,
+      [tokenHash]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(401).json({
+        error: "La sesión administrativa expiró o no es válida."
+      });
+    }
+
+    req.adminSession = result.rows[0];
+    req.adminTokenHash = tokenHash;
+
     next();
   } catch (error) {
-    console.error("Error verificando acceso administrativo:", error);
+    console.error(
+      "Error verificando acceso administrativo:",
+      error
+    );
 
     res.status(500).json({
       error: "No se pudo verificar el acceso administrativo."
@@ -1122,6 +1147,20 @@ await pool.query(`
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_sessions (
+      id UUID PRIMARY KEY,
+      token_hash TEXT UNIQUE NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS admin_sessions_expires_at_idx
+    ON admin_sessions (expires_at);
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS admin_password_resets (
       id UUID PRIMARY KEY,
       email TEXT NOT NULL,
@@ -1208,6 +1247,11 @@ async function cleanupPreviousBusinessDay() {
     WHERE expires_at <= NOW();
   `);
 
+  const expiredAdminSessions = await pool.query(`
+    DELETE FROM admin_sessions
+    WHERE expires_at <= NOW();
+  `);
+
   const pendingTickets = await pool.query(
     `
       DELETE FROM tickets
@@ -1240,12 +1284,14 @@ async function cleanupPreviousBusinessDay() {
 
   if (
     expiredSessions.rowCount > 0 ||
+    expiredAdminSessions.rowCount > 0 ||
     pendingTickets.rowCount > 0 ||
     oldResetCodes.rowCount > 0 ||
     deletedQrFiles > 0
   ) {
     console.log("Limpieza automática completada:", {
       employeeSessions: expiredSessions.rowCount,
+      adminSessions: expiredAdminSessions.rowCount,
       pendingReservations: pendingTickets.rowCount,
       passwordResetCodes: oldResetCodes.rowCount,
       qrFiles: deletedQrFiles
@@ -1688,6 +1734,10 @@ app.post("/api/admin/password/reset", async (req, res) => {
       ]
     );
 
+    await client.query(`
+      DELETE FROM admin_sessions;
+    `);
+
     await client.query(
       `
         UPDATE admin_password_resets
@@ -1733,18 +1783,86 @@ app.post("/api/admin/login", async (req, res) => {
       });
     }
 
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = hashSessionToken(token);
+
+    await pool.query(
+      `
+        INSERT INTO admin_sessions (
+          id,
+          token_hash,
+          expires_at
+        )
+        VALUES (
+          $1,
+          $2,
+          NOW() + INTERVAL '12 hours'
+        );
+      `,
+      [
+        crypto.randomUUID(),
+        tokenHash
+      ]
+    );
+
     res.json({
       success: true,
+      token,
+      expiresInHours: 12,
       message: "Acceso autorizado."
     });
   } catch (error) {
-    console.error("Error iniciando sesiÃ3n:", error);
+    console.error(
+      "Error iniciando sesión administrativa:",
+      error
+    );
 
     res.status(500).json({
-      error: "No se pudo iniciar sesiÃ3n."
+      error: "No se pudo iniciar sesión."
     });
   }
 });
+
+app.get(
+  "/api/admin/me",
+  requireAdmin,
+  async (req, res) => {
+    res.json({
+      success: true,
+      message: "Sesión administrativa válida."
+    });
+  }
+);
+
+app.post(
+  "/api/admin/logout",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      await pool.query(
+        `
+          DELETE FROM admin_sessions
+          WHERE token_hash = $1;
+        `,
+        [req.adminTokenHash]
+      );
+
+      res.json({
+        success: true,
+        message: "Sesión cerrada correctamente."
+      });
+    } catch (error) {
+      console.error(
+        "Error cerrando sesión administrativa:",
+        error
+      );
+
+      res.status(500).json({
+        error: "No se pudo cerrar la sesión."
+      });
+    }
+  }
+);
 
 app.put(
   "/api/admin/password",
@@ -1798,6 +1916,10 @@ app.put(
           credentials.hash
         ]
       );
+
+      await pool.query(`
+        DELETE FROM admin_sessions;
+      `);
 
       res.json({
         success: true,
