@@ -1003,6 +1003,17 @@ async function initializeDatabase() {
     ADD COLUMN IF NOT EXISTS manual_code VARCHAR(5);
   `);
 
+  await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS cancellation_token_hash TEXT;
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS tickets_cancellation_token_hash_unique_idx
+    ON tickets (cancellation_token_hash)
+    WHERE cancellation_token_hash IS NOT NULL;
+  `);
+
 await pool.query(`
   ALTER TABLE tickets
   DROP CONSTRAINT IF EXISTS tickets_manual_code_format_check;
@@ -3277,6 +3288,8 @@ if (
 
     const ticketId = crypto.randomUUID();
     const qrToken = crypto.randomBytes(32).toString("hex");
+    const cancellationToken = crypto.randomBytes(32).toString("hex");
+    const cancellationTokenHash = hashSessionToken(cancellationToken);
     const manualCode = await generateUniqueManualCode(client);
     const adultPrice = Number(showtime.global_adult_price);
     const childPrice = Number(showtime.global_child_price);
@@ -3317,6 +3330,7 @@ const initialPaymentStatus =
           payment_status,
           qr,
           manual_code,
+          cancellation_token_hash,
           used,
           ticket_breakdown
         )
@@ -3330,8 +3344,9 @@ const initialPaymentStatus =
           $7,
           $8,
           $9,
+          $10,
           FALSE,
-          $10
+          $11
         )
         RETURNING *;
       `,
@@ -3345,6 +3360,7 @@ const initialPaymentStatus =
         initialPaymentStatus,
         qrToken,
         manualCode,
+        cancellationTokenHash,
         JSON.stringify(normalizedTicketTypes)
       ]
     );
@@ -3352,9 +3368,12 @@ const initialPaymentStatus =
     await client.query("COMMIT");
 
     res.status(201).json({
-  success: true,
-  reservation: formatTicket(result.rows[0])
-});
+      success: true,
+      reservation: {
+        ...formatTicket(result.rows[0]),
+        cancellationToken
+      }
+    });
   } catch (error) {
     await client.query("ROLLBACK");
 
@@ -3384,6 +3403,9 @@ en estado "pending". Una reservación pagada nunca se borra aquí.
 app.delete("/api/reservations/:id/cancel", async (req, res) => {
   try {
     const reservationId = String(req.params.id || "").trim();
+    const cancellationToken = String(
+      req.headers["x-reservation-cancel-token"] || ""
+    ).trim();
 
     if (!reservationId) {
       return res.status(400).json({
@@ -3391,14 +3413,25 @@ app.delete("/api/reservations/:id/cancel", async (req, res) => {
       });
     }
 
+    if (!cancellationToken) {
+      return res.status(401).json({
+        error: "Falta la autorización para cancelar esta reservación."
+      });
+    }
+
+    const cancellationTokenHash =
+      hashSessionToken(cancellationToken);
+
     const result = await pool.query(
       `
         DELETE FROM tickets
-        WHERE id = $1
+        WHERE
+          id = $1
           AND payment_status = 'pending'
+          AND cancellation_token_hash = $2
         RETURNING id;
       `,
-      [reservationId]
+      [reservationId, cancellationTokenHash]
     );
 
     if (result.rowCount > 0) {
@@ -3410,7 +3443,7 @@ app.delete("/api/reservations/:id/cancel", async (req, res) => {
 
     const existing = await pool.query(
       `
-        SELECT payment_status
+        SELECT payment_status, cancellation_token_hash
         FROM tickets
         WHERE id = $1;
       `,
@@ -3422,6 +3455,17 @@ app.delete("/api/reservations/:id/cancel", async (req, res) => {
         success: true,
         removed: false,
         message: "La reservación ya no existe."
+      });
+    }
+
+    const ticket = existing.rows[0];
+
+    if (
+      !ticket.cancellation_token_hash ||
+      ticket.cancellation_token_hash !== cancellationTokenHash
+    ) {
+      return res.status(403).json({
+        error: "No estás autorizado para cancelar esta reservación."
       });
     }
 
@@ -3627,7 +3671,10 @@ const updatedCustomer = {
     const updateResult = await client.query(
       `
         UPDATE tickets
-        SET payment_status = 'paid', customer = $2
+        SET
+          payment_status = 'paid',
+          customer = $2,
+          cancellation_token_hash = NULL
         WHERE id = $1
         RETURNING *;
       `,
