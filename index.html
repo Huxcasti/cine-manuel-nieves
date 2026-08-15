@@ -4184,7 +4184,6 @@ function getCustomerData() {
   seats: selectedSeats,
   ticketTypes: selectedTicketTypes,
   paymentMethod: paymentMethod,
-  athTestApproved: paymentMethod === "ath_movil",
   customer
 })
 		      });
@@ -4405,7 +4404,9 @@ function getCustomerData() {
 		        return;
 		      }
 
-		      if (selectedPaymentMethod !== "ath_movil") {
+		      // ATH MÓVIL BUSINESS: punto preparado para integración real.
+      // No se genera un boleto pagado hasta que el servidor confirme el pago.
+      if (selectedPaymentMethod !== "ath_movil") {
 		        showCustomerMessage(
 		          "error",
 		          "Selecciona un método de pago."
