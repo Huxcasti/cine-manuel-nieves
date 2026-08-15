@@ -115,6 +115,8 @@ app.use(
       "Content-Type",
       "x-admin-token",
       "x-employee-token",
+      "x-employee-id",
+      "x-employee-username",
       "x-reservation-cancel-token"
     ],
     maxAge: 86400
