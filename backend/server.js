@@ -14,6 +14,11 @@ const PENDING_RESERVATION_MINUTES = Math.max(
   Number(process.env.PENDING_RESERVATION_MINUTES || 5)
 );
 
+const PAYPAL_CHECKOUT_MINUTES = Math.max(
+  PENDING_RESERVATION_MINUTES,
+  Number(process.env.PAYPAL_CHECKOUT_MINUTES || 30)
+);
+
 const QR_STORAGE_RETENTION_DAYS = Math.max(
   1,
   Number(process.env.QR_STORAGE_RETENTION_DAYS || 30)
@@ -75,8 +80,6 @@ const PAYPAL_MODE = String(process.env.PAYPAL_MODE || "sandbox").toLowerCase();
 const PAYPAL_CURRENCY = String(process.env.PAYPAL_CURRENCY || "USD").toUpperCase();
 const ATH_MOVIL_PHONE = process.env.ATH_MOVIL_PHONE || "";
 
-const ATH_TEST_MODE =
-  String(process.env.ATH_TEST_MODE || "false").toLowerCase() === "true";
 
 const PAYPAL_API_BASE = PAYPAL_MODE === "live"
   ? "https://api-m.paypal.com"
@@ -211,6 +214,20 @@ const passwordResetLimiter = createRateLimiter({
   max: 15,
   message:
     "Demasiados intentos de restablecimiento. Intenta nuevamente más tarde."
+});
+
+const reservationCreateLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  message:
+    "Se han creado demasiadas reservaciones desde este dispositivo o red. Intenta nuevamente en unos minutos."
+});
+
+const paymentOperationLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 60,
+  message:
+    "Se han realizado demasiadas operaciones de pago. Intenta nuevamente en unos minutos."
 });
 
 if (!process.env.DATABASE_URL) {
@@ -1137,6 +1154,22 @@ async function initializeDatabase() {
   `);
 
   await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS paypal_order_id TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS payment_hold_until TIMESTAMPTZ;
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS tickets_paypal_order_id_unique_idx
+    ON tickets (paypal_order_id)
+    WHERE paypal_order_id IS NOT NULL;
+  `);
+
+  await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS tickets_cancellation_token_hash_unique_idx
     ON tickets (cancellation_token_hash)
     WHERE cancellation_token_hash IS NOT NULL;
@@ -1394,8 +1427,12 @@ async function cleanupPreviousBusinessDay() {
   const pendingTickets = await pool.query(
     `
       DELETE FROM tickets
-      WHERE payment_status = 'pending'
-        AND created_at < NOW() - ($1 * INTERVAL '1 minute');
+      WHERE
+        payment_status = 'pending'
+        AND COALESCE(
+          payment_hold_until,
+          created_at + ($1 * INTERVAL '1 minute')
+        ) <= NOW();
     `,
     [PENDING_RESERVATION_MINUTES]
   );
@@ -3124,7 +3161,10 @@ app.get("/api/seats", async (req, res) => {
             )
             OR (
               payment_status = 'pending'
-              AND created_at >= NOW() - ($2 * INTERVAL '1 minute')
+              AND COALESCE(
+                payment_hold_until,
+                created_at + ($2 * INTERVAL '1 minute')
+              ) > NOW()
             )
           );
       `,
@@ -3207,7 +3247,7 @@ function normalizeTicketShowTime(value) {
   return `${String(match[1]).padStart(2, "0")}:${match[2]}`;
 }
 
-app.post("/api/reservations", async (req, res) => {
+app.post("/api/reservations", reservationCreateLimiter, async (req, res) => {
   const client = await pool.connect();
 
   try {
@@ -3217,19 +3257,8 @@ app.post("/api/reservations", async (req, res) => {
   seats,
   ticketTypes,
   paymentMethod = "",
-  athTestApproved = false,
   customer
 } = req.body;
-
-if (
-  paymentMethod === "ath_movil" &&
-  ATH_TEST_MODE &&
-  athTestApproved !== true
-) {
-  return res.status(400).json({
-    error: "El pago de prueba de ATH Móvil no fue aprobado."
-  });
-}
 
     if (
       typeof showtimeId !== "string" ||
@@ -3384,7 +3413,10 @@ if (
             )
             OR (
               payment_status = 'pending'
-              AND created_at >= NOW() - ($2 * INTERVAL '1 minute')
+              AND COALESCE(
+                payment_hold_until,
+                created_at + ($2 * INTERVAL '1 minute')
+              ) > NOW()
             )
           )
         FOR UPDATE;
@@ -3427,12 +3459,7 @@ if (
       normalizedTicketTypes.child * childPrice +
       normalizedTicketTypes.senior * seniorPrice;
 
-const initialPaymentStatus =
-  paymentMethod === "ath_movil" &&
-  ATH_TEST_MODE &&
-  athTestApproved === true
-    ? "paid"
-    : "pending";
+const initialPaymentStatus = "pending";
 
     const storedCustomer = {
       ...customer,
@@ -3626,220 +3653,441 @@ app.get("/api/paypal/config", (req, res) => {
   });
 });
 
-app.post("/api/paypal/orders", async (req, res) => {
-  try {
-    if (!paypalIsConfigured()) {
-      return res.status(503).json({
-        error: "PayPal todavía no está configurado en Render."
-      });
-    }
+app.post(
+  "/api/paypal/orders",
+  paymentOperationLimiter,
+  async (req, res) => {
+    const client = await pool.connect();
 
-    const reservationId = String(req.body?.reservationId || "").trim();
-    if (!reservationId) {
-      return res.status(400).json({ error: "Falta la reservación." });
-    }
-
-    const ticketResult = await pool.query(
-      `SELECT * FROM tickets WHERE id = $1;`,
-      [reservationId]
-    );
-
-    if (ticketResult.rowCount === 0) {
-      return res.status(404).json({ error: "Reservación no encontrada." });
-    }
-
-    const ticket = ticketResult.rows[0];
-    if (ticket.payment_status !== "pending") {
-      return res.status(400).json({
-        error: "Esta reservación ya fue pagada o no puede procesarse."
-      });
-    }
-
-    if (ticket.customer?.paymentMethod !== "paypal") {
-      return res.status(400).json({
-        error: "La reservación no fue creada para PayPal."
-      });
-    }
-
-    const total = Number(ticket.total).toFixed(2);
-    const order = await paypalRequest("/v2/checkout/orders", {
-      method: "POST",
-      headers: {
-        "PayPal-Request-Id": `cine-${reservationId}`
-      },
-      body: JSON.stringify({
-        intent: "CAPTURE",
-        purchase_units: [
-          {
-            custom_id: reservationId,
-            invoice_id: reservationId,
-            description: `Boletos - ${ticket.movie}`.slice(0, 127),
-            amount: {
-              currency_code: PAYPAL_CURRENCY,
-              value: total
-            }
-          }
-        ],
-        application_context: {
-          brand_name: "Cine Teatro Manuel Nieves Quintero",
-          shipping_preference: "NO_SHIPPING",
-          user_action: "PAY_NOW"
-        }
-      })
-    });
-
-    res.status(201).json({ orderId: order.id });
-  } catch (error) {
-    console.error("Error creando orden de PayPal:", error);
-    res.status(502).json({
-      error: "No se pudo crear la orden de PayPal."
-    });
-  }
-});
-
-app.post("/api/paypal/orders/:orderId/capture", async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const orderId = String(req.params.orderId || "").trim();
-    const reservationId = String(req.body?.reservationId || "").trim();
-
-    if (!orderId || !reservationId) {
-      return res.status(400).json({
-        error: "Faltan los datos de la orden de PayPal."
-      });
-    }
-
-    const capture = await paypalRequest(
-      `/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`,
-      {
-        method: "POST",
-        headers: {
-          "PayPal-Request-Id": `capture-${orderId}`
-        },
-        body: "{}"
+    try {
+      if (!paypalIsConfigured()) {
+        return res.status(503).json({
+          error: "PayPal todavía no está configurado en Render."
+        });
       }
-    );
 
-    const purchaseUnit = capture.purchase_units?.[0];
-    const capturedPayment = purchaseUnit?.payments?.captures?.[0];
-    const capturedAmount = capturedPayment?.amount;
-    const paypalReservationId = String(
-  capturedPayment?.custom_id ||
-  capturedPayment?.invoice_id ||
-  purchaseUnit?.custom_id ||
-  purchaseUnit?.invoice_id ||
-  ""
-).trim();
+      const reservationId = String(
+        req.body?.reservationId || ""
+      ).trim();
 
-const requestedReservationId = String(
-  reservationId || ""
-).trim();
+      if (!reservationId) {
+        return res.status(400).json({
+          error: "Falta la reservación."
+        });
+      }
 
-    if (capture.status !== "COMPLETED" || capturedPayment?.status !== "COMPLETED") {
-      return res.status(400).json({
-        error: "PayPal no confirmó el pago como completado."
+      await client.query("BEGIN");
+
+      const ticketResult = await client.query(
+        `
+          SELECT *
+          FROM tickets
+          WHERE id = $1
+          FOR UPDATE;
+        `,
+        [reservationId]
+      );
+
+      if (ticketResult.rowCount === 0) {
+        await client.query("ROLLBACK");
+
+        return res.status(404).json({
+          error:
+            "La reservación expiró o ya no está disponible. Selecciona los asientos nuevamente."
+        });
+      }
+
+      const ticket = ticketResult.rows[0];
+
+      if (ticket.payment_status !== "pending") {
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "Esta reservación ya fue pagada o no puede procesarse."
+        });
+      }
+
+      if (ticket.customer?.paymentMethod !== "paypal") {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "La reservación no fue creada para PayPal."
+        });
+      }
+
+      const holdUntil = ticket.payment_hold_until
+        ? new Date(ticket.payment_hold_until)
+        : new Date(
+            new Date(ticket.created_at).getTime() +
+              PENDING_RESERVATION_MINUTES * 60 * 1000
+          );
+
+      if (
+        !Number.isFinite(holdUntil.getTime()) ||
+        holdUntil.getTime() <= Date.now()
+      ) {
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "La reservación expiró. Selecciona los asientos nuevamente."
+        });
+      }
+
+      // Si ya existe una orden activa para esta reservación, reutilízala.
+      if (
+        ticket.paypal_order_id &&
+        ticket.payment_hold_until &&
+        new Date(ticket.payment_hold_until).getTime() > Date.now()
+      ) {
+        await client.query("COMMIT");
+
+        return res.json({
+          orderId: ticket.paypal_order_id,
+          reused: true
+        });
+      }
+
+      const total = Number(ticket.total).toFixed(2);
+
+      // La fila permanece bloqueada durante esta petición para evitar que
+      // el cleanup elimine la reservación en medio de la creación de la orden.
+      const order = await paypalRequest(
+        "/v2/checkout/orders",
+        {
+          method: "POST",
+          headers: {
+            "PayPal-Request-Id":
+              `cine-${reservationId}`
+          },
+          body: JSON.stringify({
+            intent: "CAPTURE",
+            purchase_units: [
+              {
+                custom_id: reservationId,
+                invoice_id: reservationId,
+                description:
+                  `Boletos - ${ticket.movie}`.slice(0, 127),
+                amount: {
+                  currency_code: PAYPAL_CURRENCY,
+                  value: total
+                }
+              }
+            ],
+            application_context: {
+              brand_name:
+                "Cine Teatro Manuel Nieves Quintero",
+              shipping_preference: "NO_SHIPPING",
+              user_action: "PAY_NOW"
+            }
+          })
+        }
+      );
+
+      await client.query(
+        `
+          UPDATE tickets
+          SET
+            paypal_order_id = $2,
+            payment_hold_until =
+              NOW() + ($3 * INTERVAL '1 minute')
+          WHERE id = $1;
+        `,
+        [
+          reservationId,
+          order.id,
+          PAYPAL_CHECKOUT_MINUTES
+        ]
+      );
+
+      await client.query("COMMIT");
+
+      return res.status(201).json({
+        orderId: order.id,
+        expiresInMinutes: PAYPAL_CHECKOUT_MINUTES
       });
-    }
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
 
-    if (
-  !paypalReservationId ||
-  paypalReservationId !== requestedReservationId
-) {
-      return res.status(400).json({
-        error: "La orden de PayPal no corresponde a esta reservación."
+      console.error(
+        "Error creando orden de PayPal:",
+        error
+      );
+
+      return res.status(502).json({
+        error:
+          "No se pudo crear la orden de PayPal."
       });
+    } finally {
+      client.release();
     }
-
-    await client.query("BEGIN");
-
-    const ticketResult = await client.query(
-      `SELECT * FROM tickets WHERE id = $1 FOR UPDATE;`,
-      [reservationId]
-    );
-
-    if (ticketResult.rowCount === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Reservación no encontrada." });
-    }
-
-    const ticket = ticketResult.rows[0];
-    const expectedAmount = Number(ticket.total).toFixed(2);
-
-    if (
-      capturedAmount?.currency_code !== PAYPAL_CURRENCY ||
-      Number(capturedAmount?.value).toFixed(2) !== expectedAmount
-    ) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({
-        error: "El total confirmado por PayPal no coincide con la reservación."
-      });
-    }
-
-    if (
-  ticket.payment_status === "paid" ||
-  ticket.payment_status === "approved"
-) {
-  await client.query("COMMIT");
-
-  return res.json({
-    success: true,
-    reservation: formatTicket(ticket)
-  });
-}
-
-const updatedCustomer = {
-  ...(ticket.customer || {}),
-  paymentMethod: "paypal",
-  paypalOrderId: orderId,
-  paypalCaptureId: capturedPayment.id || "",
-  paypalPayerEmail: capture.payer?.email_address || ""
-};
-    const updateResult = await client.query(
-      `
-        UPDATE tickets
-        SET
-          payment_status = 'paid',
-          customer = $2,
-          cancellation_token_hash = NULL
-        WHERE id = $1
-        RETURNING *;
-      `,
-      [reservationId, JSON.stringify(updatedCustomer)]
-    );
-
-    await client.query("COMMIT");
-
-const reservation = formatTicket(updateResult.rows[0]);
-
-try {
-  await sendTicketEmail(reservation);
-} catch (emailError) {
-  console.error("Error enviando correo:", emailError);
-}
-
-res.json({
-  success: true,
-  reservation
-});
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
-    console.error("Error capturando pago de PayPal:", error);
-    res.status(502).json({
-      error: "No se pudo confirmar el pago de PayPal."
-    });
-  } finally {
-    client.release();
   }
-});
+);
+
+app.post(
+  "/api/paypal/orders/:orderId/capture",
+  paymentOperationLimiter,
+  async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const orderId = String(
+        req.params.orderId || ""
+      ).trim();
+
+      const reservationId = String(
+        req.body?.reservationId || ""
+      ).trim();
+
+      if (!orderId || !reservationId) {
+        return res.status(400).json({
+          error:
+            "Faltan los datos de la orden de PayPal."
+        });
+      }
+
+      await client.query("BEGIN");
+
+      // Bloqueamos y validamos la reservación ANTES de pedir el cobro.
+      const ticketResult = await client.query(
+        `
+          SELECT *
+          FROM tickets
+          WHERE id = $1
+          FOR UPDATE;
+        `,
+        [reservationId]
+      );
+
+      if (ticketResult.rowCount === 0) {
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "La reservación expiró antes de completar el pago. No se realizó un nuevo cobro."
+        });
+      }
+
+      const ticket = ticketResult.rows[0];
+
+      // Respuesta idempotente si este mismo pago ya quedó registrado.
+      if (
+        ["paid", "approved"].includes(
+          ticket.payment_status
+        ) &&
+        ticket.paypal_order_id === orderId
+      ) {
+        await client.query("COMMIT");
+
+        return res.json({
+          success: true,
+          reservation: formatTicket(ticket),
+          alreadyCaptured: true
+        });
+      }
+
+      if (ticket.payment_status !== "pending") {
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "Esta reservación ya no puede procesarse."
+        });
+      }
+
+      if (ticket.customer?.paymentMethod !== "paypal") {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "La reservación no fue creada para PayPal."
+        });
+      }
+
+      if (
+        !ticket.paypal_order_id ||
+        ticket.paypal_order_id !== orderId
+      ) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "La orden de PayPal no pertenece a esta reservación."
+        });
+      }
+
+      const holdUntil = ticket.payment_hold_until
+        ? new Date(ticket.payment_hold_until)
+        : null;
+
+      if (
+        !holdUntil ||
+        !Number.isFinite(holdUntil.getTime()) ||
+        holdUntil.getTime() <= Date.now()
+      ) {
+        await client.query("ROLLBACK");
+
+        return res.status(409).json({
+          error:
+            "La ventana de pago expiró. No se realizó un nuevo cobro."
+        });
+      }
+
+      // La fila sigue bloqueada mientras PayPal captura, impidiendo que
+      // el cleanup o una captura concurrente cambien/elimine la reserva.
+      const capture = await paypalRequest(
+        `/v2/checkout/orders/${encodeURIComponent(
+          orderId
+        )}/capture`,
+        {
+          method: "POST",
+          headers: {
+            "PayPal-Request-Id":
+              `capture-${orderId}`
+          },
+          body: "{}"
+        }
+      );
+
+      const purchaseUnit =
+        capture.purchase_units?.[0];
+
+      const capturedPayment =
+        purchaseUnit?.payments?.captures?.[0];
+
+      const capturedAmount =
+        capturedPayment?.amount;
+
+      const paypalReservationId = String(
+        capturedPayment?.custom_id ||
+        capturedPayment?.invoice_id ||
+        purchaseUnit?.custom_id ||
+        purchaseUnit?.invoice_id ||
+        ""
+      ).trim();
+
+      if (
+        capture.status !== "COMPLETED" ||
+        capturedPayment?.status !== "COMPLETED"
+      ) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "PayPal no confirmó el pago como completado."
+        });
+      }
+
+      if (
+        !paypalReservationId ||
+        paypalReservationId !== reservationId
+      ) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "La orden de PayPal no corresponde a esta reservación."
+        });
+      }
+
+      const expectedAmount =
+        Number(ticket.total).toFixed(2);
+
+      if (
+        capturedAmount?.currency_code !==
+          PAYPAL_CURRENCY ||
+        Number(capturedAmount?.value).toFixed(2) !==
+          expectedAmount
+      ) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          error:
+            "El total confirmado por PayPal no coincide con la reservación."
+        });
+      }
+
+      const updatedCustomer = {
+        ...(ticket.customer || {}),
+        paymentMethod: "paypal",
+        paypalOrderId: orderId,
+        paypalCaptureId:
+          capturedPayment.id || "",
+        paypalPayerEmail:
+          capture.payer?.email_address || ""
+      };
+
+      const updateResult = await client.query(
+        `
+          UPDATE tickets
+          SET
+            payment_status = 'paid',
+            customer = $2,
+            cancellation_token_hash = NULL,
+            payment_hold_until = NULL
+          WHERE id = $1
+          RETURNING *;
+        `,
+        [
+          reservationId,
+          JSON.stringify(updatedCustomer)
+        ]
+      );
+
+      await client.query("COMMIT");
+
+      const reservation =
+        formatTicket(updateResult.rows[0]);
+
+      try {
+        await sendTicketEmail(reservation);
+      } catch (emailError) {
+        console.error(
+          "Error enviando correo:",
+          emailError
+        );
+      }
+
+      return res.json({
+        success: true,
+        reservation
+      });
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+
+      console.error(
+        "Error capturando pago de PayPal:",
+        error
+      );
+
+      return res.status(502).json({
+        error:
+          "No se pudo confirmar el pago de PayPal."
+      });
+    } finally {
+      client.release();
+    }
+  }
+);
 
 /*
 ==================================================
+ATH MÓVIL BUSINESS - PUNTO DE INTEGRACIÓN
+
+Esta ruta mantiene preparado el flujo de ATH Móvil.
+Mientras no exista una integración Business real, una reservación ATH
+permanece en estado "pending" y NUNCA se marca como pagada desde el cliente.
+
+Cuando se habilite ATH Móvil Business, la confirmación real del proveedor
+debe validar el pago en el servidor antes de cambiar payment_status a 'paid'.
+
 ATH MÓVIL MANUAL
 ==================================================
 */
 
-app.post("/api/reservations/:id/ath-movil/submit", async (req, res) => {
+app.post("/api/reservations/:id/ath-movil/submit", paymentOperationLimiter, async (req, res) => {
   try {
     const id = String(req.params.id || "").trim();
     const result = await pool.query(
