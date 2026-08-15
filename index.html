@@ -4204,6 +4204,18 @@ function getCustomerData() {
 		        return true;
 		      }
 
+		      const cancellationToken = String(
+		        pendingReservation?.cancellationToken || ""
+		      ).trim();
+
+		      if (!cancellationToken) {
+		        console.warn(
+		          "La reservación pendiente no tiene token de cancelación."
+		        );
+		        pendingReservation = null;
+		        return false;
+		      }
+
 		      try {
 		        const response = await fetch(
 		          `${API_URL}/api/reservations/${encodeURIComponent(
@@ -4211,6 +4223,9 @@ function getCustomerData() {
 		          )}/cancel`,
 		          {
 		            method: "DELETE",
+		            headers: {
+		              "x-reservation-cancel-token": cancellationToken
+		            },
 		            keepalive: Boolean(options.keepalive)
 		          }
 		        );
