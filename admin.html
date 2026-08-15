@@ -2626,7 +2626,7 @@
   <script>
     const API_URL = "https://cine-manuel-nieves.onrender.com";
 
-    let currentAdminKey = "";
+    let currentAdminToken = "";
     let currentSection = "reservations";
     let reservationsLiveTimer = null;
     let moviesCache = [];
@@ -2664,7 +2664,7 @@
     async function adminFetch(path, options = {}) {
       const headers = {
         ...(options.headers || {}),
-        "x-admin-key": currentAdminKey
+        "x-admin-token": currentAdminToken
       };
 
       if (
@@ -2681,7 +2681,7 @@
       });
 
       if (response.status === 401 || response.status === 403) {
-        logout();
+        await logout(false);
         throw new Error("La sesión administrativa no es válida.");
       }
 
@@ -2906,13 +2906,18 @@
           body: JSON.stringify({ password: key })
         });
 
-        await parseResponse(response);
-        currentAdminKey = key;
-        sessionStorage.setItem("cineAdminKey", key);
+        const data = await parseResponse(response);
+
+        currentAdminToken = data.token;
+        sessionStorage.setItem("cineAdminToken", data.token);
+
+        keyInput.value = "";
+
         openDashboard();
         await loadReservations();
       } catch (error) {
-        currentAdminKey = "";
+        currentAdminToken = "";
+        sessionStorage.removeItem("cineAdminToken");
         setMessage("loginMessage", "error", error.message);
       } finally {
         loginButton.disabled = false;
@@ -2933,35 +2938,68 @@
       }
     }
 
-    function logout() {
+    async function logout(notifyServer = true) {
       stopReservationsLiveUpdates();
-      currentAdminKey = "";
-      sessionStorage.removeItem("cineAdminKey");
+
+      const token = currentAdminToken;
+
+      currentAdminToken = "";
+      sessionStorage.removeItem("cineAdminToken");
+
+      if (notifyServer && token) {
+        try {
+          await fetch(`${API_URL}/api/admin/logout`, {
+            method: "POST",
+            headers: {
+              "x-admin-token": token
+            }
+          });
+        } catch (error) {
+          console.warn(
+            "No se pudo cerrar la sesión en el servidor:",
+            error
+          );
+        }
+      }
+
       document.getElementById("dashboard").style.display = "none";
       document.getElementById("loginWrapper").style.display = "flex";
       document.getElementById("adminKey").value = "";
+
       setMessage("loginMessage", "", "");
-      window.scrollTo({ top: 0, behavior: "instant" });
+
+      window.scrollTo({
+        top: 0,
+        behavior: "instant"
+      });
     }
 
     async function restoreSession() {
-      const savedKey = sessionStorage.getItem("cineAdminKey");
-      if (!savedKey) return;
+      const savedToken = sessionStorage.getItem("cineAdminToken");
 
-      currentAdminKey = savedKey;
+      if (!savedToken) {
+        return;
+      }
+
+      currentAdminToken = savedToken;
 
       try {
-        const response = await fetch(`${API_URL}/api/admin/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password: savedKey })
-        });
+        const response = await fetch(
+          `${API_URL}/api/admin/me`,
+          {
+            method: "GET",
+            headers: {
+              "x-admin-token": savedToken
+            }
+          }
+        );
 
         await parseResponse(response);
+
         openDashboard();
         await loadReservations();
       } catch (error) {
-        logout();
+        await logout(false);
       }
     }
 
@@ -3026,7 +3064,7 @@
       if (
         document.visibilityState === "visible" &&
         currentSection === "reservations" &&
-        currentAdminKey
+        currentAdminToken
       ) {
         loadReservations({ silent: true });
       }
@@ -4695,12 +4733,20 @@ const durationValue =
       }
 
       if (newPassword.length < 8) {
-        setMessage("passwordMessage", "error", "La nueva contraseña debe tener al menos ocho caracteres.");
+        setMessage(
+          "passwordMessage",
+          "error",
+          "La nueva contraseña debe tener al menos ocho caracteres."
+        );
         return;
       }
 
       if (newPassword !== confirmPassword) {
-        setMessage("passwordMessage", "error", "Las contraseñas nuevas no coinciden.");
+        setMessage(
+          "passwordMessage",
+          "error",
+          "Las contraseñas nuevas no coinciden."
+        );
         return;
       }
 
@@ -4712,15 +4758,21 @@ const durationValue =
       try {
         await adminFetch("/api/admin/password", {
           method: "PUT",
-          body: JSON.stringify({ currentPassword, newPassword })
+          body: JSON.stringify({
+            currentPassword,
+            newPassword
+          })
         });
 
-        currentAdminKey = newPassword;
-        sessionStorage.setItem("cineAdminKey", newPassword);
         document.getElementById("currentPassword").value = "";
         document.getElementById("newPassword").value = "";
         document.getElementById("confirmPassword").value = "";
-        setMessage("passwordMessage", "success", "Contraseña actualizada correctamente.");
+
+        alert(
+          "Contraseña actualizada. Inicia sesión nuevamente."
+        );
+
+        await logout(false);
       } catch (error) {
         setMessage("passwordMessage", "error", error.message);
       } finally {
