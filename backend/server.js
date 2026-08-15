@@ -82,8 +82,135 @@ const PAYPAL_API_BASE = PAYPAL_MODE === "live"
   ? "https://api-m.paypal.com"
   : "https://api-m.sandbox.paypal.com";
 
-app.use(cors());
-app.use(express.json());
+
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://huxcasti.github.io"
+];
+
+const ALLOWED_ORIGINS = new Set(
+  String(
+    process.env.ALLOWED_ORIGINS ||
+    DEFAULT_ALLOWED_ORIGINS.join(",")
+  )
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
+
+app.set("trust proxy", 1);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || ALLOWED_ORIGINS.has(origin)) {
+        return callback(null, true);
+      }
+
+      const error = new Error("Origen no permitido por CORS.");
+      error.status = 403;
+      return callback(error);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "x-admin-token",
+      "x-employee-token",
+      "x-reservation-cancel-token"
+    ],
+    maxAge: 86400
+  })
+);
+
+app.use(express.json({ limit: "100kb" }));
+
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()"
+  );
+  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
+
+  const forwardedProto =
+    String(req.headers["x-forwarded-proto"] || "")
+      .split(",")[0]
+      .trim()
+      .toLowerCase();
+
+  if (req.secure || forwardedProto === "https") {
+    res.setHeader(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains"
+    );
+  }
+
+  next();
+});
+
+function createRateLimiter({ windowMs, max, message }) {
+  const buckets = new Map();
+
+  return function rateLimiter(req, res, next) {
+    const now = Date.now();
+    const key = req.ip || req.socket?.remoteAddress || "unknown";
+    const current = buckets.get(key);
+
+    if (!current || current.resetAt <= now) {
+      buckets.set(key, {
+        count: 1,
+        resetAt: now + windowMs
+      });
+      return next();
+    }
+
+    current.count += 1;
+
+    if (current.count > max) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((current.resetAt - now) / 1000)
+      );
+
+      res.setHeader("Retry-After", String(retryAfterSeconds));
+
+      return res.status(429).json({
+        error: message
+      });
+    }
+
+    next();
+  };
+}
+
+const adminLoginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message:
+    "Demasiados intentos de acceso administrativo. Intenta nuevamente más tarde."
+});
+
+const employeeLoginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message:
+    "Demasiados intentos de acceso. Intenta nuevamente más tarde."
+});
+
+const passwordRecoveryLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message:
+    "Demasiadas solicitudes de recuperación. Intenta nuevamente más tarde."
+});
+
+const passwordResetLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message:
+    "Demasiados intentos de restablecimiento. Intenta nuevamente más tarde."
+});
 
 if (!process.env.DATABASE_URL) {
   console.error("Falta la variable DATABASE_URL.");
@@ -1506,7 +1633,7 @@ AUTENTICACIÃN DEL ADMINISTRADOR
 */
 
 
-app.post("/api/admin/password/forgot", async (req, res) => {
+app.post("/api/admin/password/forgot", passwordRecoveryLimiter, async (req, res) => {
   try {
     if (!ADMIN_RECOVERY_EMAIL) {
       return res.status(503).json({
@@ -1630,13 +1757,12 @@ app.post("/api/admin/password/forgot", async (req, res) => {
 
     res.status(500).json({
       error:
-        error.message ||
         "No se pudo enviar el código de recuperación."
     });
   }
 });
 
-app.post("/api/admin/password/reset", async (req, res) => {
+app.post("/api/admin/password/reset", passwordResetLimiter, async (req, res) => {
   const client = await pool.connect();
 
   try {
@@ -1782,7 +1908,7 @@ app.post("/api/admin/password/reset", async (req, res) => {
   }
 });
 
-app.post("/api/admin/login", async (req, res) => {
+app.post("/api/admin/login", adminLoginLimiter, async (req, res) => {
   try {
     const { password } = req.body;
 
@@ -1956,7 +2082,7 @@ CUENTAS Y SESIONES DE EMPLEADOS
 ==================================================
 */
 
-app.post("/api/employee/login", async (req, res) => {
+app.post("/api/employee/login", employeeLoginLimiter, async (req, res) => {
   try {
     const username = normalizeUsername(req.body?.username);
     const password = req.body?.password;
@@ -3565,7 +3691,7 @@ app.post("/api/paypal/orders", async (req, res) => {
   } catch (error) {
     console.error("Error creando orden de PayPal:", error);
     res.status(502).json({
-      error: error.message || "No se pudo crear la orden de PayPal."
+      error: "No se pudo crear la orden de PayPal."
     });
   }
 });
@@ -3699,7 +3825,7 @@ res.json({
     await client.query("ROLLBACK").catch(() => {});
     console.error("Error capturando pago de PayPal:", error);
     res.status(502).json({
-      error: error.message || "No se pudo confirmar el pago de PayPal."
+      error: "No se pudo confirmar el pago de PayPal."
     });
   } finally {
     client.release();
@@ -4203,6 +4329,41 @@ app.use((error, req, res, next) => {
 INICIAR SERVIDOR
 ==================================================
 */
+
+
+app.use((error, req, res, next) => {
+  if (!error) {
+    return next();
+  }
+
+  if (
+    error.type === "entity.too.large" ||
+    error.status === 413
+  ) {
+    return res.status(413).json({
+      error: "La solicitud es demasiado grande."
+    });
+  }
+
+  if (
+    error.message === "Origen no permitido por CORS." ||
+    error.status === 403
+  ) {
+    return res.status(403).json({
+      error: "Origen no autorizado."
+    });
+  }
+
+  console.error("Error no controlado:", error);
+
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  return res.status(500).json({
+    error: "Ocurrió un error interno."
+  });
+});
 
 async function startServer() {
   try {
