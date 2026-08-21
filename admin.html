@@ -3036,11 +3036,7 @@
         clearInterval(reservationsLiveTimer);
       }
 
-      // Primera comprobación inmediata y silenciosa.
-      if (currentSection === "reservations") {
-        loadReservations({ silent: true });
-      }
-
+      // La carga inicial ya se realiza al abrir la sección.
       // Luego vuelve a consultar cada 5 segundos sin mostrar
       // "Cargando información..." ni mover el contenido.
       reservationsLiveTimer = window.setInterval(() => {
@@ -3178,12 +3174,71 @@
           renderReservations(reservationsCache);
         }
       } catch (error) {
-        alert(error.message);
+        if (silent) {
+          console.warn("No se pudieron actualizar las reservaciones:", error);
+        } else {
+          alert(error.message);
+        }
       } finally {
         if (!silent) {
           setLoading(false);
         }
       }
+    }
+
+    function isPaidPaymentStatus(status) {
+      return ["paid", "approved"].includes(
+        String(status || "").trim().toLowerCase()
+      );
+    }
+
+    function getPaymentStatusPresentation(status) {
+      const normalized = String(status || "").trim().toLowerCase();
+
+      if (isPaidPaymentStatus(normalized)) {
+        return { badge: "success", label: "Pagado" };
+      }
+
+      if (normalized === "pending") {
+        return { badge: "warning", label: "Pendiente" };
+      }
+
+      if (normalized === "refunded") {
+        return { badge: "info", label: "Reembolsado" };
+      }
+
+      if (normalized === "reversed") {
+        return { badge: "danger", label: "Revertido" };
+      }
+
+      if (["failed", "denied", "declined"].includes(normalized)) {
+        return { badge: "danger", label: "Fallido" };
+      }
+
+      if (["cancelled", "canceled"].includes(normalized)) {
+        return { badge: "danger", label: "Cancelado" };
+      }
+
+      return {
+        badge: "warning",
+        label: normalized ? capitalize(normalized) : "Desconocido"
+      };
+    }
+
+    function formatPuertoRicoDateTime(value) {
+      if (!value) return "—";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "—";
+
+      return new Intl.DateTimeFormat("es-PR", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "numeric",
+        minute: "2-digit"
+      }).format(date);
     }
 
     function renderReservations(reservations) {
@@ -3201,11 +3256,10 @@
 
       reservations.forEach((ticket) => {
         const row = document.createElement("tr");
-        const createdDate = ticket.created
-          ? new Date(ticket.created).toLocaleString("es-PR")
-          : "—";
+        const createdDate = formatPuertoRicoDateTime(ticket.created);
         const seats = Array.isArray(ticket.seats) ? ticket.seats.join(", ") : "—";
-        const paid = ticket.paymentStatus === "paid" || ticket.paymentStatus === "approved";
+        const paymentStatus =
+          getPaymentStatusPresentation(ticket.paymentStatus);
         const used = Boolean(ticket.used);
 
         row.innerHTML = `
@@ -3218,7 +3272,7 @@
           <td>${escapeHtml(formatCheckinShowtime(ticket.time))}</td>
           <td>${escapeHtml(seats)}</td>
           <td>$${Number(ticket.total || 0).toFixed(2)}</td>
-          <td><span class="badge ${paid ? "success" : "warning"}">${paid ? "Pagado" : "Pendiente"}</span></td>
+          <td><span class="badge ${paymentStatus.badge}">${escapeHtml(paymentStatus.label)}</span></td>
           <td><span class="badge ${used ? "info" : "success"}">${used ? "Utilizada" : "Disponible"}</span></td>
         `;
 
@@ -3229,16 +3283,19 @@
     function updateStatistics(reservations) {
       const safeReservations = Array.isArray(reservations) ? reservations : [];
 
-      const ticketCount = safeReservations.reduce((total, ticket) => {
+      const paidReservations = safeReservations.filter((ticket) =>
+        isPaidPaymentStatus(ticket.paymentStatus)
+      );
+
+      const ticketCount = paidReservations.reduce((total, ticket) => {
         return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
       }, 0);
 
-      const salesTotal = safeReservations.reduce((total, ticket) => {
-        const paid = ticket.paymentStatus === "paid" || ticket.paymentStatus === "approved";
-        return paid ? total + Number(ticket.total || 0) : total;
+      const salesTotal = paidReservations.reduce((total, ticket) => {
+        return total + Number(ticket.total || 0);
       }, 0);
 
-      const usedCount = safeReservations.reduce((total, ticket) => {
+      const usedCount = paidReservations.reduce((total, ticket) => {
         if (!ticket.used) return total;
         return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
       }, 0);
@@ -3688,6 +3745,25 @@ const durationValue =
   durationSelect.value === "other"
     ? durationCustom.value
     : durationSelect.value;
+
+      const durationMinutes =
+        durationValue === "" ? null : Number(durationValue);
+
+      if (
+        durationMinutes !== null &&
+        (
+          !Number.isInteger(durationMinutes) ||
+          durationMinutes <= 0
+        )
+      ) {
+        setMessage(
+          "movieMessage",
+          "error",
+          "La duración debe ser un número entero mayor que cero."
+        );
+        return;
+      }
+
       const rating = document.getElementById("movieRating").value.trim();
       const active = document.getElementById("movieActive").checked;
       const comingSoon = document.getElementById("movieComingSoon").checked;
@@ -3718,7 +3794,7 @@ const durationValue =
           description,
           posterUrl,
           trailerUrl,
-          durationMinutes: durationValue === "" ? null : Number(durationValue),
+          durationMinutes,
           rating,
           active,
           comingSoon
@@ -3748,6 +3824,45 @@ const durationValue =
       }
     }
 
+    function setMovieDurationFields(durationMinutes) {
+      const select = document.getElementById("movieDuration");
+      const custom = document.getElementById("movieDurationCustom");
+
+      if (!select || !custom) return;
+
+      const normalized =
+        durationMinutes === null ||
+        durationMinutes === undefined ||
+        durationMinutes === ""
+          ? ""
+          : String(durationMinutes);
+
+      const hasStandardOption = Array.from(select.options).some(
+        (option) =>
+          option.value &&
+          option.value !== "other" &&
+          option.value === normalized
+      );
+
+      if (!normalized) {
+        select.value = "";
+        custom.value = "";
+        custom.style.display = "none";
+        return;
+      }
+
+      if (hasStandardOption) {
+        select.value = normalized;
+        custom.value = "";
+        custom.style.display = "none";
+        return;
+      }
+
+      select.value = "other";
+      custom.value = normalized;
+      custom.style.display = "block";
+    }
+
     function editMovie(id) {
       const movie = moviesCache.find((item) => item.id === id);
       if (!movie) return;
@@ -3763,7 +3878,7 @@ const durationValue =
       document.getElementById("movieTrailerFile").value = "";
       showTrailerPreview(movie.trailerUrl || "");
 
-      document.getElementById("movieDuration").value = movie.durationMinutes || "";
+      setMovieDurationFields(movie.durationMinutes);
       document.getElementById("movieRating").value = movie.rating || "";
       document.getElementById("movieActive").checked = Boolean(movie.active);
       document.getElementById("movieComingSoon").checked = Boolean(movie.comingSoon);
@@ -3784,7 +3899,7 @@ const durationValue =
       document.getElementById("movieTrailerFile").value = "";
       showTrailerPreview("");
 
-      document.getElementById("movieDuration").value = "";
+      setMovieDurationFields("");
       document.getElementById("movieRating").value = "";
       document.getElementById("movieActive").checked = true;
       document.getElementById("movieComingSoon").checked = false;
@@ -3990,6 +4105,49 @@ const durationValue =
       }
     }
 
+    function getPuertoRicoCurrentDateTime() {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).formatToParts(new Date());
+
+      const values = {};
+
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          values[part.type] = part.value;
+        }
+      });
+
+      return {
+        date: `${values.year}-${values.month}-${values.day}`,
+        time: `${values.hour}:${values.minute}`
+      };
+    }
+
+    function showtimeHasStartedInPuertoRico(showDate, showTime) {
+      const now = getPuertoRicoCurrentDateTime();
+      const normalizedDate = String(showDate || "").slice(0, 10);
+      const normalizedTime = String(showTime || "").slice(0, 5);
+
+      if (!normalizedDate || !normalizedTime) {
+        return false;
+      }
+
+      return (
+        normalizedDate < now.date ||
+        (
+          normalizedDate === now.date &&
+          normalizedTime <= now.time
+        )
+      );
+    }
+
     function populateShowtimePickers() {
       const dateSelect = document.getElementById("showtimeDate");
       const timeSelect = document.getElementById("showtimeTime");
@@ -4000,8 +4158,10 @@ const durationValue =
         dateSelect.innerHTML =
           '<option value="">Selecciona una fecha</option>';
 
-        const today = new Date();
-        today.setHours(12, 0, 0, 0);
+        const [year, month, day] =
+          getTodayPuertoRicoDateKey().split("-").map(Number);
+
+        const today = new Date(year, month - 1, day, 12, 0, 0, 0);
 
         for (let offset = 0; offset <= 365; offset += 1) {
           const date = new Date(today);
@@ -4064,6 +4224,15 @@ const durationValue =
 
       if (!movieId || !showDate || !showTime) {
         setMessage("showtimeMessage", "error", "Completa los datos de la tanda.");
+        return;
+      }
+
+      if (!id && showtimeHasStartedInPuertoRico(showDate, showTime)) {
+        setMessage(
+          "showtimeMessage",
+          "error",
+          "No puedes crear una tanda para una fecha u hora que ya pasó en Puerto Rico."
+        );
         return;
       }
 
@@ -4386,9 +4555,7 @@ const durationValue =
 
       employees.forEach((employee) => {
         const row = document.createElement("tr");
-        const lastScan = employee.lastScan
-          ? new Date(employee.lastScan).toLocaleString("es-PR")
-          : "—";
+        const lastScan = formatPuertoRicoDateTime(employee.lastScan);
 
         row.innerHTML = `
           <td><strong>${escapeHtml(employee.name)}</strong></td>
@@ -4701,9 +4868,7 @@ const durationValue =
 
       checkins.forEach((checkin) => {
         const row = document.createElement("tr");
-        const scannedAt = checkin.scannedAt
-          ? new Date(checkin.scannedAt).toLocaleString("es-PR")
-          : "—";
+        const scannedAt = formatPuertoRicoDateTime(checkin.scannedAt);
         const seats = Array.isArray(checkin.seats) ? checkin.seats.join(", ") : "—";
 
         row.innerHTML = `
@@ -4834,7 +4999,9 @@ const movieDurationSelect =
 const movieDurationCustom =
   document.getElementById("movieDurationCustom");
 
-movieDurationSelect.addEventListener("change", () => {
+movieDurationSelect?.addEventListener("change", () => {
+  if (!movieDurationCustom) return;
+
   if (movieDurationSelect.value === "other") {
     movieDurationCustom.style.display = "block";
     movieDurationCustom.focus();
