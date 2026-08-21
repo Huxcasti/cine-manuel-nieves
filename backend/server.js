@@ -76,6 +76,7 @@ const SUPABASE_TRAILERS_BUCKET =
 // PayPal y ATH Móvil
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || "";
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
+const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || "";
 const PAYPAL_MODE = String(process.env.PAYPAL_MODE || "sandbox").toLowerCase();
 const PAYPAL_CURRENCY = String(process.env.PAYPAL_CURRENCY || "USD").toUpperCase();
 const ATH_MOVIL_PHONE = process.env.ATH_MOVIL_PHONE || "";
@@ -252,9 +253,16 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
   process.exit(1);
 }
 
+if (!["sandbox", "live"].includes(PAYPAL_MODE)) {
+  console.error(
+    "PAYPAL_MODE debe ser 'sandbox' o 'live'."
+  );
+  process.exit(1);
+}
+
 /*
 ==================================================
-CONEXIÃN CON POSTGRESQL
+CONEXIÓN CON POSTGRESQL
 ==================================================
 */
 
@@ -339,7 +347,7 @@ const trailerUpload = multer({
     if (!allowedTypes.has(file.mimetype)) {
       callback(
         new Error(
-          "El trÃ¡iler debe ser MP4, WEBM o MOV."
+          "El tráiler debe ser MP4, WEBM o MOV."
         )
       );
       return;
@@ -493,7 +501,7 @@ async function cleanupOldQrFiles() {
 
 /*
 ==================================================
-CONTRASEÃA DEL ADMINISTRADOR
+CONTRASEÑA DEL ADMINISTRADOR
 ==================================================
 */
 
@@ -701,7 +709,7 @@ async function requireEmployee(req, res, next) {
   try {
     const token = req.headers["x-employee-token"];
     if (!token || typeof token !== "string") {
-      return res.status(401).json({ error: "Debes iniciar sesiÃ3n como empleado." });
+      return res.status(401).json({ error: "Debes iniciar sesión como empleado." });
     }
     const tokenHash = hashSessionToken(token);
     const result = await pool.query(`
@@ -720,14 +728,14 @@ async function requireEmployee(req, res, next) {
         AND e.active = TRUE;
     `, [tokenHash]);
     if (result.rowCount === 0) {
-      return res.status(401).json({ error: "La sesiÃ3n del empleado expirÃ3 o no es vÃ¡lida." });
+      return res.status(401).json({ error: "La sesión del empleado expiró o no es válida." });
     }
     req.employee = result.rows[0];
     req.employeeTokenHash = tokenHash;
     next();
   } catch (error) {
     console.error("Error verificando al empleado:", error);
-    res.status(500).json({ error: "No se pudo verificar la sesiÃ3n del empleado." });
+    res.status(500).json({ error: "No se pudo verificar la sesión del empleado." });
   }
 }
 
@@ -739,6 +747,68 @@ PAYPAL
 
 function paypalIsConfigured() {
   return Boolean(PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET);
+}
+
+function paypalWebhookIsConfigured() {
+  return paypalIsConfigured() && Boolean(PAYPAL_WEBHOOK_ID);
+}
+
+function emailIsProductionReady() {
+  return Boolean(
+    RESEND_API_KEY &&
+    RESEND_FROM_EMAIL &&
+    !RESEND_FROM_EMAIL.includes("onboarding@resend.dev")
+  );
+}
+
+async function verifyPayPalWebhook(req) {
+  if (!paypalWebhookIsConfigured()) {
+    return false;
+  }
+
+  const transmissionId = String(
+    req.headers["paypal-transmission-id"] || ""
+  ).trim();
+  const transmissionTime = String(
+    req.headers["paypal-transmission-time"] || ""
+  ).trim();
+  const certUrl = String(
+    req.headers["paypal-cert-url"] || ""
+  ).trim();
+  const authAlgo = String(
+    req.headers["paypal-auth-algo"] || ""
+  ).trim();
+  const transmissionSig = String(
+    req.headers["paypal-transmission-sig"] || ""
+  ).trim();
+
+  if (
+    !transmissionId ||
+    !transmissionTime ||
+    !certUrl ||
+    !authAlgo ||
+    !transmissionSig
+  ) {
+    return false;
+  }
+
+  const verification = await paypalRequest(
+    "/v1/notifications/verify-webhook-signature",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        transmission_id: transmissionId,
+        transmission_time: transmissionTime,
+        cert_url: certUrl,
+        auth_algo: authAlgo,
+        transmission_sig: transmissionSig,
+        webhook_id: PAYPAL_WEBHOOK_ID,
+        webhook_event: req.body
+      })
+    }
+  );
+
+  return verification?.verification_status === "SUCCESS";
 }
 
 async function paypalRequest(path, options = {}) {
@@ -816,7 +886,7 @@ async function generateUniqueManualCode(client) {
   }
 
   throw new Error(
-    "No se pudo generar un cÃ3digo manual Ãonico."
+    "No se pudo generar un código manual único."
   );
 }
 
@@ -1156,6 +1226,21 @@ const qrPublicUrl = qrPublicData.publicUrl;
   }
 }
 
+async function sendTicketEmailAndMark(ticket) {
+  await sendTicketEmail(ticket);
+
+  if (ticket?.id) {
+    await pool.query(
+      `
+        UPDATE tickets
+        SET ticket_email_sent_at = NOW()
+        WHERE id = $1;
+      `,
+      [ticket.id]
+    );
+  }
+}
+
 function formatMovie(row) {
   return {
     id: row.id,
@@ -1173,8 +1258,8 @@ function formatMovie(row) {
 
 const SHOWTIME_LANGUAGES = {
   spanish: "Español",
-  english: "Ingles",
-  english_subtitled: "Ingles con subtitulos en español"
+  english: "Inglés",
+  english_subtitled: "Inglés con subtítulos en español"
 };
 
 function normalizeShowtimeLanguage(value) {
@@ -1223,7 +1308,7 @@ function formatCheckin(row) {
 
 /*
 ==================================================
-CREAR TABLAS AUTOMÃTICAMENTE
+CREAR TABLAS AUTOMÁTICAMENTE
 ==================================================
 */
 
@@ -1263,6 +1348,11 @@ async function initializeDatabase() {
   await pool.query(`
     ALTER TABLE tickets
     ADD COLUMN IF NOT EXISTS payment_hold_until TIMESTAMPTZ;
+  `);
+
+  await pool.query(`
+    ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS ticket_email_sent_at TIMESTAMPTZ;
   `);
 
   await pool.query(`
@@ -1307,14 +1397,20 @@ await pool.query(`
       duration_minutes INTEGER,
       rating TEXT,
       active BOOLEAN NOT NULL DEFAULT TRUE,
+      coming_soon BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
   await pool.query(`
-  ALTER TABLE movies
-  ADD COLUMN IF NOT EXISTS trailer_url TEXT;
-`);
+    ALTER TABLE movies
+    ADD COLUMN IF NOT EXISTS trailer_url TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE movies
+    ADD COLUMN IF NOT EXISTS coming_soon BOOLEAN NOT NULL DEFAULT FALSE;
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS showtimes (
@@ -1499,7 +1595,7 @@ await pool.query(`
       ]
     );
 
-    console.log("ContraseÃ±a administrativa inicial creada.");
+    console.log("Contraseña administrativa inicial creada.");
   }
 
   console.log("Base de datos preparada correctamente.");
@@ -1507,12 +1603,12 @@ await pool.query(`
 
 /*
 ==================================================
-REINICIO DIARIO A LAS 3:00 A. M.
-HORA DE PUERTO RICO
+LIMPIEZA AUTOMÁTICA / HOUSEKEEPING
 ==================================================
 
-Solo elimina reservaciones y taquillas.
-No elimina pelÃ­culas, tandas ni contraseÃ±a.
+Elimina sesiones vencidas, reservaciones pendientes expiradas,
+códigos de recuperación antiguos y archivos QR fuera de retención.
+Nunca elimina películas, tandas ni boletos pagados.
 */
 
 async function cleanupPreviousBusinessDay() {
@@ -1531,10 +1627,20 @@ async function cleanupPreviousBusinessDay() {
       DELETE FROM tickets
       WHERE
         payment_status = 'pending'
-        AND COALESCE(
-          payment_hold_until,
-          created_at + ($1 * INTERVAL '1 minute')
-        ) <= NOW();
+        AND (
+          (
+            paypal_order_id IS NULL
+            AND COALESCE(
+              payment_hold_until,
+              created_at + ($1 * INTERVAL '1 minute')
+            ) <= NOW()
+          )
+          OR (
+            paypal_order_id IS NOT NULL
+            AND COALESCE(payment_hold_until, created_at)
+                <= NOW() - INTERVAL '24 hours'
+          )
+        );
     `,
     [PENDING_RESERVATION_MINUTES]
   );
@@ -1610,9 +1716,20 @@ app.get("/", async (req, res) => {
     res.json({
       status: "online",
       database: "connected",
-      dailyReset: "3:00 AM America/Puerto_Rico",
+      housekeeping: {
+        intervalMinutes: Math.round(CLEANUP_INTERVAL_MS / 60000),
+        pendingReservationMinutes: PENDING_RESERVATION_MINUTES,
+        qrRetentionDays: QR_STORAGE_RETENTION_DAYS
+      },
+      integrations: {
+        paypal: paypalIsConfigured(),
+        paypalMode: PAYPAL_MODE,
+        paypalWebhook: paypalWebhookIsConfigured(),
+        email: Boolean(resend),
+        emailProductionReady: emailIsProductionReady()
+      },
       app: "Cine Teatro Manuel Nieves Quintero",
-      version: "5.0"
+      version: "5.1"
     });
   } catch (error) {
     console.error("Error verificando la base de datos:", error);
@@ -1626,7 +1743,7 @@ app.get("/", async (req, res) => {
 
 /*
 ==================================================
-CARTELERA PÃBLICA
+CARTELERA PÚBLICA
 ==================================================
 */
 
@@ -1739,7 +1856,7 @@ app.put("/api/admin/ticket-prices", requireAdmin, async (req, res) => {
       seniorPrice < 0
     ) {
       return res.status(400).json({
-        error: "Los precios de adulto, niÃ±o y senior deben ser vÃ¡lidos."
+        error: "Los precios de adulto, niño y senior deben ser válidos."
       });
     }
 
@@ -1768,7 +1885,7 @@ app.put("/api/admin/ticket-prices", requireAdmin, async (req, res) => {
 
 /*
 ==================================================
-AUTENTICACIÃN DEL ADMINISTRADOR
+AUTENTICACIÓN DEL ADMINISTRADOR
 ==================================================
 */
 
@@ -2204,12 +2321,12 @@ app.put(
       });
     } catch (error) {
       console.error(
-        "Error cambiando la contraseÃ±a:",
+        "Error cambiando la contraseña:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudo cambiar la contraseÃ±a."
+        error: "No se pudo cambiar la contraseña."
       });
     }
   }
@@ -2227,20 +2344,20 @@ app.post("/api/employee/login", employeeLoginLimiter, async (req, res) => {
     const username = normalizeUsername(req.body?.username);
     const password = req.body?.password;
     if (!username || typeof password !== "string") {
-      return res.status(400).json({ error: "Escribe el usuario y la contraseÃ±a." });
+      return res.status(400).json({ error: "Escribe el usuario y la contraseña." });
     }
     const result = await pool.query(`SELECT * FROM employees WHERE LOWER(username) = $1;`, [username]);
-    if (result.rowCount === 0) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    if (result.rowCount === 0) return res.status(401).json({ error: "Usuario o contraseña incorrectos." });
     const employee = result.rows[0];
-    if (!employee.active) return res.status(403).json({ error: "Esta cuenta estÃ¡ desactivada." });
+    if (!employee.active) return res.status(403).json({ error: "Esta cuenta está desactivada." });
     const valid = await verifyPassword(password, employee.password_salt, employee.password_hash);
-    if (!valid) return res.status(401).json({ error: "Usuario o contraseÃ±a incorrectos." });
+    if (!valid) return res.status(401).json({ error: "Usuario o contraseña incorrectos." });
     const token = crypto.randomBytes(32).toString("hex");
     await pool.query(`INSERT INTO employee_sessions (id, employee_id, token_hash, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '12 hours');`, [crypto.randomUUID(), employee.id, hashSessionToken(token)]);
     res.json({ success: true, token, expiresInHours: 12, employee: { id: employee.id, name: employee.name, username: employee.username } });
   } catch (error) {
-    console.error("Error iniciando sesiÃ3n de empleado:", error);
-    res.status(500).json({ error: "No se pudo iniciar la sesiÃ3n." });
+    console.error("Error iniciando sesión de empleado:", error);
+    res.status(500).json({ error: "No se pudo iniciar la sesión." });
   }
 });
 
@@ -2310,16 +2427,16 @@ app.get("/api/employee/session-summary", requireEmployee, async (req, res) => {
 app.post("/api/employee/logout", requireEmployee, async (req, res) => {
   try {
     await pool.query(`DELETE FROM employee_sessions WHERE token_hash = $1;`, [req.employeeTokenHash]);
-    res.json({ success: true, message: "SesiÃ3n cerrada correctamente." });
+    res.json({ success: true, message: "Sesión cerrada correctamente." });
   } catch (error) {
-    console.error("Error cerrando sesiÃ3n de empleado:", error);
-    res.status(500).json({ error: "No se pudo cerrar la sesiÃ3n." });
+    console.error("Error cerrando sesión de empleado:", error);
+    res.status(500).json({ error: "No se pudo cerrar la sesión." });
   }
 });
 
 /*
 ==================================================
-ADMINISTRACIÃN DE EMPLEADOS
+ADMINISTRACIÓN DE EMPLEADOS
 ==================================================
 */
 
@@ -2353,13 +2470,13 @@ app.post("/api/admin/employees", requireAdmin, async (req, res) => {
     const password = req.body?.password;
     const active = req.body?.active !== false;
     if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
-    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, nÃomeros, punto, guion o guion bajo." });
-    if (typeof password !== "string" || password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El usuario debe tener entre 3 y 30 caracteres y solo puede usar letras, números, punto, guion o guion bajo." });
+    if (typeof password !== "string" || password.length < 8) return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres." });
     const credentials = await hashPassword(password);
     const result = await pool.query(`INSERT INTO employees (id,name,username,password_salt,password_hash,active) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;`, [crypto.randomUUID(),name,username,credentials.salt,credentials.hash,Boolean(active)]);
     res.status(201).json(formatEmployee(result.rows[0]));
   } catch (error) {
-    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya está registrado." });
     console.error("Error creando empleado:", error);
     res.status(500).json({ error: "No se pudo crear el empleado." });
   }
@@ -2373,10 +2490,10 @@ app.put("/api/admin/employees/:id", requireAdmin, async (req, res) => {
     const password = req.body?.password;
     const active = req.body?.active !== false;
     if (!name) return res.status(400).json({ error: "El nombre del empleado es obligatorio." });
-    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El nombre de usuario no es vÃ¡lido." });
+    if (!/^[a-z0-9._-]{3,30}$/.test(username)) return res.status(400).json({ error: "El nombre de usuario no es válido." });
     let result;
     if (typeof password === "string" && password.length > 0) {
-      if (password.length < 8) return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 8 caracteres." });
+      if (password.length < 8) return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres." });
       const credentials = await hashPassword(password);
       result = await pool.query(`UPDATE employees SET name=$1,username=$2,password_salt=$3,password_hash=$4,active=$5,updated_at=NOW() WHERE id=$6 RETURNING *;`, [name,username,credentials.salt,credentials.hash,Boolean(active),id]);
       await pool.query(`DELETE FROM employee_sessions WHERE employee_id = $1;`, [id]);
@@ -2387,7 +2504,7 @@ app.put("/api/admin/employees/:id", requireAdmin, async (req, res) => {
     if (result.rowCount === 0) return res.status(404).json({ error: "Empleado no encontrado." });
     res.json(formatEmployee(result.rows[0]));
   } catch (error) {
-    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya estÃ¡ registrado." });
+    if (error?.code === "23505") return res.status(409).json({ error: "Ese nombre de usuario ya está registrado." });
     console.error("Error actualizando empleado:", error);
     res.status(500).json({ error: "No se pudo actualizar el empleado." });
   }
@@ -2474,7 +2591,7 @@ app.post(
       if (!publicUrlData?.publicUrl) {
         return res.status(500).json({
           error:
-            "El afiche se subiÃ3, pero no se pudo obtener su URL pÃoblica."
+            "El afiche se subió, pero no se pudo obtener su URL pública."
         });
       }
 
@@ -2495,7 +2612,7 @@ app.post(
 
 /*
 ==================================================
-ADMINISTRACIÃN DE PELÃCULAS
+ADMINISTRACIÓN DE PELÍCULAS
 ==================================================
 */
 
@@ -2513,12 +2630,12 @@ app.get(
       res.json(result.rows.map(formatMovie));
     } catch (error) {
       console.error(
-        "Error obteniendo pelÃ­culas:",
+        "Error obteniendo películas:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudieron obtener las pelÃ­culas."
+        error: "No se pudieron obtener las películas."
       });
     }
   }
@@ -2545,7 +2662,7 @@ app.post(
         !title.trim()
       ) {
         return res.status(400).json({
-          error: "El tÃ­tulo de la pelÃ­cula es obligatorio."
+          error: "El título de la película es obligatorio."
         });
       }
 
@@ -2558,7 +2675,7 @@ app.post(
       ) {
         return res.status(400).json({
           error:
-            "La duraciÃ3n debe ser un nÃomero entero mayor que cero."
+            "La duración debe ser un número entero mayor que cero."
         });
       }
 
@@ -2574,9 +2691,10 @@ app.post(
             trailer_url,
             duration_minutes,
             rating,
-            active
+            active,
+            coming_soon
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
           RETURNING *;
         `,
         [
@@ -2589,7 +2707,8 @@ app.post(
             ? null
             : Number(durationMinutes),
           rating.trim(),
-          Boolean(active)
+          Boolean(active),
+          Boolean(comingSoon)
         ]
       );
 
@@ -2598,12 +2717,12 @@ app.post(
       );
     } catch (error) {
       console.error(
-        "Error creando pelÃ­cula:",
+        "Error creando película:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudo crear la pelÃ­cula."
+        error: "No se pudo crear la película."
       });
     }
   }
@@ -2632,7 +2751,7 @@ app.put(
         !title.trim()
       ) {
         return res.status(400).json({
-          error: "El tÃ­tulo de la pelÃ­cula es obligatorio."
+          error: "El título de la película es obligatorio."
         });
       }
 
@@ -2645,7 +2764,7 @@ app.put(
       ) {
         return res.status(400).json({
           error:
-            "La duraciÃ3n debe ser un nÃomero entero mayor que cero."
+            "La duración debe ser un número entero mayor que cero."
         });
       }
 
@@ -2681,19 +2800,19 @@ app.put(
 
       if (result.rowCount === 0) {
         return res.status(404).json({
-          error: "PelÃ­cula no encontrada."
+          error: "Película no encontrada."
         });
       }
 
       res.json(formatMovie(result.rows[0]));
     } catch (error) {
       console.error(
-        "Error actualizando pelÃ­cula:",
+        "Error actualizando película:",
         error
       );
 
       res.status(500).json({
-        error: "No se pudo actualizar la pelÃ­cula."
+        error: "No se pudo actualizar la película."
       });
     }
   }
@@ -2764,7 +2883,7 @@ app.delete(
 
 /*
 ==================================================
-ADMINISTRACIÃN DE TANDAS
+ADMINISTRACIÓN DE TANDAS
 ==================================================
 */
 
@@ -2820,7 +2939,7 @@ app.post(
         !movieId.trim()
       ) {
         return res.status(400).json({
-          error: "Debes seleccionar una pelÃ­cula."
+          error: "Debes seleccionar una película."
         });
       }
 
@@ -2829,7 +2948,7 @@ app.post(
         !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
       ) {
         return res.status(400).json({
-          error: "La fecha de la tanda no es vÃ¡lida."
+          error: "La fecha de la tanda no es válida."
         });
       }
 
@@ -2856,7 +2975,7 @@ app.post(
 
       if (!normalizedLanguage) {
         return res.status(400).json({
-          error: "El idioma de la tanda no es vÃ¡lido."
+          error: "El idioma de la tanda no es válido."
         });
       }
 
@@ -2871,7 +2990,7 @@ app.post(
 
       if (movieResult.rowCount === 0) {
         return res.status(404).json({
-          error: "La pelÃ­cula seleccionada no existe."
+          error: "La película seleccionada no existe."
         });
       }
 
@@ -2894,7 +3013,7 @@ app.post(
       if (duplicateResult.rowCount > 0) {
         return res.status(409).json({
           error:
-            "Esta pelÃ­cula ya tiene una tanda en esa fecha y hora."
+            "Esta película ya tiene una tanda en esa fecha y hora."
         });
       }
 
@@ -2983,7 +3102,7 @@ app.put(
         !movieId.trim()
       ) {
         return res.status(400).json({
-          error: "Debes seleccionar una pelÃ­cula."
+          error: "Debes seleccionar una película."
         });
       }
 
@@ -2992,7 +3111,7 @@ app.put(
         !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
       ) {
         return res.status(400).json({
-          error: "La fecha de la tanda no es vÃ¡lida."
+          error: "La fecha de la tanda no es válida."
         });
       }
 
@@ -3019,7 +3138,7 @@ app.put(
 
       if (!normalizedLanguage) {
         return res.status(400).json({
-          error: "El idioma de la tanda no es vÃ¡lido."
+          error: "El idioma de la tanda no es válido."
         });
       }
 
@@ -3034,7 +3153,7 @@ app.put(
 
       if (movieResult.rowCount === 0) {
         return res.status(404).json({
-          error: "La pelÃ­cula seleccionada no existe."
+          error: "La película seleccionada no existe."
         });
       }
 
@@ -3059,7 +3178,7 @@ app.put(
       if (duplicateResult.rowCount > 0) {
         return res.status(409).json({
           error:
-            "Ya existe otra tanda para esa pelÃ­cula en esa fecha y hora."
+            "Ya existe otra tanda para esa película en esa fecha y hora."
         });
       }
 
@@ -3300,7 +3419,7 @@ app.get("/api/seats", async (req, res) => {
 
 /*
 ==================================================
-CREAR RESERVACIÃN
+CREAR RESERVACIÓN
 ==================================================
 */
 
@@ -3394,7 +3513,7 @@ app.post("/api/reservations", reservationCreateLimiter, async (req, res) => {
 
     if (normalizedSeats.length === 0) {
       return res.status(400).json({
-        error: "Los asientos seleccionados no son vÃ¡lidos."
+        error: "Los asientos seleccionados no son válidos."
       });
     }
 
@@ -3423,7 +3542,7 @@ app.post("/api/reservations", reservationCreateLimiter, async (req, res) => {
     if (ticketTypeCount !== normalizedSeats.length) {
       return res.status(400).json({
         error:
-          "La cantidad de taquillas por categorÃ­a debe coincidir con los asientos seleccionados."
+          "La cantidad de taquillas por categoría debe coincidir con los asientos seleccionados."
       });
     }
 
@@ -3498,7 +3617,7 @@ app.post("/api/reservations", reservationCreateLimiter, async (req, res) => {
       await client.query("ROLLBACK");
 
       return res.status(400).json({
-        error: "Esta tanda no estÃ¡ disponible."
+        error: "Esta tanda no está disponible."
       });
     }
 
@@ -3634,12 +3753,12 @@ const initialPaymentStatus = "pending";
     await client.query("ROLLBACK");
 
     console.error(
-      "Error creando la reservaciÃ3n:",
+      "Error creando la reservación:",
       error
     );
 
     res.status(500).json({
-      error: "No se pudo crear la reservaciÃ3n."
+      error: "No se pudo crear la reservación."
     });
   } finally {
     client.release();
@@ -4144,7 +4263,7 @@ app.post(
         formatTicket(updateResult.rows[0]);
 
       try {
-        await sendTicketEmail(reservation);
+        await sendTicketEmailAndMark(reservation);
       } catch (emailError) {
         console.error(
           "Error enviando correo:",
@@ -4277,7 +4396,7 @@ app.get(
 
 /*
 ==================================================
-VALIDAR CÃDIGO QR
+VALIDAR CÓDIGO QR
 ==================================================
 */
 
@@ -4488,7 +4607,7 @@ app.post(
 
       if (!code) {
         return res.status(400).json({
-          error: "El cÃ3digo del boleto es obligatorio."
+          error: "El código del boleto es obligatorio."
         });
       }
 
@@ -4572,7 +4691,7 @@ app.post(
 
 /*
 ==================================================
-SUBIR TRÃILER A SUPABASE STORAGE
+SUBIR TRÁILER A SUPABASE STORAGE
 ==================================================
 */
 
@@ -4584,7 +4703,7 @@ app.post(
     try {
       if (!req.file) {
         return res.status(400).json({
-          error: "Selecciona un video para el trÃ¡iler."
+          error: "Selecciona un video para el tráiler."
         });
       }
 
@@ -4614,14 +4733,14 @@ app.post(
 
       if (uploadError) {
         console.error(
-          "Error de Supabase subiendo trÃ¡iler:",
+          "Error de Supabase subiendo tráiler:",
           uploadError
         );
 
         return res.status(502).json({
           error:
             uploadError.message ||
-            "No se pudo subir el trÃ¡iler a Supabase Storage."
+            "No se pudo subir el tráiler a Supabase Storage."
         });
       }
 
@@ -4633,7 +4752,7 @@ app.post(
       if (!publicUrlData?.publicUrl) {
         return res.status(500).json({
           error:
-            "El trÃ¡iler se subiÃ3, pero no se pudo obtener su URL pÃoblica."
+            "El tráiler se subió, pero no se pudo obtener su URL pública."
         });
       }
 
@@ -4645,13 +4764,13 @@ app.post(
       });
     } catch (error) {
       console.error(
-        "Error subiendo trÃ¡iler:",
+        "Error subiendo tráiler:",
         error
       );
 
       res.status(500).json({
         error:
-          "No se pudo subir el trÃ¡iler."
+          "No se pudo subir el tráiler."
       });
     }
   }
@@ -4689,8 +4808,8 @@ app.use((error, req, res, next) => {
 
       return res.status(413).json({
         error: isTrailer
-          ? "El trÃ¡iler es demasiado grande. El mÃ¡ximo es 50 MB."
-          : "El afiche es demasiado grande. El mÃ¡ximo es 6 MB."
+          ? "El tráiler es demasiado grande. El máximo es 50 MB."
+          : "El afiche es demasiado grande. El máximo es 6 MB."
       });
     }
 
@@ -4703,7 +4822,7 @@ app.use((error, req, res, next) => {
     error?.message ===
       "El afiche debe ser JPG, PNG o WEBP." ||
     error?.message ===
-      "El trÃ¡iler debe ser MP4, WEBM o MOV."
+      "El tráiler debe ser MP4, WEBM o MOV."
   ) {
     return res.status(400).json({
       error: error.message
@@ -4711,8 +4830,256 @@ app.use((error, req, res, next) => {
   }
 
   res.status(500).json({
-    error: "OcurriÃ3 un error inesperado."
+    error: "Ocurrió un error inesperado."
   });
+});
+
+
+/*
+==================================================
+PAYPAL WEBHOOK / RECONCILIACIÓN
+==================================================
+
+Este endpoint permite que PayPal confirme el resultado aunque el navegador
+se cierre o pierda conexión después del cobro. Requiere PAYPAL_WEBHOOK_ID.
+*/
+
+app.post("/api/paypal/webhook", async (req, res) => {
+  if (!paypalWebhookIsConfigured()) {
+    return res.status(503).json({
+      error: "El webhook de PayPal todavía no está configurado."
+    });
+  }
+
+  try {
+    const verified = await verifyPayPalWebhook(req);
+
+    if (!verified) {
+      return res.status(400).json({
+        error: "No se pudo verificar la firma del webhook de PayPal."
+      });
+    }
+
+    const event = req.body || {};
+    const eventType = String(event.event_type || "").trim();
+    const resource = event.resource || {};
+
+    if (eventType === "PAYMENT.CAPTURE.COMPLETED") {
+      const reservationId = String(
+        resource.custom_id || resource.invoice_id || ""
+      ).trim();
+      const orderId = String(
+        resource.supplementary_data?.related_ids?.order_id || ""
+      ).trim();
+
+      if (!reservationId) {
+        console.warn(
+          "Webhook PayPal COMPLETED sin reservationId:",
+          event.id || "sin-id"
+        );
+        return res.json({ success: true, ignored: true });
+      }
+
+      const client = await pool.connect();
+
+      try {
+        await client.query("BEGIN");
+
+        const ticketResult = await client.query(
+          `
+            SELECT *
+            FROM tickets
+            WHERE id = $1
+            FOR UPDATE;
+          `,
+          [reservationId]
+        );
+
+        if (ticketResult.rowCount === 0) {
+          await client.query("ROLLBACK");
+          console.warn(
+            "Webhook PayPal para reservación inexistente:",
+            reservationId
+          );
+          return res.json({ success: true, ignored: true });
+        }
+
+        const ticket = ticketResult.rows[0];
+
+        if (["paid", "approved"].includes(ticket.payment_status)) {
+          await client.query("COMMIT");
+
+          if (!ticket.ticket_email_sent_at) {
+            try {
+              await sendTicketEmailAndMark(formatTicket(ticket));
+            } catch (emailError) {
+              console.error(
+                "Pago ya confirmado, pero no se pudo recuperar el envío del boleto:",
+                emailError
+              );
+            }
+          }
+
+          return res.json({ success: true, alreadyProcessed: true });
+        }
+
+        if (ticket.customer?.paymentMethod !== "paypal") {
+          await client.query("ROLLBACK");
+          console.warn(
+            "Webhook PayPal no corresponde al método de pago:",
+            reservationId
+          );
+          return res.json({ success: true, ignored: true });
+        }
+
+        if (
+          !ticket.paypal_order_id ||
+          !orderId ||
+          ticket.paypal_order_id !== orderId
+        ) {
+          await client.query("ROLLBACK");
+          console.error(
+            "Webhook PayPal con orderId que no coincide:",
+            { reservationId, orderId, storedOrderId: ticket.paypal_order_id }
+          );
+          return res.json({ success: true, ignored: true });
+        }
+
+        const expectedAmount = Number(ticket.total).toFixed(2);
+        const webhookAmount = resource.amount || {};
+
+        if (
+          webhookAmount.currency_code !== PAYPAL_CURRENCY ||
+          Number(webhookAmount.value).toFixed(2) !== expectedAmount
+        ) {
+          await client.query("ROLLBACK");
+          console.error(
+            "Webhook PayPal con monto/moneda que no coincide:",
+            { reservationId, expectedAmount, webhookAmount }
+          );
+          return res.json({ success: true, ignored: true });
+        }
+
+        const updatedCustomer = {
+          ...(ticket.customer || {}),
+          paymentMethod: "paypal",
+          paypalOrderId: orderId,
+          paypalCaptureId: resource.id || ""
+        };
+
+        const updateResult = await client.query(
+          `
+            UPDATE tickets
+            SET
+              payment_status = 'paid',
+              customer = $2,
+              cancellation_token_hash = NULL,
+              payment_hold_until = NULL
+            WHERE id = $1
+            RETURNING *;
+          `,
+          [reservationId, JSON.stringify(updatedCustomer)]
+        );
+
+        await client.query("COMMIT");
+
+        const reservation = formatTicket(updateResult.rows[0]);
+
+        try {
+          await sendTicketEmailAndMark(reservation);
+        } catch (emailError) {
+          console.error(
+            "Pago reconciliado, pero no se pudo enviar el boleto:",
+            emailError
+          );
+        }
+
+        return res.json({
+          success: true,
+          reconciled: true,
+          reservationId
+        });
+      } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
+
+    if (eventType === "PAYMENT.CAPTURE.PENDING") {
+      return res.json({ success: true, pending: true });
+    }
+
+    if (
+      eventType === "PAYMENT.CAPTURE.DENIED" ||
+      eventType === "PAYMENT.CAPTURE.DECLINED"
+    ) {
+      const reservationId = String(
+        resource.custom_id || resource.invoice_id || ""
+      ).trim();
+
+      if (reservationId) {
+        await pool.query(
+          `
+            UPDATE tickets
+            SET
+              payment_status = 'failed',
+              payment_hold_until = NULL
+            WHERE
+              id = $1
+              AND payment_status = 'pending';
+          `,
+          [reservationId]
+        );
+      }
+
+      return res.json({ success: true });
+    }
+
+    if (eventType === "PAYMENT.CAPTURE.REFUNDED") {
+      const originalCaptureId = String(
+        resource.supplementary_data?.related_ids?.capture_id || ""
+      ).trim();
+
+      if (originalCaptureId) {
+        await pool.query(
+          `
+            UPDATE tickets
+            SET payment_status = 'refunded'
+            WHERE customer->>'paypalCaptureId' = $1;
+          `,
+          [originalCaptureId]
+        );
+      }
+
+      return res.json({ success: true });
+    }
+
+    if (eventType === "PAYMENT.CAPTURE.REVERSED") {
+      const captureId = String(resource.id || "").trim();
+
+      if (captureId) {
+        await pool.query(
+          `
+            UPDATE tickets
+            SET payment_status = 'reversed'
+            WHERE customer->>'paypalCaptureId' = $1;
+          `,
+          [captureId]
+        );
+      }
+
+      return res.json({ success: true });
+    }
+
+    return res.json({ success: true, ignored: true });
+  } catch (error) {
+    console.error("Error procesando webhook de PayPal:", error);
+    return res.status(500).json({
+      error: "No se pudo procesar el webhook de PayPal."
+    });
+  }
 });
 
 /*
@@ -4765,7 +5132,31 @@ async function startServer() {
       console.log(
         `Servidor iniciado correctamente en el puerto ${PORT}.`
       );
+
+      if (PAYPAL_MODE === "live" && !PAYPAL_WEBHOOK_ID) {
+        console.warn(
+          "ADVERTENCIA: PayPal está en live, pero falta PAYPAL_WEBHOOK_ID."
+        );
+      }
+
+      if (resend && !emailIsProductionReady()) {
+        console.warn(
+          "ADVERTENCIA: configura RESEND_FROM_EMAIL con un dominio verificado antes de producción."
+        );
+      }
     });
+
+    const cleanupTimer = setInterval(async () => {
+      try {
+        await cleanupPreviousBusinessDay();
+      } catch (error) {
+        console.error("Error en limpieza periódica:", error);
+      }
+    }, CLEANUP_INTERVAL_MS);
+
+    if (typeof cleanupTimer.unref === "function") {
+      cleanupTimer.unref();
+    }
   } catch (error) {
     console.error(
       "No se pudo iniciar el servidor:",
