@@ -960,6 +960,108 @@ function formatTicketDateTime(value) {
   };
 }
 
+function getPuertoRicoDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Puerto_Rico",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getTicketShowDateKey(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  const isoMatch = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const englishMatch = raw.match(
+    /\b(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/i
+  );
+
+  if (englishMatch) {
+    const monthNumbers = {
+      jan: "01",
+      feb: "02",
+      mar: "03",
+      apr: "04",
+      may: "05",
+      jun: "06",
+      jul: "07",
+      aug: "08",
+      sep: "09",
+      oct: "10",
+      nov: "11",
+      dec: "12"
+    };
+
+    const month =
+      monthNumbers[String(englishMatch[1]).toLowerCase()];
+
+    const day =
+      String(englishMatch[2]).padStart(2, "0");
+
+    return `${englishMatch[3]}-${month}-${day}`;
+  }
+
+  return "";
+}
+
+function getTicketDateValidation(ticket) {
+  const todayKey = getPuertoRicoDateKey();
+  const showDateKey = getTicketShowDateKey(ticket?.show_time);
+
+  if (!showDateKey) {
+    return {
+      allowed: false,
+      status: 422,
+      error:
+        "No se pudo verificar la fecha de esta tanda. No marques el boleto como utilizado."
+    };
+  }
+
+  const formatted =
+    formatTicketDateTime(ticket?.show_time);
+
+  if (showDateKey > todayKey) {
+    return {
+      allowed: false,
+      status: 409,
+      error:
+        `Esta entrada todavía no es válida. Corresponde a ${formatted.full}.`
+    };
+  }
+
+  if (showDateKey < todayKey) {
+    return {
+      allowed: false,
+      status: 410,
+      error:
+        `Este boleto está vencido. Correspondía a ${formatted.full}.`
+    };
+  }
+
+  return {
+    allowed: true,
+    status: 200,
+    error: ""
+  };
+}
+
+
 
   async function sendTicketEmail(ticket) {
   if (!resend) {
@@ -4187,6 +4289,7 @@ CHECK-IN DEL EMPLEADO
 
 app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
   const client = await pool.connect();
+
   try {
     const code = String(
       req.body?.manualCode ||
@@ -4197,7 +4300,7 @@ app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
 
     if (!code) {
       return res.status(400).json({
-        error: "El cÃ3digo del boleto es obligatorio."
+        error: "El código del boleto es obligatorio."
       });
     }
 
@@ -4212,25 +4315,155 @@ app.post("/api/employee/checkin", requireEmployee, async (req, res) => {
       `,
       [code]
     );
-    if (ticketResult.rowCount === 0) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Boleto no encontrado." }); }
+
+    if (ticketResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(404).json({
+        error: "Boleto no encontrado."
+      });
+    }
+
     const ticket = ticketResult.rows[0];
-    if (!["paid","approved"].includes(ticket.payment_status)) { await client.query("ROLLBACK"); return res.status(400).json({ error: "El boleto no ha sido pagado.", ticket: formatTicket(ticket) }); }
+
+    if (!["paid", "approved"].includes(ticket.payment_status)) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error: "El boleto no ha sido pagado.",
+        ticket: formatTicket(ticket)
+      });
+    }
+
     if (ticket.used) {
       await client.query("ROLLBACK");
-      const existing = await pool.query(`SELECT employee_name, scanned_at FROM checkins WHERE ticket_id=$1;`, [ticket.id]);
-      return res.status(409).json({ error: "Este boleto ya fue utilizado.", ticket: formatTicket(ticket), checkin: existing.rows[0] || null });
+
+      const existing = await pool.query(
+        `
+          SELECT employee_name, scanned_at
+          FROM checkins
+          WHERE ticket_id = $1;
+        `,
+        [ticket.id]
+      );
+
+      return res.status(409).json({
+        error: "Este boleto ya fue utilizado.",
+        ticket: formatTicket(ticket),
+        checkin: existing.rows[0] || null
+      });
     }
-    const seatsCount = Array.isArray(ticket.seats) ? ticket.seats.length : 0;
-    if (seatsCount <= 0) { await client.query("ROLLBACK"); return res.status(400).json({ error: "El boleto no contiene asientos vÃ¡lidos." }); }
-    const updateResult = await client.query(`UPDATE tickets SET used=TRUE,checkin_at=NOW() WHERE id=$1 RETURNING *;`, [ticket.id]);
-    await client.query(`INSERT INTO checkins (id,ticket_id,employee_id,employee_name,employee_username,seats_count,movie,show_time,seats) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);`, [crypto.randomUUID(),ticket.id,req.employee.id,req.employee.name,req.employee.username,seatsCount,ticket.movie,ticket.show_time,ticket.seats]);
+
+    /*
+    ==================================================
+    VALIDACIÓN DE FECHA DE LA TANDA
+    ==================================================
+
+    La fecha se compara usando America/Puerto_Rico.
+    Si la tanda es futura o ya venció, el boleto NO
+    se marca como usado y NO se registra check-in.
+    */
+    const dateValidation =
+      getTicketDateValidation(ticket);
+
+    if (!dateValidation.allowed) {
+      await client.query("ROLLBACK");
+
+      return res
+        .status(dateValidation.status)
+        .json({
+          error: dateValidation.error,
+          ticket: formatTicket(ticket)
+        });
+    }
+
+    const seatsCount =
+      Array.isArray(ticket.seats)
+        ? ticket.seats.length
+        : 0;
+
+    if (seatsCount <= 0) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        error:
+          "El boleto no contiene asientos válidos.",
+        ticket: formatTicket(ticket)
+      });
+    }
+
+    const updateResult = await client.query(
+      `
+        UPDATE tickets
+        SET
+          used = TRUE,
+          checkin_at = NOW()
+        WHERE id = $1
+        RETURNING *;
+      `,
+      [ticket.id]
+    );
+
+    await client.query(
+      `
+        INSERT INTO checkins (
+          id,
+          ticket_id,
+          employee_id,
+          employee_name,
+          employee_username,
+          seats_count,
+          movie,
+          show_time,
+          seats
+        )
+        VALUES (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9
+        );
+      `,
+      [
+        crypto.randomUUID(),
+        ticket.id,
+        req.employee.id,
+        req.employee.name,
+        req.employee.username,
+        seatsCount,
+        ticket.movie,
+        ticket.show_time,
+        ticket.seats
+      ]
+    );
+
     await client.query("COMMIT");
-    res.json({ success: true, message: `Entrada registrada por ${req.employee.name}. ${seatsCount} taquilla${seatsCount===1?"":"s"} contabilizada${seatsCount===1?"":"s"}.`, employee: { id:req.employee.id,name:req.employee.name,username:req.employee.username }, seatsCount, ticket: formatTicket(updateResult.rows[0]) });
+
+    res.json({
+      success: true,
+      message:
+        `Entrada registrada por ${req.employee.name}. ` +
+        `${seatsCount} taquilla${seatsCount === 1 ? "" : "s"} ` +
+        `contabilizada${seatsCount === 1 ? "" : "s"}.`,
+      employee: {
+        id: req.employee.id,
+        name: req.employee.name,
+        username: req.employee.username
+      },
+      seatsCount,
+      ticket: formatTicket(updateResult.rows[0])
+    });
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error registrando check-in de empleado:", error);
-    res.status(500).json({ error: "No se pudo registrar la entrada." });
-  } finally { client.release(); }
+    await client.query("ROLLBACK").catch(() => {});
+
+    console.error(
+      "Error registrando check-in de empleado:",
+      error
+    );
+
+    res.status(500).json({
+      error: "No se pudo registrar la entrada."
+    });
+  } finally {
+    client.release();
+  }
 });
 
 /*
