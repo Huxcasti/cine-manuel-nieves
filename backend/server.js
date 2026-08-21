@@ -1133,17 +1133,17 @@ function getTicketDateValidation(ticket) {
 
 
 
-  async function sendTicketEmail(ticket) {
+async function sendTicketEmail(ticket) {
   if (!resend) {
     console.warn("Resend no está configurado.");
-    return;
+    return false;
   }
 
   const customerEmail = ticket?.customer?.email;
 
   if (!customerEmail) {
     console.warn("El boleto no tiene correo del cliente.");
-    return;
+    return false;
   }
 
   const qrBuffer = await QRCode.toBuffer(String(ticket.qr || ""), {
@@ -1224,12 +1224,14 @@ const qrPublicUrl = qrPublicData.publicUrl;
   if (error) {
     throw new Error(error.message || "No se pudo enviar el boleto.");
   }
+
+  return true;
 }
 
 async function sendTicketEmailAndMark(ticket) {
-  await sendTicketEmail(ticket);
+  const sent = await sendTicketEmail(ticket);
 
-  if (ticket?.id) {
+  if (sent && ticket?.id) {
     await pool.query(
       `
         UPDATE tickets
@@ -1239,6 +1241,8 @@ async function sendTicketEmailAndMark(ticket) {
       [ticket.id]
     );
   }
+
+  return sent;
 }
 
 function formatMovie(row) {
@@ -4778,65 +4782,6 @@ app.post(
 
 /*
 ==================================================
-RUTA NO ENCONTRADA
-==================================================
-*/
-
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Ruta no encontrada."
-  });
-});
-
-/*
-==================================================
-MANEJO GENERAL DE ERRORES
-==================================================
-*/
-
-app.use((error, req, res, next) => {
-  console.error("Error inesperado:", error);
-
-  if (res.headersSent) {
-    return next(error);
-  }
-
-  if (error instanceof multer.MulterError) {
-    if (error.code === "LIMIT_FILE_SIZE") {
-      const isTrailer =
-        req.path.includes("/trailers");
-
-      return res.status(413).json({
-        error: isTrailer
-          ? "El tráiler es demasiado grande. El máximo es 50 MB."
-          : "El afiche es demasiado grande. El máximo es 6 MB."
-      });
-    }
-
-    return res.status(400).json({
-      error: "No se pudo procesar el archivo."
-    });
-  }
-
-  if (
-    error?.message ===
-      "El afiche debe ser JPG, PNG o WEBP." ||
-    error?.message ===
-      "El tráiler debe ser MP4, WEBM o MOV."
-  ) {
-    return res.status(400).json({
-      error: error.message
-    });
-  }
-
-  res.status(500).json({
-    error: "Ocurrió un error inesperado."
-  });
-});
-
-
-/*
-==================================================
 PAYPAL WEBHOOK / RECONCILIACIÓN
 ==================================================
 
@@ -5084,19 +5029,30 @@ app.post("/api/paypal/webhook", async (req, res) => {
 
 /*
 ==================================================
-INICIAR SERVIDOR
+RUTA NO ENCONTRADA
 ==================================================
 */
 
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Ruta no encontrada."
+  });
+});
+
+/*
+==================================================
+MANEJO GENERAL DE ERRORES
+==================================================
+*/
 
 app.use((error, req, res, next) => {
-  if (!error) {
-    return next();
+  if (res.headersSent) {
+    return next(error);
   }
 
   if (
-    error.type === "entity.too.large" ||
-    error.status === 413
+    error?.type === "entity.too.large" ||
+    error?.status === 413
   ) {
     return res.status(413).json({
       error: "La solicitud es demasiado grande."
@@ -5104,24 +5060,52 @@ app.use((error, req, res, next) => {
   }
 
   if (
-    error.message === "Origen no permitido por CORS." ||
-    error.status === 403
+    error?.message === "Origen no permitido por CORS." ||
+    error?.status === 403
   ) {
     return res.status(403).json({
       error: "Origen no autorizado."
     });
   }
 
-  console.error("Error no controlado:", error);
+  if (error instanceof multer.MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      const isTrailer = req.path.includes("/trailers");
 
-  if (res.headersSent) {
-    return next(error);
+      return res.status(413).json({
+        error: isTrailer
+          ? "El tráiler es demasiado grande. El máximo es 50 MB."
+          : "El afiche es demasiado grande. El máximo es 6 MB."
+      });
+    }
+
+    return res.status(400).json({
+      error: "No se pudo procesar el archivo."
+    });
   }
+
+  if (
+    error?.message === "El afiche debe ser JPG, PNG o WEBP." ||
+    error?.message === "El tráiler debe ser MP4, WEBM o MOV."
+  ) {
+    return res.status(400).json({
+      error: error.message
+    });
+  }
+
+  console.error("Error no controlado:", error);
 
   return res.status(500).json({
     error: "Ocurrió un error interno."
   });
 });
+
+/*
+==================================================
+INICIAR SERVIDOR
+==================================================
+*/
+
 
 async function startServer() {
   try {
