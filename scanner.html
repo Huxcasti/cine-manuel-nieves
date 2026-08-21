@@ -1200,9 +1200,7 @@
     console.log("Scanner build:", SCANNER_BUILD);
 
     const LOGIN_ENDPOINTS = [
-      "/api/employee/login",
-      "/api/employees/login",
-      "/api/scanner/login"
+      "/api/employee/login"
     ];
 
     const VALIDATE_ENDPOINTS = [
@@ -1211,6 +1209,10 @@
 
     const SESSION_SUMMARY_ENDPOINT =
       "/api/employee/session-summary";
+    const SESSION_ME_ENDPOINT =
+      "/api/employee/me";
+    const LOGOUT_ENDPOINT =
+      "/api/employee/logout";
 
     let employeeSession = null;
     let html5QrScanner = null;
@@ -1219,6 +1221,7 @@
     let qrFallbackContext = null;
     let scannerStarted = false;
     let scanCooldown = false;
+    let validationInProgress = false;
     let lastScannedCode = "";
     let lastScanAt = 0;
     let recentHistory = [];
@@ -1254,7 +1257,9 @@
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return String(value);
 
-      return date.toLocaleString("es-PR");
+      return date.toLocaleString("es-PR", {
+        timeZone: "America/Puerto_Rico"
+      });
     }
 
     function formatShowtime(value) {
@@ -1441,10 +1446,13 @@
       const data = await safeJson(response);
 
       if (!response.ok) {
-        throw new Error(
+        const error = new Error(
           extractErrorMessage(data) ||
           "No se pudo cargar el resumen de sesión."
         );
+        error.status = response.status;
+        error.data = data;
+        throw error;
       }
 
       sessionScans = Number(data?.scans || 0);
@@ -1586,21 +1594,25 @@
       }
     }
 
-    function logoutEmployee() {
-      stopScanner();
+    function clearEmployeeSessionLocally({ clearStoredSession = true } = {}) {
       employeeSession = null;
       recentHistory = [];
       sessionScans = 0;
       sessionTickets = 0;
-      sessionStorage.removeItem("cineEmployeeSession");
+      scanCooldown = false;
+      validationInProgress = false;
+      lastScannedCode = "";
+      lastScanAt = 0;
+
+      if (clearStoredSession) {
+        sessionStorage.removeItem("cineEmployeeSession");
+      }
 
       document.getElementById("employeeUsername").value = "";
       document.getElementById("employeePassword").value = "";
       document.getElementById("manualCode").value = "";
 
-      setMessage("loginMessage", "", "");
       setMessage("manualMessage", "", "");
-
       updateSessionSummary();
       renderHistory();
       renderResultPlaceholder();
@@ -1609,17 +1621,87 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    async function logoutEmployee() {
+      const authHeaders = buildAuthHeaders();
+
+      await stopScanner();
+
+      try {
+        if (authHeaders["x-employee-token"]) {
+          const response = await fetch(`${API_URL}${LOGOUT_ENDPOINT}`, {
+            method: "POST",
+            headers: authHeaders
+          });
+
+          if (!response.ok && response.status !== 401) {
+            const data = await safeJson(response);
+            console.warn(
+              "El servidor no pudo cerrar la sesión del empleado:",
+              extractErrorMessage(data)
+            );
+          }
+        }
+      } catch (error) {
+        console.warn(
+          "No se pudo notificar el cierre de sesión al servidor:",
+          error
+        );
+      } finally {
+        clearEmployeeSessionLocally();
+        setMessage("loginMessage", "", "");
+      }
+    }
+
+    async function verifySavedEmployeeSession() {
+      const response = await fetch(`${API_URL}${SESSION_ME_ENDPOINT}`, {
+        method: "GET",
+        headers: buildAuthHeaders()
+      });
+
+      const data = await safeJson(response);
+
+      if (!response.ok) {
+        const error = new Error(
+          extractErrorMessage(data) ||
+          "No se pudo verificar la sesión del empleado."
+        );
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    }
+
     async function restoreEmployeeSession() {
       const savedSession = sessionStorage.getItem("cineEmployeeSession");
       if (!savedSession) return;
 
       try {
         employeeSession = JSON.parse(savedSession);
+
+        if (!getEmployeeToken(employeeSession)) {
+          const error = new Error("La sesión guardada no contiene un token válido.");
+          error.status = 401;
+          throw error;
+        }
+
+        const verified = await verifySavedEmployeeSession();
+
+        employeeSession = {
+          ...employeeSession,
+          employee: verified.employee || employeeSession.employee
+        };
+
+        sessionStorage.setItem(
+          "cineEmployeeSession",
+          JSON.stringify(employeeSession)
+        );
+
         updateSessionSummary();
         renderHistory();
         renderResultPlaceholder();
         showPortal();
-
         await loadSessionSummary();
       } catch (error) {
         console.error(
@@ -1627,14 +1709,39 @@
           error
         );
 
-        if (
-          String(error?.message || "")
-            .toLowerCase()
-            .includes("sesión")
-        ) {
-          sessionStorage.removeItem("cineEmployeeSession");
-        }
+        const authInvalid =
+          Number(error?.status) === 401 ||
+          Number(error?.status) === 403;
+
+        clearEmployeeSessionLocally({
+          clearStoredSession: authInvalid
+        });
+
+        setMessage(
+          "loginMessage",
+          "error",
+          authInvalid
+            ? "Tu sesión expiró. Inicia sesión nuevamente."
+            : "No se pudo verificar la sesión guardada. Inicia sesión para continuar."
+        );
       }
+    }
+
+    async function handleEmployeeAuthenticationError(error) {
+      const status = Number(error?.status || 0);
+
+      if (status !== 401 && status !== 403) {
+        return false;
+      }
+
+      await stopScanner();
+      clearEmployeeSessionLocally();
+      setMessage(
+        "loginMessage",
+        "error",
+        "Tu sesión expiró o ya no es válida. Inicia sesión nuevamente."
+      );
+      return true;
     }
 
     function updateSessionSummary(lastResponse = null) {
@@ -2064,6 +2171,16 @@
         return;
       }
 
+      if (validationInProgress) {
+        setMessage(
+          "manualMessage",
+          "info",
+          "Ya hay una validación en proceso."
+        );
+        return;
+      }
+
+      validationInProgress = true;
       button.disabled = true;
       button.textContent = "Validando...";
       setMessage("manualMessage", "", "");
@@ -2072,6 +2189,10 @@
         await validateTicket(code, "manual");
         input.value = "";
       } catch (error) {
+        if (await handleEmployeeAuthenticationError(error)) {
+          return;
+        }
+
         const failureData =
           buildValidationFailureData(error);
 
@@ -2084,6 +2205,7 @@
           failureData.message
         );
       } finally {
+        validationInProgress = false;
         button.disabled = false;
         button.textContent = "Validar entrada";
       }
@@ -2202,7 +2324,11 @@
       const normalizedCode = String(decodedText || "").trim();
       const now = Date.now();
 
-      if (!normalizedCode || scanCooldown) {
+      if (
+        !normalizedCode ||
+        scanCooldown ||
+        validationInProgress
+      ) {
         return;
       }
 
@@ -2214,6 +2340,7 @@
       }
 
       scanCooldown = true;
+      validationInProgress = true;
       lastScannedCode = normalizedCode;
       lastScanAt = now;
 
@@ -2237,6 +2364,10 @@
 
         return result;
       } catch (error) {
+        if (await handleEmployeeAuthenticationError(error)) {
+          return;
+        }
+
         playScannerTone(false);
         vibrateScanner(false);
         temporarilyPauseScanner(1200);
@@ -2254,6 +2385,7 @@
             block: "center"
           });
       } finally {
+        validationInProgress = false;
         window.setTimeout(() => {
           scanCooldown = false;
         }, 1500);
@@ -2528,6 +2660,10 @@
         scannerStarted = true;
         hideScannerPlaceholder();
         startJsQrFallback();
+
+        window.setTimeout(() => {
+          void configureActiveCamera();
+        }, 350);
 
         window.setTimeout(() => {
           const video =
