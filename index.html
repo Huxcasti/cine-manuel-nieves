@@ -2496,6 +2496,7 @@ body {
 		              id="customerName"
 		              type="text"
 		              autocomplete="name"
+		              maxlength="100"
 		              required
 		            />
 		
@@ -2504,6 +2505,7 @@ body {
 		              id="customerEmail"
 		              type="email"
 		              autocomplete="email"
+		              maxlength="254"
 		              required
 		            />
 
@@ -2512,6 +2514,7 @@ body {
 		              id="customerEmailConfirm"
 		              type="email"
 		              autocomplete="email"
+		              maxlength="254"
 		              required
 		              onpaste="return false"
 		            />
@@ -2770,7 +2773,8 @@ body {
 		      "https://cine-manuel-nieves.onrender.com";
 
 		    // Pega aquí el enlace oficial de pago cuando ATH Móvil Business lo entregue.
-		    const ATH_MOVIL_PAYMENT_URL = "";
+        const ATH_MOVIL_PAYMENT_URL = "";
+        const ATH_MOVIL_ENABLED = false;
 
             const OFFICIAL_SEAT_LAYOUT = (() => {
               const rows = {};
@@ -2848,6 +2852,9 @@ body {
 		    let pendingReservation = null;
 		    let paypalButtonsRendered = false;
 		    let paypalSdkPromise = null;
+		    let paypalCaptureStarted = false;
+		    let seatAvailabilityLoaded = false;
+		    let paymentMethodChangeInProgress = false;
 		
 		    function showPage(pageId) {
 		      document
@@ -2914,7 +2921,8 @@ body {
 		
 		      try {
 		        const response = await fetch(
-		          `${API_URL}/api/movies`
+		          `${API_URL}/api/movies`,
+		          { cache: "no-store" }
 		        );
 		
 		        const data =
@@ -3557,6 +3565,7 @@ filterMovieShowtimesByDate(movie.id, today);
 		        senior: 0
 		      };
 		      occupiedSeats = [];
+		      seatAvailabilityLoaded = false;
 		
 		      renderSelectedMovie();
 		      updateSummary();
@@ -3713,37 +3722,38 @@ filterMovieShowtimesByDate(movie.id, today);
 		
 		    async function loadOccupiedSeats() {
   showSeatMessage("", "");
+  seatAvailabilityLoaded = false;
 
   try {
     const response = await fetch(
-      `${API_URL}/api/seats?` +
-      `showtimeId=` +
-      encodeURIComponent(
+      `${API_URL}/api/seats?showtimeId=${encodeURIComponent(
         selectedShowtime.id
-      )
+      )}`,
+      {
+        cache: "no-store"
+      }
     );
 
-    const data =
-      await readResponse(response);
-		
-		        occupiedSeats =
-		          Array.isArray(
-		            data.occupiedSeats
-		          )
-		            ? data.occupiedSeats
-		            : [];
-		
-		        renderSeatMap();
-		      } catch (error) {
-		        renderSeatMap();
-		
-		        showSeatMessage(
-		          "error",
-		          `No se pudieron consultar ` +
-		          `los asientos: ${error.message}`
-		        );
-		      }
-		    }
+    const data = await readResponse(response);
+
+    occupiedSeats = Array.isArray(data.occupiedSeats)
+      ? data.occupiedSeats
+      : [];
+
+    seatAvailabilityLoaded = true;
+    renderSeatMap();
+  } catch (error) {
+    occupiedSeats = [];
+    seatAvailabilityLoaded = false;
+    renderSeatMap();
+
+    showSeatMessage(
+      "error",
+      "No se pudo confirmar la disponibilidad de los asientos. " +
+      "Por seguridad, la selección queda bloqueada hasta que puedas intentarlo nuevamente."
+    );
+  }
+}
 
             function renderSeatMap() {
               const seatMap = document.getElementById("seatMap");
@@ -3790,6 +3800,12 @@ filterMovieShowtimesByDate(movie.id, today);
                     ? `Espacio accesible ${seatData.label}`
                     : `Asiento ${seatData.label}, número ${seatData.number}`;
 
+                  if (!seatAvailabilityLoaded) {
+                    button.disabled = true;
+                    button.title =
+                      "No se pudo confirmar la disponibilidad de este asiento.";
+                  }
+
                   button.addEventListener("click", () =>
                     toggleSeat(seatData.id, button)
                   );
@@ -3818,6 +3834,14 @@ filterMovieShowtimesByDate(movie.id, today);
 		      seatName,
 		      button
 		    ) {
+		      if (!seatAvailabilityLoaded) {
+		        showSeatMessage(
+		          "error",
+		          "Todavía no se ha podido confirmar la disponibilidad de los asientos."
+		        );
+		        return;
+		      }
+
 		      const requiredSeats = getSelectedTicketCount();
 		
 		      if (requiredSeats === 0) {
@@ -3868,21 +3892,21 @@ filterMovieShowtimesByDate(movie.id, today);
 		    }
 		
 		    function compareSeatNames(a, b) {
+		      const left = String(a || "").match(/^([A-Z])(\d+)/i);
+		      const right = String(b || "").match(/^([A-Z])(\d+)/i);
+
+		      if (!left || !right) {
+		        return String(a || "").localeCompare(String(b || ""));
+		      }
+
 		      const rowComparison =
-		        a.charAt(0).localeCompare(
-		          b.charAt(0)
-		        );
-		
-		      if (
-		        rowComparison !== 0
-		      ) {
+		        left[1].toUpperCase().localeCompare(right[1].toUpperCase());
+
+		      if (rowComparison !== 0) {
 		        return rowComparison;
 		      }
-		
-		      return (
-		        Number(a.slice(1)) -
-		        Number(b.slice(1))
-		      );
+
+		      return Number(left[2]) - Number(right[2]);
 		    }
 		
 		    function updateSummary() {
@@ -3960,6 +3984,22 @@ filterMovieShowtimesByDate(movie.id, today);
 		    }
 		
 		    function openCustomerPage() {
+		      if (!seatAvailabilityLoaded) {
+		        showSeatMessage(
+		          "error",
+		          "No se ha podido confirmar la disponibilidad de los asientos."
+		        );
+		        return;
+		      }
+
+		      if (selectedShowtime && isShowtimeExpired(selectedShowtime)) {
+		        showSeatMessage(
+		          "error",
+		          "Esta tanda ya comenzó o pasó de hora. Selecciona otra tanda."
+		        );
+		        return;
+		      }
+
 		      if (
 		        !selectedShowtime ||
 		        getSelectedTicketCount() === 0 ||
@@ -4119,54 +4159,106 @@ function getCustomerData() {
 		      };
 		    }
 		
-		    function selectPaymentMethod(method) {
-		      if (
-		        pendingReservation &&
-		        pendingReservation.paymentMethod &&
-		        pendingReservation.paymentMethod !== method
-		      ) {
-		        void cancelPendingReservation();
+		    async function selectPaymentMethod(method) {
+		      if (!["paypal", "ath_movil"].includes(method)) {
+		        return;
 		      }
 
-		      selectedPaymentMethod = method;
-		
-		      document.querySelectorAll(".payment-option").forEach((button) => {
-		        button.classList.remove("selected");
-		      });
-		
-		      document.getElementById("paypalOption").classList.toggle(
-		        "selected",
-		        method === "paypal"
-		      );
-		      document.getElementById("athMovilOption").classList.toggle(
-		        "selected",
-		        method === "ath_movil"
-		      );
-		
-		      const paypalContainer = document.getElementById("paypalButtonContainer");
-		      const athInstructions = document.getElementById("athInstructions");
-		      const purchaseButton = document.getElementById("purchaseButton");
-		
-		      if (method === "paypal") {
-		        document.getElementById("paymentMessage").textContent =
-		          "Paga de forma segura con PayPal. El boleto se genera únicamente después de que PayPal confirme el pago.";
-		        paypalContainer.classList.add("visible");
-		        athInstructions.classList.remove("visible");
-		        purchaseButton.style.display = "none";
-		        initializePayPalButtons();
-		      } else {
-		        document.getElementById("paymentMessage").textContent =
-		          "Serás dirigido al enlace oficial de ATH Móvil para completar el pago.";
-		        paypalContainer.classList.remove("visible");
-		        athInstructions.classList.add("visible");
-		        purchaseButton.style.display = "block";
-		        purchaseButton.textContent = "Pagar con ATH Móvil";
+		      if (paymentMethodChangeInProgress) {
+		        return;
 		      }
+
+		      if (paypalCaptureStarted) {
+		        showCustomerMessage(
+		          "error",
+		          "Ya se está confirmando un pago con PayPal. No cambies el método de pago hasta conocer el resultado."
+		        );
+		        return;
+		      }
+
+		      paymentMethodChangeInProgress = true;
+
+		      const paypalOption = document.getElementById("paypalOption");
+		      const athOption = document.getElementById("athMovilOption");
+
+		      paypalOption.disabled = true;
+		      athOption.disabled = true;
+
+		      try {
+		        if (
+		          pendingReservation &&
+		          pendingReservation.paymentMethod &&
+		          pendingReservation.paymentMethod !== method
+		        ) {
+		          const cancelled = await cancelPendingReservation();
+
+		          if (!cancelled) {
+		            showCustomerMessage(
+		              "error",
+		              "No se pudo liberar la reservación anterior. Intenta nuevamente antes de cambiar el método de pago."
+		            );
+		            return;
+		          }
+		        }
+
+		        selectedPaymentMethod = method;
 		
-		      showCustomerMessage("", "");
+		        document.querySelectorAll(".payment-option").forEach((button) => {
+		          button.classList.remove("selected");
+		        });
+		
+		        paypalOption.classList.toggle(
+		          "selected",
+		          method === "paypal"
+		        );
+		        athOption.classList.toggle(
+		          "selected",
+		          method === "ath_movil"
+		        );
+		
+		        const paypalContainer = document.getElementById("paypalButtonContainer");
+		        const athInstructions = document.getElementById("athInstructions");
+		        const purchaseButton = document.getElementById("purchaseButton");
+		
+		        if (method === "paypal") {
+		          document.getElementById("paymentMessage").textContent =
+		            "Paga de forma segura con PayPal. El boleto se genera únicamente después de que PayPal confirme el pago.";
+		          paypalContainer.classList.add("visible");
+		          athInstructions.classList.remove("visible");
+		          purchaseButton.style.display = "none";
+		          initializePayPalButtons();
+		        } else {
+		          document.getElementById("paymentMessage").textContent =
+		            "ATH Móvil estará disponible cuando se complete la integración Business del cine.";
+		          paypalContainer.classList.remove("visible");
+		          athInstructions.classList.add("visible");
+		          purchaseButton.style.display = "block";
+		          purchaseButton.textContent = "Pagar con ATH Móvil";
+		        }
+		
+		        showCustomerMessage("", "");
+		      } finally {
+		        paymentMethodChangeInProgress = false;
+		        paypalOption.disabled = false;
+		        athOption.disabled =
+		          !ATH_MOVIL_ENABLED ||
+		          !ATH_MOVIL_PAYMENT_URL.trim();
+		      }
 		    }
 		
 		    async function createReservationRecord(paymentMethod) {
+		      if (!seatAvailabilityLoaded) {
+		        throw new Error(
+		          "No se pudo confirmar la disponibilidad de los asientos."
+		        );
+		      }
+
+		      if (!selectedShowtime || isShowtimeExpired(selectedShowtime)) {
+		        throw new Error(
+		          "Esta tanda ya comenzó o pasó de hora. Selecciona otra tanda."
+		        );
+		      }
+
 		      if (pendingReservation && pendingReservation.paymentMethod === paymentMethod) {
 		        return pendingReservation;
 		      }
@@ -4194,6 +4286,10 @@ function getCustomerData() {
 		    }
 
 		    async function cancelPendingReservation(options = {}) {
+		      if (paypalCaptureStarted && !options.allowDuringCapture) {
+		        return false;
+		      }
+
 		      const reservationId = String(
 		        pendingReservation?.id || ""
 		      ).trim();
@@ -4211,7 +4307,6 @@ function getCustomerData() {
 		        console.warn(
 		          "La reservación pendiente no tiene token de cancelación."
 		        );
-		        pendingReservation = null;
 		        return false;
 		      }
 
@@ -4229,26 +4324,31 @@ function getCustomerData() {
 		          }
 		        );
 
-		        if (!response.ok && response.status !== 404) {
-		          const data = await response.json().catch(() => ({}));
-
-		          if (response.status !== 409) {
-		            throw new Error(
-		              data.error ||
-		              "No se pudo cancelar la reservación pendiente."
-		            );
-		          }
+		        if (response.ok || response.status === 404) {
+		          pendingReservation = null;
+		          return true;
 		        }
 
-		        return true;
+		        const data = await response.json().catch(() => ({}));
+
+		        if (response.status === 409) {
+		          console.warn(
+		            "La reservación ya no puede cancelarse:",
+		            data.error || "estado no cancelable"
+		          );
+		          return false;
+		        }
+
+		        throw new Error(
+		          data.error ||
+		          "No se pudo cancelar la reservación pendiente."
+		        );
 		      } catch (error) {
 		        console.warn(
 		          "No se pudo eliminar la reservación pendiente:",
 		          error
 		        );
 		        return false;
-		      } finally {
-		        pendingReservation = null;
 		      }
 		    }
 
@@ -4284,7 +4384,10 @@ function getCustomerData() {
 		      container.innerHTML = "Cargando PayPal...";
 		
 		      try {
-		        const configResponse = await fetch(`${API_URL}/api/paypal/config`);
+		        const configResponse = await fetch(
+		          `${API_URL}/api/paypal/config`,
+		          { cache: "no-store" }
+		        );
 		        const config = await readResponse(configResponse);
 		
 		        if (!config.enabled || !config.clientId) {
@@ -4302,6 +4405,7 @@ function getCustomerData() {
 		          },
 		
 		          createOrder: async () => {
+		            paypalCaptureStarted = false;
 		            showCustomerMessage("", "");
 
 		            try {
@@ -4330,9 +4434,16 @@ function getCustomerData() {
 		          },
 		
 		          onApprove: async (data) => {
+  paypalCaptureStarted = true;
   showPage("processingPage");
 
   try {
+    if (!pendingReservation?.id) {
+      throw new Error(
+        "No se encontró la reservación asociada al pago."
+      );
+    }
+
     const response = await fetch(
       `${API_URL}/api/paypal/orders/${
         encodeURIComponent(data.orderID)
@@ -4349,32 +4460,64 @@ function getCustomerData() {
     );
 
     const result = await readResponse(response);
+    const reservation = result?.reservation;
 
-    currentTicket = result.reservation;
+    if (
+      !reservation ||
+      !["paid", "approved"].includes(reservation.paymentStatus)
+    ) {
+      throw new Error(
+        "El servidor todavía no confirmó el boleto como pagado."
+      );
+    }
+
+    currentTicket = reservation;
+    pendingReservation = null;
+    paypalCaptureStarted = false;
+
     renderTicket(currentTicket);
     showPage("ticketPage");
   } catch (error) {
     showPage("customerPage");
-    showCustomerMessage("error", error.message);
+    showCustomerMessage(
+      "error",
+      "No pudimos confirmar el resultado final del pago en esta pantalla. " +
+      "Por seguridad, no vuelvas a pagar de inmediato. Revisa tu correo; " +
+      "si PayPal completó el cobro, el servidor puede reconciliarlo automáticamente."
+    );
+    console.error("Error confirmando captura de PayPal:", error);
   }
 },
 		          onCancel: async () => {
-		            await cancelPendingReservation();
+		            paypalCaptureStarted = false;
+		            const cancelled = await cancelPendingReservation();
 
 		            showCustomerMessage(
 		              "error",
-		              "El pago fue cancelado. La reservación pendiente fue eliminada y los asientos volvieron a estar disponibles."
+		              cancelled
+		                ? "El pago fue cancelado. La reservación pendiente fue eliminada y los asientos volvieron a estar disponibles."
+		                : "El pago fue cancelado, pero no se pudo confirmar la liberación inmediata de la reservación. Intenta nuevamente en unos minutos."
 		            );
 		          },
 		
 		          onError: async (error) => {
 		            console.error("PayPal error:", error);
 
-		            await cancelPendingReservation();
+		            if (!paypalCaptureStarted) {
+		              const cancelled = await cancelPendingReservation();
+
+		              showCustomerMessage(
+		                "error",
+		                cancelled
+		                  ? "PayPal no pudo iniciar el pago. La reservación pendiente fue liberada; puedes intentarlo nuevamente."
+		                  : "PayPal no pudo iniciar el pago y no se pudo confirmar la liberación inmediata de la reservación."
+		              );
+		              return;
+		            }
 
 		            showCustomerMessage(
 		              "error",
-		              "PayPal no pudo procesar el pago. La reservación pendiente fue eliminada; puedes intentarlo nuevamente."
+		              "PayPal encontró un problema después de comenzar la confirmación. No repitas el pago de inmediato; revisa tu correo para confirmar el resultado."
 		            );
 		          }
 		        }).render("#paypalButtonContainer");
@@ -4414,10 +4557,13 @@ function getCustomerData() {
 		        return;
 		      }
 
-		      if (!ATH_MOVIL_PAYMENT_URL.trim()) {
+		      if (
+		        !ATH_MOVIL_ENABLED ||
+		        !ATH_MOVIL_PAYMENT_URL.trim()
+		      ) {
 		        showCustomerMessage(
 		          "error",
-		          "ATH Móvil todavía no está disponible. Añade el enlace oficial en ATH_MOVIL_PAYMENT_URL."
+		          "ATH Móvil todavía no está habilitado. Debe completarse la integración Business y la confirmación del pago en el servidor."
 		        );
 		        return;
 		      }
@@ -4696,6 +4842,9 @@ function getCustomerData() {
 		      currentTicket = null;
 		      selectedPaymentMethod = null;
 		      pendingReservation = null;
+		      paypalCaptureStarted = false;
+		      seatAvailabilityLoaded = false;
+		      paymentMethodChangeInProgress = false;
 		
 		      document.querySelectorAll(".payment-option").forEach((button) => {
 		        button.classList.remove("selected");
@@ -4840,8 +4989,6 @@ function getCustomerData() {
 		        .replaceAll('"', "&quot;")
 		        .replaceAll("'", "&#039;");
 		    }
-		
-		    loadMovies();
 		
 		    function toggleMovieDescription(movieId, button) {
 		  const description = document.getElementById(
@@ -5020,11 +5167,31 @@ if (label && selectedDate) {
 		    if (
 		      typeof pendingReservation !== "undefined" &&
 		      pendingReservation?.id &&
-		      pendingReservation?.paymentStatus === "pending"
+		      pendingReservation?.paymentStatus === "pending" &&
+		      !paypalCaptureStarted
 		    ) {
 		      void cancelPendingReservation({ keepalive: true });
 		    }
 		  });
+
+		  const athMovilOption =
+		    document.getElementById("athMovilOption");
+
+		  if (
+		    athMovilOption &&
+		    (
+		      !ATH_MOVIL_ENABLED ||
+		      !ATH_MOVIL_PAYMENT_URL.trim()
+		    )
+		  ) {
+		    athMovilOption.disabled = true;
+		    athMovilOption.title =
+		      "ATH Móvil estará disponible cuando se complete la integración Business.";
+		    const label = athMovilOption.querySelector("span");
+		    if (label) {
+		      label.textContent = "ATH Móvil · Próximamente";
+		    }
+		  }
 		
 		    document.getElementById("customerEmail")?.addEventListener(
 		      "input",
