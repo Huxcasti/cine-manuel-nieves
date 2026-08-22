@@ -1396,6 +1396,109 @@ function normalizeShowtimeLanguage(value) {
     : null;
 }
 
+function normalizeShowtimeDateInput(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return raw;
+}
+
+function normalizeShowtimeTimeInput(value) {
+  const raw = String(value || "").trim();
+
+  if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(raw)) {
+    return null;
+  }
+
+  return raw;
+}
+
+function getShowtimeDateTimeParts(showDate, showTime) {
+  const normalizedDate = normalizeShowtimeDateInput(showDate);
+  const normalizedTime = normalizeShowtimeTimeInput(showTime);
+
+  if (!normalizedDate || !normalizedTime) {
+    return null;
+  }
+
+  const [year, month, day] = normalizedDate
+    .split("-")
+    .map(Number);
+
+  const [hour, minute] = normalizedTime
+    .split(":")
+    .map(Number);
+
+  return {
+    year,
+    month,
+    day,
+    hour,
+    minute
+  };
+}
+
+function getShowtimePurchaseValidation(showDate, showTime) {
+  const normalizedDate = normalizeTicketShowDate(showDate);
+  const normalizedTime = normalizeTicketShowTime(showTime);
+
+  const showParts = getShowtimeDateTimeParts(
+    normalizedDate,
+    normalizedTime
+  );
+
+  if (!showParts) {
+    return {
+      allowed: false,
+      status: 422,
+      error:
+        "No se pudo verificar la fecha y hora de esta tanda. No completes la reservación."
+    };
+  }
+
+  const nowPuertoRicoParts = getPuertoRicoDateTimeParts();
+  const showStamp = localDateTimePartsToStamp(showParts);
+  const nowStamp = localDateTimePartsToStamp(nowPuertoRicoParts);
+
+  if (nowStamp >= showStamp) {
+    const formatted = formatTicketDateTime(
+      `${normalizedDate} ${normalizedTime}`
+    );
+
+    return {
+      allowed: false,
+      status: 409,
+      error:
+        `Esta tanda ya comenzó (${formatted.full}). ` +
+        "Ya no se pueden reservar taquillas para esta función."
+    };
+  }
+
+  return {
+    allowed: true,
+    status: 200,
+    error: ""
+  };
+}
+
 function formatShowtime(row) {
   const language = normalizeShowtimeLanguage(row.language) || "spanish";
 
@@ -3070,21 +3173,22 @@ app.post(
         });
       }
 
-      if (
-        typeof showDate !== "string" ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
-      ) {
+      const normalizedShowDate =
+        normalizeShowtimeDateInput(showDate);
+
+      if (!normalizedShowDate) {
         return res.status(400).json({
           error: "La fecha de la tanda no es válida."
         });
       }
 
-      if (
-        typeof showTime !== "string" ||
-        !showTime.trim()
-      ) {
+      const normalizedShowTime =
+        normalizeShowtimeTimeInput(showTime);
+
+      if (!normalizedShowTime) {
         return res.status(400).json({
-          error: "La hora de la tanda es obligatoria."
+          error:
+            "La hora de la tanda no es válida. Usa el formato HH:MM."
         });
       }
 
@@ -3132,8 +3236,8 @@ app.post(
         `,
         [
           movieId,
-          showDate,
-          showTime.trim()
+          normalizedShowDate,
+          normalizedShowTime
         ]
       );
 
@@ -3166,8 +3270,8 @@ app.post(
         [
           id,
           movieId,
-          showDate,
-          showTime.trim(),
+          normalizedShowDate,
+          normalizedShowTime,
           numericAdultPrice,
           numericAdultPrice,
           numericChildPrice,
@@ -3233,21 +3337,22 @@ app.put(
         });
       }
 
-      if (
-        typeof showDate !== "string" ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(showDate)
-      ) {
+      const normalizedShowDate =
+        normalizeShowtimeDateInput(showDate);
+
+      if (!normalizedShowDate) {
         return res.status(400).json({
           error: "La fecha de la tanda no es válida."
         });
       }
 
-      if (
-        typeof showTime !== "string" ||
-        !showTime.trim()
-      ) {
+      const normalizedShowTime =
+        normalizeShowtimeTimeInput(showTime);
+
+      if (!normalizedShowTime) {
         return res.status(400).json({
-          error: "La hora de la tanda es obligatoria."
+          error:
+            "La hora de la tanda no es válida. Usa el formato HH:MM."
         });
       }
 
@@ -3296,8 +3401,8 @@ app.put(
         `,
         [
           movieId,
-          showDate,
-          showTime.trim(),
+          normalizedShowDate,
+          normalizedShowTime,
           id
         ]
       );
@@ -3327,8 +3432,8 @@ app.put(
         `,
         [
           movieId,
-          showDate,
-          showTime.trim(),
+          normalizedShowDate,
+          normalizedShowTime,
           numericAdultPrice,
           numericAdultPrice,
           numericChildPrice,
@@ -3746,6 +3851,22 @@ app.post("/api/reservations", reservationCreateLimiter, async (req, res) => {
       return res.status(400).json({
         error: "Esta tanda no está disponible."
       });
+    }
+
+    const purchaseValidation =
+      getShowtimePurchaseValidation(
+        showtime.show_date,
+        showtime.show_time
+      );
+
+    if (!purchaseValidation.allowed) {
+      await client.query("ROLLBACK");
+
+      return res
+        .status(purchaseValidation.status)
+        .json({
+          error: purchaseValidation.error
+        });
     }
 
     const occupiedResult = await client.query(
