@@ -14,6 +14,11 @@ const PENDING_RESERVATION_MINUTES = Math.max(
   Number(process.env.PENDING_RESERVATION_MINUTES || 5)
 );
 
+const QR_VALIDATION_EARLY_MINUTES = Math.max(
+  0,
+  Number(process.env.QR_VALIDATION_EARLY_MINUTES || 20)
+);
+
 const PAYPAL_CHECKOUT_MINUTES = Math.max(
   PENDING_RESERVATION_MINUTES,
   Number(process.env.PAYPAL_CHECKOUT_MINUTES || 30)
@@ -1090,6 +1095,94 @@ function getTicketShowDateKey(value) {
   return "";
 }
 
+function getPuertoRicoDateTimeParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Puerto_Rico",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value])
+  );
+
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour),
+    minute: Number(values.minute)
+  };
+}
+
+function getTicketShowDateTimeParts(value) {
+  const raw = String(value || "").trim();
+  const showDateKey = getTicketShowDateKey(raw);
+
+  if (!showDateKey) {
+    return null;
+  }
+
+  const dateParts = showDateKey
+    .split("-")
+    .map((part) => Number(part));
+
+  if (
+    dateParts.length !== 3 ||
+    dateParts.some((part) => !Number.isInteger(part))
+  ) {
+    return null;
+  }
+
+  const timeMatches = [
+    ...raw.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)
+  ];
+
+  const lastTimeMatch = timeMatches.length
+    ? timeMatches[timeMatches.length - 1]
+    : null;
+
+  if (!lastTimeMatch) {
+    return null;
+  }
+
+  return {
+    year: dateParts[0],
+    month: dateParts[1],
+    day: dateParts[2],
+    hour: Number(lastTimeMatch[1]),
+    minute: Number(lastTimeMatch[2])
+  };
+}
+
+function localDateTimePartsToStamp(parts) {
+  return Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    0,
+    0
+  );
+}
+
+function localStampToTicketDateTime(stamp) {
+  const date = new Date(stamp);
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hour = String(date.getUTCHours()).padStart(2, "0");
+  const minute = String(date.getUTCMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hour}:${minute}`;
+}
+
 function getTicketDateValidation(ticket) {
   const todayKey = getPuertoRicoDateKey();
   const showDateKey = getTicketShowDateKey(ticket?.show_time);
@@ -1106,21 +1199,51 @@ function getTicketDateValidation(ticket) {
   const formatted =
     formatTicketDateTime(ticket?.show_time);
 
-  if (showDateKey > todayKey) {
-    return {
-      allowed: false,
-      status: 409,
-      error:
-        `Esta entrada todavía no es válida. Corresponde a ${formatted.full}.`
-    };
-  }
-
   if (showDateKey < todayKey) {
     return {
       allowed: false,
       status: 410,
       error:
         `Este boleto está vencido. Correspondía a ${formatted.full}.`
+    };
+  }
+
+  const showParts =
+    getTicketShowDateTimeParts(ticket?.show_time);
+
+  if (!showParts) {
+    return {
+      allowed: false,
+      status: 422,
+      error:
+        "No se pudo verificar la hora de esta tanda. No marques el boleto como utilizado."
+    };
+  }
+
+  const nowPuertoRicoParts =
+    getPuertoRicoDateTimeParts();
+
+  const showStamp =
+    localDateTimePartsToStamp(showParts);
+
+  const nowStamp =
+    localDateTimePartsToStamp(nowPuertoRicoParts);
+
+  const validationOpensStamp =
+    showStamp - QR_VALIDATION_EARLY_MINUTES * 60_000;
+
+  if (nowStamp < validationOpensStamp) {
+    const validationOpensFormatted = formatTicketDateTime(
+      localStampToTicketDateTime(validationOpensStamp)
+    );
+
+    return {
+      allowed: false,
+      status: 409,
+      error:
+        `Esta entrada todavía no está habilitada. ` +
+        `Podrá validarse desde ${validationOpensFormatted.full}, ` +
+        `${QR_VALIDATION_EARLY_MINUTES} minutos antes de la tanda de ${formatted.time}`
     };
   }
 
