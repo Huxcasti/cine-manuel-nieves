@@ -2973,7 +2973,7 @@ app.put(
         durationMinutes = null,
         rating = "",
         active = true,
-        comingSoon = false 
+        comingSoon = false
       } = req.body;
 
       if (
@@ -2997,6 +2997,26 @@ app.put(
             "La duración debe ser un número entero mayor que cero."
         });
       }
+
+      // Guardamos las URLs actuales antes de editar la película.
+      // Así podemos eliminar de Supabase solamente los archivos que
+      // fueron reemplazados por una foto o un tráiler nuevos.
+      const previousResult = await pool.query(
+        `
+          SELECT id, poster_url, trailer_url
+          FROM movies
+          WHERE id = $1;
+        `,
+        [id]
+      );
+
+      if (previousResult.rowCount === 0) {
+        return res.status(404).json({
+          error: "Película no encontrada."
+        });
+      }
+
+      const previousMovie = previousResult.rows[0];
 
       const result = await pool.query(
         `
@@ -3034,7 +3054,98 @@ app.put(
         });
       }
 
-      res.json(formatMovie(result.rows[0]));
+      const updatedMovie = result.rows[0];
+
+      // Si al editar cambiaron el afiche o el tráiler, limpiamos el
+      // archivo anterior de Supabase para que no quede ocupando espacio.
+      // Si el archivo sigue siendo el mismo, no se toca.
+      try {
+        const replacedFiles = [
+          {
+            type: "afiche",
+            bucket: SUPABASE_POSTERS_BUCKET,
+            oldUrl: previousMovie.poster_url,
+            newUrl: updatedMovie.poster_url
+          },
+          {
+            type: "tráiler",
+            bucket: SUPABASE_TRAILERS_BUCKET,
+            oldUrl: previousMovie.trailer_url,
+            newUrl: updatedMovie.trailer_url
+          }
+        ];
+
+        const processedFiles = new Set();
+
+        for (const file of replacedFiles) {
+          const oldUrl = String(file.oldUrl || "").trim();
+          const newUrl = String(file.newUrl || "").trim();
+
+          // No había archivo anterior o no fue reemplazado.
+          if (!oldUrl || oldUrl === newUrl) {
+            continue;
+          }
+
+          // Solo borramos archivos que realmente pertenecen al bucket
+          // configurado de Supabase.
+          const oldPath = extractSupabaseObjectPath(
+            oldUrl,
+            file.bucket
+          );
+
+          if (!oldPath) {
+            continue;
+          }
+
+          const fileKey = `${file.bucket}:${oldPath}`;
+
+          if (processedFiles.has(fileKey)) {
+            continue;
+          }
+
+          processedFiles.add(fileKey);
+
+          // Protección extra: si otra película todavía usa exactamente
+          // esa misma URL, conservamos el archivo.
+          const referenceResult = await pool.query(
+            `
+              SELECT id
+              FROM movies
+              WHERE
+                id <> $1
+                AND (
+                  poster_url = $2
+                  OR trailer_url = $2
+                )
+              LIMIT 1;
+            `,
+            [id, oldUrl]
+          );
+
+          if (referenceResult.rowCount > 0) {
+            continue;
+          }
+
+          await removeSupabaseObjects(
+            file.bucket,
+            [oldPath]
+          );
+
+          console.log(
+            `${file.type} anterior eliminado de Supabase:`,
+            oldPath
+          );
+        }
+      } catch (storageCleanupError) {
+        // La edición ya quedó guardada en PostgreSQL. Si Supabase tiene
+        // un problema temporal, no hacemos fallar toda la edición.
+        console.error(
+          "La película se actualizó, pero no se pudieron limpiar todos los archivos anteriores de Supabase:",
+          storageCleanupError
+        );
+      }
+
+      res.json(formatMovie(updatedMovie));
     } catch (error) {
       console.error(
         "Error actualizando película:",
