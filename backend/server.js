@@ -421,32 +421,115 @@ async function removeSupabaseObjects(bucketName, paths) {
   return Array.isArray(data) ? data.length : uniquePaths.length;
 }
 
+function extractSupabaseStorageLocation(publicUrl) {
+  const value = String(publicUrl || "").trim();
+
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+
+    const markers = [
+      "/storage/v1/object/public/",
+      "/storage/v1/object/sign/",
+      "/storage/v1/object/authenticated/"
+    ];
+
+    let remainder = "";
+
+    for (const marker of markers) {
+      const index = url.pathname.indexOf(marker);
+
+      if (index !== -1) {
+        remainder = url.pathname.slice(index + marker.length);
+        break;
+      }
+    }
+
+    if (!remainder) {
+      return null;
+    }
+
+    const separatorIndex = remainder.indexOf("/");
+
+    if (separatorIndex <= 0) {
+      return null;
+    }
+
+    const bucketName = decodeURIComponent(
+      remainder.slice(0, separatorIndex)
+    );
+
+    const objectPath = decodeURIComponent(
+      remainder.slice(separatorIndex + 1)
+    );
+
+    if (!bucketName || !objectPath) {
+      return null;
+    }
+
+    return {
+      bucketName,
+      objectPath
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function removeSupabaseUrl(publicUrl, fallbackBucketName) {
+  const value = String(publicUrl || "").trim();
+
+  if (!value) {
+    return 0;
+  }
+
+  // Primero tomamos el bucket y la ruta DIRECTAMENTE de la URL guardada.
+  // Esto evita fallos si el tráiler está en el mismo bucket que los afiches,
+  // en otra carpeta, o si la variable SUPABASE_TRAILERS_BUCKET no coincide
+  // exactamente con el bucket usado cuando se subió el archivo.
+  const location = extractSupabaseStorageLocation(value);
+
+  if (location) {
+    return removeSupabaseObjects(
+      location.bucketName,
+      [location.objectPath]
+    );
+  }
+
+  // Compatibilidad con URLs antiguas: si no pudimos leer el bucket desde
+  // la URL, intentamos con el bucket configurado en Render.
+  const fallbackPath = extractSupabaseObjectPath(
+    value,
+    fallbackBucketName
+  );
+
+  if (!fallbackPath) {
+    return 0;
+  }
+
+  return removeSupabaseObjects(
+    fallbackBucketName,
+    [fallbackPath]
+  );
+}
+
 async function deleteMovieStorageFiles(movie) {
   if (!movie) {
     return;
   }
 
-  const posterPath = extractSupabaseObjectPath(
-    movie.poster_url,
-    SUPABASE_POSTERS_BUCKET
-  );
-
-  const trailerPath = extractSupabaseObjectPath(
-    movie.trailer_url,
-    SUPABASE_TRAILERS_BUCKET
-  );
-
-  if (SUPABASE_POSTERS_BUCKET === SUPABASE_TRAILERS_BUCKET) {
-    await removeSupabaseObjects(
-      SUPABASE_POSTERS_BUCKET,
-      [posterPath, trailerPath]
-    );
-    return;
-  }
-
   await Promise.all([
-    removeSupabaseObjects(SUPABASE_POSTERS_BUCKET, [posterPath]),
-    removeSupabaseObjects(SUPABASE_TRAILERS_BUCKET, [trailerPath])
+    removeSupabaseUrl(
+      movie.poster_url,
+      SUPABASE_POSTERS_BUCKET
+    ),
+    removeSupabaseUrl(
+      movie.trailer_url,
+      SUPABASE_TRAILERS_BUCKET
+    )
   ]);
 }
 
