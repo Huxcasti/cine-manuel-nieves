@@ -2998,9 +2998,11 @@ app.put(
         });
       }
 
-      // Guardamos las URLs actuales antes de editar la película.
-      // Así podemos eliminar de Supabase solamente los archivos que
-      // fueron reemplazados por una foto o un tráiler nuevos.
+      /*
+      ==================================================
+      GUARDAR LOS ARCHIVOS ACTUALES ANTES DE EDITAR
+      ==================================================
+      */
       const previousResult = await pool.query(
         `
           SELECT id, poster_url, trailer_url
@@ -3017,7 +3019,14 @@ app.put(
       }
 
       const previousMovie = previousResult.rows[0];
+      const newPosterUrl = String(posterUrl || "").trim();
+      const newTrailerUrl = String(trailerUrl || "").trim();
 
+      /*
+      ==================================================
+      ACTUALIZAR LA PELÍCULA
+      ==================================================
+      */
       const result = await pool.query(
         `
           UPDATE movies
@@ -3036,8 +3045,8 @@ app.put(
         [
           title.trim(),
           description.trim(),
-          posterUrl.trim(),
-          trailerUrl.trim(),
+          newPosterUrl,
+          newTrailerUrl,
           durationMinutes === null
             ? null
             : Number(durationMinutes),
@@ -3056,93 +3065,66 @@ app.put(
 
       const updatedMovie = result.rows[0];
 
-      // Si al editar cambiaron el afiche o el tráiler, limpiamos el
-      // archivo anterior de Supabase para que no quede ocupando espacio.
-      // Si el archivo sigue siendo el mismo, no se toca.
-      try {
-        const replacedFiles = [
-          {
-            type: "afiche",
-            bucket: SUPABASE_POSTERS_BUCKET,
-            oldUrl: previousMovie.poster_url,
-            newUrl: updatedMovie.poster_url
-          },
-          {
-            type: "tráiler",
-            bucket: SUPABASE_TRAILERS_BUCKET,
-            oldUrl: previousMovie.trailer_url,
-            newUrl: updatedMovie.trailer_url
-          }
-        ];
+      /*
+      ==================================================
+      BORRAR DE SUPABASE LOS ARCHIVOS QUE SE REEMPLAZARON
+      ==================================================
 
-        const processedFiles = new Set();
+      Reutilizamos EXACTAMENTE el mismo helper que ya usa
+      "Eliminar película". La única diferencia es que aquí
+      solo le pasamos el póster/tráiler viejo si realmente
+      fue reemplazado durante la edición.
+      */
+      const oldPosterUrl = String(
+        previousMovie.poster_url || ""
+      ).trim();
 
-        for (const file of replacedFiles) {
-          const oldUrl = String(file.oldUrl || "").trim();
-          const newUrl = String(file.newUrl || "").trim();
+      const oldTrailerUrl = String(
+        previousMovie.trailer_url || ""
+      ).trim();
 
-          // No había archivo anterior o no fue reemplazado.
-          if (!oldUrl || oldUrl === newUrl) {
-            continue;
-          }
+      const posterWasReplaced =
+        Boolean(oldPosterUrl) &&
+        oldPosterUrl !== newPosterUrl;
 
-          // Solo borramos archivos que realmente pertenecen al bucket
-          // configurado de Supabase.
-          const oldPath = extractSupabaseObjectPath(
-            oldUrl,
-            file.bucket
+      const trailerWasReplaced =
+        Boolean(oldTrailerUrl) &&
+        oldTrailerUrl !== newTrailerUrl;
+
+      if (posterWasReplaced || trailerWasReplaced) {
+        const oldFilesToDelete = {
+          poster_url: posterWasReplaced
+            ? oldPosterUrl
+            : "",
+          trailer_url: trailerWasReplaced
+            ? oldTrailerUrl
+            : ""
+        };
+
+        try {
+          await deleteMovieStorageFiles(
+            oldFilesToDelete
           );
 
-          if (!oldPath) {
-            continue;
+          if (posterWasReplaced) {
+            console.log(
+              "Afiche anterior eliminado de Supabase al editar película:",
+              oldPosterUrl
+            );
           }
 
-          const fileKey = `${file.bucket}:${oldPath}`;
-
-          if (processedFiles.has(fileKey)) {
-            continue;
+          if (trailerWasReplaced) {
+            console.log(
+              "Tráiler anterior eliminado de Supabase al editar película:",
+              oldTrailerUrl
+            );
           }
-
-          processedFiles.add(fileKey);
-
-          // Protección extra: si otra película todavía usa exactamente
-          // esa misma URL, conservamos el archivo.
-          const referenceResult = await pool.query(
-            `
-              SELECT id
-              FROM movies
-              WHERE
-                id <> $1
-                AND (
-                  poster_url = $2
-                  OR trailer_url = $2
-                )
-              LIMIT 1;
-            `,
-            [id, oldUrl]
-          );
-
-          if (referenceResult.rowCount > 0) {
-            continue;
-          }
-
-          await removeSupabaseObjects(
-            file.bucket,
-            [oldPath]
-          );
-
-          console.log(
-            `${file.type} anterior eliminado de Supabase:`,
-            oldPath
+        } catch (storageError) {
+          console.error(
+            "La película se actualizó, pero no se pudieron borrar de Supabase los archivos anteriores reemplazados:",
+            storageError
           );
         }
-      } catch (storageCleanupError) {
-        // La edición ya quedó guardada en PostgreSQL. Si Supabase tiene
-        // un problema temporal, no hacemos fallar toda la edición.
-        console.error(
-          "La película se actualizó, pero no se pudieron limpiar todos los archivos anteriores de Supabase:",
-          storageCleanupError
-        );
       }
 
       res.json(formatMovie(updatedMovie));
