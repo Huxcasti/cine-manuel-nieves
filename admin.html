@@ -1431,6 +1431,10 @@
 
     .reservation-month-button {
       display: inline-flex;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
       width: 44px;
       height: 44px;
       flex: 0 0 44px;
@@ -1677,6 +1681,10 @@
 
     .scan-history-month-nav {
       display: inline-flex;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
       width: 44px;
       height: 44px;
       flex: 0 0 44px;
@@ -5702,6 +5710,18 @@ const durationValue =
       document.getElementById("scanHistoryMonthBar")?.classList.add("active");
       renderMonthlyCheckins();
     }
+
+
+    // Evita que Safari interprete dos toques rápidos en las flechas mensuales como zoom.
+    document.addEventListener("dblclick", (event) => {
+      const monthlyArrow = event.target.closest(
+        ".scan-history-month-nav, .reservation-month-button"
+      );
+
+      if (monthlyArrow) {
+        event.preventDefault();
+      }
+    }, { passive: false });
 
 
     function formatCheckinShowtime(value) {
