@@ -1640,6 +1640,83 @@
       }
     }
 
+
+
+    /* =========================================================
+       HISTORIAL DE ESCANEOS - CONTROLES MENSUALES
+    ========================================================= */
+    .scan-history-all-button {
+      background: linear-gradient(135deg, #164e63, #0f766e);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+    }
+
+    .scan-history-monthly-button {
+      background: linear-gradient(135deg, #6d28d9, #4f46e5);
+      color: #ffffff;
+      border: 1px solid rgba(167, 139, 250, 0.58);
+      box-shadow: 0 10px 24px rgba(79, 70, 229, 0.24);
+    }
+
+    .scan-history-month-bar {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 0 18px;
+      padding: 12px;
+      border: 1px solid #334766;
+      border-radius: 16px;
+      background: rgba(11, 19, 34, 0.84);
+    }
+
+    .scan-history-month-bar.active {
+      display: flex;
+    }
+
+    .scan-history-month-nav {
+      display: inline-flex;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #3b506f;
+      border-radius: 12px;
+      background: #111a2b;
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .scan-history-month-current {
+      min-width: 210px;
+      padding: 10px 18px;
+      border: 1px solid rgba(167, 139, 250, 0.52);
+      border-radius: 12px;
+      background: rgba(109, 40, 217, 0.12);
+      color: #f5f3ff;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 900;
+      text-transform: capitalize;
+    }
+
+    @media (max-width: 520px) {
+      .scan-history-month-bar {
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .scan-history-month-current {
+        min-width: 0;
+        flex: 1 1 auto;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 14px;
+      }
+    }
   
     .forgot-password-button {
       display: block;
@@ -2791,11 +2868,20 @@
               </div>
 
               <button
-                class="btn btn-secondary"
+                class="btn scan-history-all-button"
                 type="button"
                 onclick="clearCheckinDateFilter()"
               >
                 Ver todos
+              </button>
+
+              <button
+                id="scanHistoryMonthlyButton"
+                class="btn scan-history-monthly-button"
+                type="button"
+                onclick="showMonthlyCheckins()"
+              >
+                📅 Escaneos mensuales
               </button>
 
               <button
@@ -2806,6 +2892,26 @@
                 Actualizar
               </button>
             </div>
+          </div>
+
+          <div id="scanHistoryMonthBar" class="scan-history-month-bar" aria-label="Navegar por meses del historial de escaneos">
+            <button
+              class="scan-history-month-nav"
+              type="button"
+              onclick="changeScanHistoryMonth(-1)"
+              aria-label="Mes anterior"
+              title="Mes anterior"
+            >‹</button>
+
+            <div id="scanHistoryMonthLabel" class="scan-history-month-current">Mes actual</div>
+
+            <button
+              class="scan-history-month-nav"
+              type="button"
+              onclick="changeScanHistoryMonth(1)"
+              aria-label="Mes siguiente"
+              title="Mes siguiente"
+            >›</button>
           </div>
 
           <div class="table-wrapper">
@@ -2925,6 +3031,8 @@
     let employeesCache = [];
     let reservationsCache = [];
     let checkinsCache = [];
+    let scanHistoryMonthDate = new Date();
+    let scanHistoryMode = "all";
     let reservationViewMode = "month";
     let reservationStatisticsMode = "today";
     let reservationSelectedMonth = "";
@@ -5377,18 +5485,22 @@ const durationValue =
 
     async function loadCheckins() {
       try {
-        const checkins = await adminFetch("/api/admin/checkins?limit=200");
+        const checkins = await adminFetch("/api/admin/checkins?limit=1000");
         checkinsCache = Array.isArray(checkins) ? checkins : [];
 
         const selectedDate = document.getElementById("scanHistoryDate")?.value || "";
 
         if (selectedDate) {
+          scanHistoryMode = "date";
           renderCheckins(
             checkinsCache.filter((checkin) =>
               getPuertoRicoDateKey(checkin.scannedAt) === selectedDate
             )
           );
+        } else if (scanHistoryMode === "month") {
+          renderMonthlyCheckins();
         } else {
+          scanHistoryMode = "all";
           renderCheckins(checkinsCache);
         }
 
@@ -5462,6 +5574,9 @@ const durationValue =
         return;
       }
 
+      scanHistoryMode = "date";
+      document.getElementById("scanHistoryMonthBar")?.classList.remove("active");
+
       const filtered = checkinsCache.filter(
         (checkin) => getPuertoRicoDateKey(checkin.scannedAt) === selectedDate
       );
@@ -5488,12 +5603,84 @@ const durationValue =
         wrap.classList.add("is-hidden");
       }
 
+      document.getElementById("scanHistoryMonthBar")?.classList.remove("active");
+      scanHistoryMode = "all";
+
       const empty =
         document.getElementById("checkinEmptyMessage");
 
       empty.textContent = "Todavía no hay escaneos.";
 
       renderCheckins(checkinsCache);
+    }
+
+    function getScanHistoryMonthKey(value) {
+      const dateKey = getPuertoRicoDateKey(value);
+      return dateKey ? dateKey.slice(0, 7) : "";
+    }
+
+    function getSelectedScanHistoryMonthKey() {
+      const year = scanHistoryMonthDate.getFullYear();
+      const month = String(scanHistoryMonthDate.getMonth() + 1).padStart(2, "0");
+      return `${year}-${month}`;
+    }
+
+    function updateScanHistoryMonthLabel() {
+      const label = document.getElementById("scanHistoryMonthLabel");
+      if (!label) return;
+
+      label.textContent = new Intl.DateTimeFormat("es-PR", {
+        month: "long",
+        year: "numeric"
+      }).format(scanHistoryMonthDate);
+    }
+
+    function renderMonthlyCheckins() {
+      const monthKey = getSelectedScanHistoryMonthKey();
+      const filtered = checkinsCache.filter(
+        (checkin) => getScanHistoryMonthKey(checkin.scannedAt) === monthKey
+      );
+
+      updateScanHistoryMonthLabel();
+      renderCheckins(filtered);
+
+      const empty = document.getElementById("checkinEmptyMessage");
+      if (!filtered.length && empty) {
+        const monthName = new Intl.DateTimeFormat("es-PR", {
+          month: "long",
+          year: "numeric"
+        }).format(scanHistoryMonthDate);
+        empty.textContent = `No hay escaneos registrados en ${monthName}.`;
+      }
+    }
+
+    function showMonthlyCheckins() {
+      const input = document.getElementById("scanHistoryDate");
+      const wrap = document.getElementById("scanHistoryDatePickerWrap");
+
+      if (input) input.value = "";
+      if (wrap) wrap.classList.add("is-hidden");
+
+      if (scanHistoryMode !== "month") {
+        const now = new Date();
+        scanHistoryMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      scanHistoryMode = "month";
+      document.getElementById("scanHistoryMonthBar")?.classList.add("active");
+      renderMonthlyCheckins();
+    }
+
+    function changeScanHistoryMonth(delta) {
+      scanHistoryMode = "month";
+      scanHistoryMonthDate = new Date(
+        scanHistoryMonthDate.getFullYear(),
+        scanHistoryMonthDate.getMonth() + Number(delta || 0),
+        1
+      );
+
+      document.getElementById("scanHistoryMonthBar")?.classList.add("active");
+      renderMonthlyCheckins();
     }
 
 
