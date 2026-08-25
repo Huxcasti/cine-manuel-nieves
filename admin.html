@@ -2104,6 +2104,15 @@
               </div>
 
               <button
+                id="reservationMonthSalesButton"
+                class="btn btn-brand"
+                type="button"
+                onclick="showReservationMonthSales()"
+              >
+                📊 Ventas del mes
+              </button>
+
+              <button
                 class="btn btn-secondary"
                 type="button"
                 onclick="clearReservationDateFilter()"
@@ -2731,6 +2740,7 @@
     let reservationsCache = [];
     let checkinsCache = [];
     let reservationViewMode = "month";
+    let reservationStatisticsMode = "today";
     let reservationSelectedMonth = "";
     let reservationCurrentMonthKey = "";
 
@@ -3298,14 +3308,30 @@
       if (usedLabel) usedLabel.textContent = selectedLabels[3];
     }
 
+    function updateReservationMonthSalesButton() {
+      const button = document.getElementById("reservationMonthSalesButton");
+      if (!button) return;
+
+      const showingMonthTotals = reservationStatisticsMode === "month";
+      button.textContent = showingMonthTotals
+        ? "📊 Viendo ventas del mes"
+        : "📊 Ventas del mes";
+      button.setAttribute("aria-pressed", showingMonthTotals ? "true" : "false");
+      button.style.boxShadow = showingMonthTotals
+        ? "0 0 0 3px rgba(73, 203, 197, 0.24), 0 10px 24px rgba(36, 159, 156, 0.18)"
+        : "";
+    }
+
     function updateTodayStatistics() {
       const todayKey = getTodayPuertoRicoDateKey();
       const todayReservations = reservationsCache.filter((ticket) => {
         return getPuertoRicoDateKey(ticket.created) === todayKey;
       });
 
+      reservationStatisticsMode = "today";
       setStatisticsLabels("today");
       updateStatistics(todayReservations);
+      updateReservationMonthSalesButton();
     }
 
     function applyReservationMonthView() {
@@ -3325,12 +3351,21 @@
 
       updateReservationMonthLabel();
       renderReservations(filteredReservations);
-      // Las tarjetas superiores SIEMPRE representan solamente el día de hoy.
-      // Cambiar el mes de la tabla no altera estos totales.
-      updateTodayStatistics();
 
       const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
-      setReservationPeriodLabel(`Mostrando ${monthLabel}`);
+
+      // Por defecto las tarjetas continúan mostrando HOY. Pero si el
+      // administrador activó "Ventas del mes", conservamos ese modo
+      // incluso al cambiar de mes o al refrescar automáticamente.
+      if (reservationStatisticsMode === "month") {
+        setStatisticsLabels("month");
+        updateStatistics(filteredReservations);
+        updateReservationMonthSalesButton();
+        setReservationPeriodLabel(`Mostrando ${monthLabel} • Totales del mes`);
+      } else {
+        updateTodayStatistics();
+        setReservationPeriodLabel(`Mostrando ${monthLabel}`);
+      }
 
       if (!filteredReservations.length && emptyMessage) {
         emptyMessage.textContent = `No hay compras registradas en ${monthLabel}.`;
@@ -3347,6 +3382,13 @@
         date.getUTCMonth() + 1
       ).padStart(2, "0")}`;
 
+      applyReservationMonthView();
+    }
+
+    function showReservationMonthSales() {
+      ensureReservationSelectedMonth();
+      reservationViewMode = "month";
+      reservationStatisticsMode = "month";
       applyReservationMonthView();
     }
 
@@ -3549,10 +3591,11 @@
       renderReservations(filteredReservations);
 
       // Al buscar una fecha específica, las tarjetas superiores muestran
-      // los totales de ESE día seleccionado. Al salir de la búsqueda,
-      // vuelven automáticamente a representar solamente HOY.
+      // los totales de ESE día seleccionado.
+      reservationStatisticsMode = "date";
       setStatisticsLabels("selected");
       updateStatistics(filteredReservations);
+      updateReservationMonthSalesButton();
 
       const emptyMessage = document.getElementById("reservationEmptyMessage");
       const [year, month, day] = selectedDate.split("-");
@@ -3580,7 +3623,8 @@
       }
 
       renderReservations(reservationsCache);
-      // Ver todo solo afecta la tabla. Las tarjetas continúan siendo del día actual.
+      // Al salir de filtros o de los totales mensuales, las tarjetas
+      // regresan automáticamente a representar solamente HOY.
       updateTodayStatistics();
       setReservationPeriodLabel("Mostrando todo el historial");
       updateReservationMonthLabel();
