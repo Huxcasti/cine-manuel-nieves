@@ -3257,7 +3257,7 @@
       }
     }
 
-    function setStatisticsLabels(mode = "month") {
+    function setStatisticsLabels(mode = "today") {
       const reservationLabel = document.getElementById("reservationStatLabel");
       const ticketLabel = document.getElementById("ticketStatLabel");
       const salesLabel = document.getElementById("salesStatLabel");
@@ -3290,7 +3290,7 @@
         ]
       };
 
-      const selectedLabels = labels[mode] || labels.month;
+      const selectedLabels = labels[mode] || labels.today;
 
       if (reservationLabel) reservationLabel.textContent = selectedLabels[0];
       if (ticketLabel) ticketLabel.textContent = selectedLabels[1];
@@ -3324,9 +3324,10 @@
       });
 
       updateReservationMonthLabel();
-      setStatisticsLabels("month");
-      updateStatistics(filteredReservations);
       renderReservations(filteredReservations);
+      // Las tarjetas superiores SIEMPRE representan solamente el día de hoy.
+      // Cambiar el mes de la tabla no altera estos totales.
+      updateTodayStatistics();
 
       const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
       setReservationPeriodLabel(`Mostrando ${monthLabel}`);
@@ -3546,8 +3547,8 @@
       });
 
       renderReservations(filteredReservations);
-      setStatisticsLabels("selected");
-      updateStatistics(filteredReservations);
+      // Buscar una fecha solo filtra la tabla. Las tarjetas siguen mostrando HOY.
+      updateTodayStatistics();
 
       const emptyMessage = document.getElementById("reservationEmptyMessage");
       const [year, month, day] = selectedDate.split("-");
@@ -3575,8 +3576,8 @@
       }
 
       renderReservations(reservationsCache);
-      setStatisticsLabels("all");
-      updateStatistics(reservationsCache);
+      // Ver todo solo afecta la tabla. Las tarjetas continúan siendo del día actual.
+      updateTodayStatistics();
       setReservationPeriodLabel("Mostrando todo el historial");
       updateReservationMonthLabel();
     }
