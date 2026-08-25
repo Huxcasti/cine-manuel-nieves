@@ -1810,7 +1810,119 @@
       }
     }
 
+
+
+    /* =========================================================
+       REPORTE PDF MENSUAL DE RESERVACIONES
+       Se genera bajo demanda; no se guarda en servidor ni DB.
+    ========================================================= */
+    .reservation-month-current {
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+    }
+
+    .reservation-month-current:hover {
+      border-color: var(--aqua);
+      background: rgba(73, 203, 197, 0.14);
+    }
+
+    .reservation-month-current:active {
+      transform: scale(0.99);
+    }
+
+    .reservation-report-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(2, 6, 14, 0.78);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .reservation-report-modal.active {
+      display: flex;
+    }
+
+    .reservation-report-dialog {
+      width: min(100%, 470px);
+      padding: 24px;
+      border: 1px solid rgba(73, 203, 197, 0.42);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top right, rgba(73, 203, 197, 0.13), transparent 38%),
+        linear-gradient(180deg, #131d30, #0b1220);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+    }
+
+    .reservation-report-dialog h3 {
+      margin-bottom: 8px;
+      font-size: 22px;
+      text-transform: capitalize;
+    }
+
+    .reservation-report-dialog p {
+      margin-bottom: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .reservation-report-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .reservation-report-summary > div {
+      padding: 12px;
+      border: 1px solid #334766;
+      border-radius: 12px;
+      background: rgba(7, 11, 20, 0.58);
+    }
+
+    .reservation-report-summary span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .reservation-report-summary strong {
+      font-size: 18px;
+    }
+
+    .reservation-report-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .reservation-report-download {
+      background: linear-gradient(135deg, #49cbc5, #249f9c);
+      color: #041817;
+    }
+
+    @media (max-width: 520px) {
+      .reservation-report-dialog {
+        padding: 20px;
+      }
+
+      .reservation-report-summary,
+      .reservation-report-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
 </style>
+  <!-- PDF mensual: se genera solamente en el navegador del administrador. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
@@ -2157,7 +2269,14 @@
               ‹
             </button>
 
-            <div class="reservation-month-current" id="reservationMonthLabel">Mes actual</div>
+            <button
+              class="reservation-month-current"
+              id="reservationMonthLabel"
+              type="button"
+              onclick="openReservationMonthReportModal()"
+              aria-label="Abrir opciones del reporte mensual"
+              title="Descargar reporte PDF de este mes"
+            >Mes actual</button>
 
             <button
               class="reservation-month-button"
@@ -2742,6 +2861,61 @@
         </section>
       </section>
     </section>
+
+    <div
+      class="reservation-report-modal"
+      id="reservationReportModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reservationReportTitle"
+      onclick="handleReservationReportBackdrop(event)"
+    >
+      <div class="reservation-report-dialog">
+        <h3 id="reservationReportTitle">Reporte mensual</h3>
+        <p id="reservationReportDescription">
+          El PDF se crea al momento y se descarga en este dispositivo. No se guarda una copia en la base de datos ni en Supabase.
+        </p>
+
+        <div class="reservation-report-summary">
+          <div>
+            <span>Reservaciones</span>
+            <strong id="reservationReportReservations">0</strong>
+          </div>
+          <div>
+            <span>Taquillas pagadas</span>
+            <strong id="reservationReportTickets">0</strong>
+          </div>
+          <div>
+            <span>Ventas pagadas</span>
+            <strong id="reservationReportSales">$0.00</strong>
+          </div>
+          <div>
+            <span>Entradas utilizadas</span>
+            <strong id="reservationReportUsed">0</strong>
+          </div>
+        </div>
+
+        <div class="reservation-report-actions">
+          <button
+            id="reservationReportDownloadButton"
+            class="btn reservation-report-download"
+            type="button"
+            onclick="downloadReservationMonthPdf()"
+          >
+            📄 Descargar PDF
+          </button>
+
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeReservationMonthReportModal()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script>
@@ -3181,6 +3355,12 @@
       }
     }
 
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeReservationMonthReportModal();
+      }
+    });
+
     document.addEventListener("visibilitychange", () => {
       if (
         document.visibilityState === "visible" &&
@@ -3385,6 +3565,275 @@
 
       if (!filteredReservations.length && emptyMessage) {
         emptyMessage.textContent = `No hay compras registradas en ${monthLabel}.`;
+      }
+    }
+
+    function getReservationMonthRows(monthKey = reservationSelectedMonth) {
+      ensureReservationSelectedMonth();
+      const targetMonth = /^\d{4}-\d{2}$/.test(String(monthKey || ""))
+        ? String(monthKey)
+        : reservationSelectedMonth;
+
+      return reservationsCache.filter((ticket) => {
+        return getReservationMonthKey(ticket.created) === targetMonth;
+      });
+    }
+
+    function getReservationReportSummary(reservations) {
+      const safeReservations = Array.isArray(reservations) ? reservations : [];
+      const paidReservations = safeReservations.filter((ticket) =>
+        isPaidPaymentStatus(ticket.paymentStatus)
+      );
+
+      const tickets = paidReservations.reduce((total, ticket) => {
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
+
+      const sales = paidReservations.reduce((total, ticket) => {
+        return total + Number(ticket.total || 0);
+      }, 0);
+
+      const used = paidReservations.reduce((total, ticket) => {
+        if (!ticket.used) return total;
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
+
+      return {
+        reservations: safeReservations.length,
+        tickets,
+        sales,
+        used
+      };
+    }
+
+    function openReservationMonthReportModal() {
+      ensureReservationSelectedMonth();
+
+      const modal = document.getElementById("reservationReportModal");
+      const title = document.getElementById("reservationReportTitle");
+      const monthReservations = getReservationMonthRows();
+      const summary = getReservationReportSummary(monthReservations);
+      const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
+
+      if (title) title.textContent = `Reporte de ${monthLabel}`;
+      document.getElementById("reservationReportReservations").textContent =
+        String(summary.reservations);
+      document.getElementById("reservationReportTickets").textContent =
+        String(summary.tickets);
+      document.getElementById("reservationReportSales").textContent =
+        `$${summary.sales.toFixed(2)}`;
+      document.getElementById("reservationReportUsed").textContent =
+        String(summary.used);
+
+      if (modal) {
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+    }
+
+    function closeReservationMonthReportModal() {
+      const modal = document.getElementById("reservationReportModal");
+      if (modal) modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function handleReservationReportBackdrop(event) {
+      if (event?.target?.id === "reservationReportModal") {
+        closeReservationMonthReportModal();
+      }
+    }
+
+    function getReservationPdfSafeText(value) {
+      return String(value ?? "")
+        .replace(/\s+/g, " ")
+        .trim() || "—";
+    }
+
+    function getReservationReportFileName(monthKey) {
+      const monthLabel = formatReservationMonthLabel(monthKey)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .toLowerCase();
+
+      return `ventas_${monthLabel || monthKey}.pdf`;
+    }
+
+    async function downloadReservationMonthPdf() {
+      ensureReservationSelectedMonth();
+
+      const button = document.getElementById("reservationReportDownloadButton");
+      const monthReservations = getReservationMonthRows();
+      const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
+
+      if (!monthReservations.length) {
+        alert(`No hay reservaciones registradas en ${monthLabel}.`);
+        return;
+      }
+
+      if (!window.jspdf?.jsPDF) {
+        alert("No se pudo cargar el generador de PDF. Revisa la conexión a internet e intenta nuevamente.");
+        return;
+      }
+
+      const previousText = button?.textContent || "📄 Descargar PDF";
+
+      try {
+        if (button) {
+          button.disabled = true;
+          button.textContent = "Generando PDF...";
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "landscape",
+          unit: "pt",
+          format: "letter",
+          compress: true
+        });
+
+        if (typeof doc.autoTable !== "function") {
+          throw new Error("El módulo de tablas del PDF no está disponible.");
+        }
+
+        const summary = getReservationReportSummary(monthReservations);
+        const paidReservations = monthReservations.filter((ticket) =>
+          isPaidPaymentStatus(ticket.paymentStatus)
+        );
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const generatedAt = new Intl.DateTimeFormat("es-PR", {
+          timeZone: "America/Puerto_Rico",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "numeric",
+          minute: "2-digit"
+        }).format(new Date());
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text("Cine Teatro Manuel Nieves Quintero", 36, 38);
+
+        doc.setFontSize(15);
+        doc.text(`Reporte de ventas - ${monthLabel}`, 36, 61);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Generado: ${generatedAt}`, pageWidth - 36, 38, { align: "right" });
+        doc.text("Documento generado bajo demanda. No se almacena una copia en el sistema.", pageWidth - 36, 54, { align: "right" });
+
+        doc.setDrawColor(45, 58, 85);
+        doc.line(36, 72, pageWidth - 36, 72);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text(`Reservaciones: ${summary.reservations}`, 36, 92);
+        doc.text(`Taquillas pagadas: ${summary.tickets}`, 190, 92);
+        doc.text(`Ventas pagadas: $${summary.sales.toFixed(2)}`, 355, 92);
+        doc.text(`Entradas utilizadas: ${summary.used}`, 545, 92);
+
+        const body = monthReservations.map((ticket) => {
+          const seats = Array.isArray(ticket.seats) && ticket.seats.length
+            ? ticket.seats.join(", ")
+            : "—";
+          const paymentStatus = getPaymentStatusPresentation(ticket.paymentStatus);
+
+          return [
+            getReservationPdfSafeText(formatPuertoRicoDateTime(ticket.created)),
+            getReservationPdfSafeText(ticket.customer?.name),
+            getReservationPdfSafeText(ticket.customer?.email),
+            getReservationPdfSafeText(ticket.movie),
+            getReservationPdfSafeText(formatCheckinShowtime(ticket.time)),
+            getReservationPdfSafeText(seats),
+            `$${Number(ticket.total || 0).toFixed(2)}`,
+            getReservationPdfSafeText(paymentStatus.label),
+            ticket.used ? "Utilizada" : "Disponible"
+          ];
+        });
+
+        doc.autoTable({
+          startY: 108,
+          head: [[
+            "Fecha compra",
+            "Cliente",
+            "Correo",
+            "Pelicula",
+            "Tanda",
+            "Asientos",
+            "Total",
+            "Pago",
+            "Entrada"
+          ]],
+          body,
+          theme: "grid",
+          styles: {
+            font: "helvetica",
+            fontSize: 6.8,
+            cellPadding: 3,
+            overflow: "linebreak",
+            valign: "top"
+          },
+          headStyles: {
+            fillColor: [17, 24, 39],
+            textColor: [255, 255, 255],
+            fontStyle: "bold"
+          },
+          alternateRowStyles: {
+            fillColor: [245, 247, 250]
+          },
+          columnStyles: {
+            0: { cellWidth: 72 },
+            1: { cellWidth: 76 },
+            2: { cellWidth: 110 },
+            3: { cellWidth: 68 },
+            4: { cellWidth: 76 },
+            5: { cellWidth: 70 },
+            6: { cellWidth: 48, halign: "right" },
+            7: { cellWidth: 48 },
+            8: { cellWidth: 52 }
+          },
+          margin: { left: 28, right: 28, bottom: 32 },
+          didDrawPage: (data) => {
+            const pageNumber = doc.internal.getNumberOfPages();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7);
+            doc.setTextColor(90);
+            doc.text(`Pagina ${pageNumber}`, pageWidth - 30, pageHeight - 14, { align: "right" });
+          }
+        });
+
+        const finalY = doc.lastAutoTable?.finalY || 108;
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        if (finalY > pageHeight - 90) {
+          doc.addPage();
+        }
+
+        const totalY = (doc.lastAutoTable?.finalY && doc.lastAutoTable.finalY <= pageHeight - 90)
+          ? doc.lastAutoTable.finalY + 22
+          : 46;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(0);
+        doc.text(`TOTAL PAGADO DEL MES: $${summary.sales.toFixed(2)}`, 36, totalY);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Reservaciones pagadas: ${paidReservations.length} | Taquillas pagadas: ${summary.tickets}`, 36, totalY + 16);
+
+        doc.save(getReservationReportFileName(reservationSelectedMonth));
+        closeReservationMonthReportModal();
+      } catch (error) {
+        console.error("Error generando reporte PDF mensual:", error);
+        alert(error.message || "No se pudo generar el PDF mensual.");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = previousText;
+        }
       }
     }
 
