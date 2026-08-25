@@ -2954,8 +2954,46 @@ app.delete("/api/admin/employees/:id", requireAdmin, async (req, res) => {
 
 app.get("/api/admin/checkins", requireAdmin, async (req, res) => {
   try {
-    const limit = Math.min(Math.max(Number(req.query.limit)||200,1),1000);
-    const result = await pool.query(`SELECT * FROM checkins ORDER BY scanned_at DESC LIMIT $1;`, [limit]);
+    const month = String(req.query.month || "").trim();
+
+    if (month) {
+      if (!/^\d{4}-\d{2}$/.test(month)) {
+        return res.status(400).json({
+          error: "El mes debe tener el formato YYYY-MM."
+        });
+      }
+
+      const result = await pool.query(
+        `
+          SELECT *
+          FROM checkins
+          WHERE
+            scanned_at >= (
+              TO_DATE($1 || '-01', 'YYYY-MM-DD')::timestamp
+              AT TIME ZONE 'America/Puerto_Rico'
+            )
+            AND scanned_at < (
+              (TO_DATE($1 || '-01', 'YYYY-MM-DD') + INTERVAL '1 month')::timestamp
+              AT TIME ZONE 'America/Puerto_Rico'
+            )
+          ORDER BY scanned_at DESC;
+        `,
+        [month]
+      );
+
+      return res.json(result.rows.map(formatCheckin));
+    }
+
+    const limit = Math.min(
+      Math.max(Number(req.query.limit) || 200, 1),
+      1000
+    );
+
+    const result = await pool.query(
+      `SELECT * FROM checkins ORDER BY scanned_at DESC LIMIT $1;`,
+      [limit]
+    );
+
     res.json(result.rows.map(formatCheckin));
   } catch (error) {
     console.error("Error obteniendo historial de escaneos:", error);
