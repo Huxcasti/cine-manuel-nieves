@@ -1485,6 +1485,22 @@
     }
 
 
+
+    .reservation-all-button {
+      background: linear-gradient(135deg, #164e63, #0f766e);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+    }
+
+    .reservation-all-button:hover {
+      filter: brightness(1.08);
+    }
+
+    .reservation-all-button:active {
+      transform: scale(0.98);
+    }
+
     .native-picker-input {
       position: relative;
       cursor: pointer;
@@ -2113,7 +2129,7 @@
               </button>
 
               <button
-                class="btn btn-secondary"
+                class="btn reservation-all-button"
                 type="button"
                 onclick="clearReservationDateFilter()"
               >
