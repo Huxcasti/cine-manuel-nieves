@@ -1414,6 +1414,77 @@
     }
 
 
+    /* =========================================================
+       NAVEGACIÓN MENSUAL DE RESERVACIONES
+    ========================================================= */
+    .reservation-month-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 0 18px;
+      padding: 12px;
+      border: 1px solid #334766;
+      border-radius: 16px;
+      background: rgba(11, 19, 34, 0.84);
+    }
+
+    .reservation-month-button {
+      display: inline-flex;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #3b506f;
+      border-radius: 12px;
+      background: #111a2b;
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .reservation-month-button:hover {
+      border-color: var(--aqua);
+      background: #17243a;
+    }
+
+    .reservation-month-current {
+      min-width: 210px;
+      padding: 10px 18px;
+      border: 1px solid rgba(73, 203, 197, 0.42);
+      border-radius: 12px;
+      background: rgba(73, 203, 197, 0.08);
+      color: #eefcff;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 900;
+      text-transform: capitalize;
+    }
+
+    .reservation-period-copy {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+      .reservation-month-bar {
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .reservation-month-current {
+        min-width: 0;
+        flex: 1 1 auto;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 14px;
+      }
+    }
+
+
     .native-picker-input {
       position: relative;
       cursor: pointer;
@@ -2010,6 +2081,7 @@
             <div>
               <h2>Reservaciones</h2>
               <p class="subtitle">Ventas y entradas registradas.</p>
+              <p class="reservation-period-copy" id="reservationPeriodLabel">Mes actual</p>
             </div>
 
             <div class="reservation-search-actions">
@@ -2047,6 +2119,30 @@
                 Actualizar
               </button>
             </div>
+          </div>
+
+          <div class="reservation-month-bar" aria-label="Navegar por meses de reservaciones">
+            <button
+              class="reservation-month-button"
+              type="button"
+              onclick="changeReservationMonth(-1)"
+              aria-label="Mes anterior"
+              title="Mes anterior"
+            >
+              ‹
+            </button>
+
+            <div class="reservation-month-current" id="reservationMonthLabel">Mes actual</div>
+
+            <button
+              class="reservation-month-button"
+              type="button"
+              onclick="changeReservationMonth(1)"
+              aria-label="Mes siguiente"
+              title="Mes siguiente"
+            >
+              ›
+            </button>
           </div>
 
           <div class="table-wrapper">
@@ -2634,6 +2730,9 @@
     let employeesCache = [];
     let reservationsCache = [];
     let checkinsCache = [];
+    let reservationViewMode = "month";
+    let reservationSelectedMonth = "";
+    let reservationCurrentMonthKey = "";
 
     function setLoading(visible) {
       document.getElementById("loadingMessage").style.display = visible ? "block" : "none";
@@ -3099,49 +3198,155 @@
       return `${values.year}-${values.month}-${values.day}`;
     }
 
-    function setStatisticsLabels(mode = "today") {
-      const isToday = mode === "today";
+    function getCurrentPuertoRicoMonthKey() {
+      return getTodayPuertoRicoDateKey().slice(0, 7);
+    }
 
+    function getReservationMonthKey(value) {
+      const dateKey = getPuertoRicoDateKey(value);
+      return dateKey ? dateKey.slice(0, 7) : "";
+    }
+
+    function formatReservationMonthLabel(monthKey) {
+      const match = String(monthKey || "").match(/^(\d{4})-(\d{2})$/);
+      if (!match) return "Mes actual";
+
+      const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1, 12));
+
+      return new Intl.DateTimeFormat("es-PR", {
+        timeZone: "America/Puerto_Rico",
+        month: "long",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function ensureReservationSelectedMonth() {
+      const currentMonthKey = getCurrentPuertoRicoMonthKey();
+
+      // Si el panel quedó abierto al cambiar de mes y el administrador
+      // todavía estaba mirando el mes que era actual, avanzamos
+      // automáticamente al nuevo mes. Si estaba consultando un mes
+      // histórico, respetamos esa selección.
+      if (
+        reservationCurrentMonthKey &&
+        reservationSelectedMonth === reservationCurrentMonthKey &&
+        reservationCurrentMonthKey !== currentMonthKey
+      ) {
+        reservationSelectedMonth = currentMonthKey;
+      }
+
+      if (!/^\d{4}-\d{2}$/.test(reservationSelectedMonth)) {
+        reservationSelectedMonth = currentMonthKey;
+      }
+
+      reservationCurrentMonthKey = currentMonthKey;
+    }
+
+    function updateReservationMonthLabel() {
+      ensureReservationSelectedMonth();
+      const label = document.getElementById("reservationMonthLabel");
+      if (label) {
+        label.textContent = formatReservationMonthLabel(reservationSelectedMonth);
+      }
+    }
+
+    function setReservationPeriodLabel(text) {
+      const label = document.getElementById("reservationPeriodLabel");
+      if (label) {
+        label.textContent = text || "";
+      }
+    }
+
+    function setStatisticsLabels(mode = "month") {
       const reservationLabel = document.getElementById("reservationStatLabel");
       const ticketLabel = document.getElementById("ticketStatLabel");
       const salesLabel = document.getElementById("salesStatLabel");
       const usedLabel = document.getElementById("usedStatLabel");
 
-      if (reservationLabel) {
-        reservationLabel.textContent = isToday
-          ? "Reservaciones de hoy"
-          : "Reservaciones del día";
-      }
+      const labels = {
+        today: [
+          "Reservaciones de hoy",
+          "Taquillas vendidas hoy",
+          "Ventas pagadas hoy",
+          "Entradas utilizadas hoy"
+        ],
+        selected: [
+          "Reservaciones del día",
+          "Taquillas vendidas del día",
+          "Ventas pagadas del día",
+          "Entradas utilizadas del día"
+        ],
+        month: [
+          "Reservaciones del mes",
+          "Taquillas vendidas del mes",
+          "Ventas pagadas del mes",
+          "Entradas utilizadas del mes"
+        ],
+        all: [
+          "Reservaciones totales",
+          "Taquillas vendidas totales",
+          "Ventas pagadas totales",
+          "Entradas utilizadas totales"
+        ]
+      };
 
-      if (ticketLabel) {
-        ticketLabel.textContent = isToday
-          ? "Taquillas vendidas hoy"
-          : "Taquillas vendidas del día";
-      }
+      const selectedLabels = labels[mode] || labels.month;
 
-      if (salesLabel) {
-        salesLabel.textContent = isToday
-          ? "Ventas pagadas hoy"
-          : "Ventas pagadas del día";
-      }
-
-      if (usedLabel) {
-        usedLabel.textContent = isToday
-          ? "Entradas utilizadas hoy"
-          : "Entradas utilizadas del día";
-      }
+      if (reservationLabel) reservationLabel.textContent = selectedLabels[0];
+      if (ticketLabel) ticketLabel.textContent = selectedLabels[1];
+      if (salesLabel) salesLabel.textContent = selectedLabels[2];
+      if (usedLabel) usedLabel.textContent = selectedLabels[3];
     }
 
     function updateTodayStatistics() {
-      setStatisticsLabels("today");
-
       const todayKey = getTodayPuertoRicoDateKey();
-
       const todayReservations = reservationsCache.filter((ticket) => {
         return getPuertoRicoDateKey(ticket.created) === todayKey;
       });
 
+      setStatisticsLabels("today");
       updateStatistics(todayReservations);
+    }
+
+    function applyReservationMonthView() {
+      ensureReservationSelectedMonth();
+      reservationViewMode = "month";
+
+      const input = document.getElementById("reservationHistoryDate");
+      const wrap = document.getElementById("reservationDatePickerWrap");
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
+
+      if (input) input.value = "";
+      if (wrap) wrap.classList.add("is-hidden");
+
+      const filteredReservations = reservationsCache.filter((ticket) => {
+        return getReservationMonthKey(ticket.created) === reservationSelectedMonth;
+      });
+
+      updateReservationMonthLabel();
+      setStatisticsLabels("month");
+      updateStatistics(filteredReservations);
+      renderReservations(filteredReservations);
+
+      const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
+      setReservationPeriodLabel(`Mostrando ${monthLabel}`);
+
+      if (!filteredReservations.length && emptyMessage) {
+        emptyMessage.textContent = `No hay compras registradas en ${monthLabel}.`;
+      }
+    }
+
+    function changeReservationMonth(delta) {
+      ensureReservationSelectedMonth();
+
+      const [year, month] = reservationSelectedMonth.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1 + Number(delta || 0), 1, 12));
+
+      reservationSelectedMonth = `${date.getUTCFullYear()}-${String(
+        date.getUTCMonth() + 1
+      ).padStart(2, "0")}`;
+
+      applyReservationMonthView();
     }
 
     async function loadReservations(options = {}) {
@@ -3160,18 +3365,12 @@
           ? reservations
           : [];
 
-        const reservationDateInput =
-          document.getElementById("reservationHistoryDate");
-
-        if (reservationDateInput?.value) {
-          // Si el administrador está consultando una fecha específica,
-          // tanto la tabla como las tarjetas muestran ese día.
+        if (reservationViewMode === "date") {
           filterReservationsByDate(false);
+        } else if (reservationViewMode === "all") {
+          showAllReservations();
         } else {
-          // Sin filtro: las tarjetas muestran HOY y la tabla conserva
-          // todas las reservaciones.
-          updateTodayStatistics();
-          renderReservations(reservationsCache);
+          applyReservationMonthView();
         }
       } catch (error) {
         if (silent) {
@@ -3340,47 +3539,50 @@
         return;
       }
 
+      reservationViewMode = "date";
+
       const filteredReservations = reservationsCache.filter((ticket) => {
         return getPuertoRicoDateKey(ticket.created) === selectedDate;
       });
 
-      // La tabla y las tarjetas muestran exactamente la fecha elegida.
       renderReservations(filteredReservations);
       setStatisticsLabels("selected");
       updateStatistics(filteredReservations);
 
-      const emptyMessage =
-        document.getElementById("reservationEmptyMessage");
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
+      const [year, month, day] = selectedDate.split("-");
+
+      setReservationPeriodLabel(`Mostrando ${month}/${day}/${year}`);
 
       if (!filteredReservations.length && emptyMessage) {
-        const [year, month, day] = selectedDate.split("-");
         emptyMessage.textContent =
           `No hay compras registradas para ${month}/${day}/${year}.`;
       }
     }
 
-    function clearReservationDateFilter() {
+    function showAllReservations() {
+      reservationViewMode = "all";
+
       const input = document.getElementById("reservationHistoryDate");
       const wrap = document.getElementById("reservationDatePickerWrap");
-      const emptyMessage =
-        document.getElementById("reservationEmptyMessage");
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
 
-      if (input) {
-        input.value = "";
-      }
-
-      if (wrap) {
-        wrap.classList.add("is-hidden");
-      }
+      if (input) input.value = "";
+      if (wrap) wrap.classList.add("is-hidden");
 
       if (emptyMessage) {
         emptyMessage.textContent = "Todavía no hay reservaciones.";
       }
 
       renderReservations(reservationsCache);
+      setStatisticsLabels("all");
+      updateStatistics(reservationsCache);
+      setReservationPeriodLabel("Mostrando todo el historial");
+      updateReservationMonthLabel();
+    }
 
-      // Al quitar el filtro, el tablero vuelve automáticamente a HOY.
-      updateTodayStatistics();
+    function clearReservationDateFilter() {
+      showAllReservations();
     }
 
     async function loadMovies() {
