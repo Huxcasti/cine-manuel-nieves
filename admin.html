@@ -2128,6 +2128,33 @@
       }
     }
 
+
+
+    /* =========================================================
+       COLORES DE ACCIONES EN EMPLEADOS
+    ========================================================= */
+    .employee-clear-button {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #241500;
+      border: 1px solid rgba(251, 191, 36, 0.58);
+      box-shadow: 0 10px 24px rgba(217, 119, 6, 0.20);
+    }
+
+    .employee-clear-button:hover {
+      filter: brightness(1.06);
+    }
+
+    .employee-all-button {
+      background: linear-gradient(135deg, #164e63, #0f766e);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+    }
+
+    .employee-all-button:hover {
+      filter: brightness(1.08);
+    }
+
 </style>
   <!-- PDF mensual: se genera solamente en el navegador del administrador. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2898,7 +2925,7 @@
                 Guardar empleado
               </button>
 
-              <button class="btn btn-secondary" type="button" onclick="resetEmployeeForm()">
+              <button class="btn employee-clear-button" type="button" onclick="resetEmployeeForm()">
                 Limpiar
               </button>
             </div>
@@ -2933,7 +2960,7 @@
                 </div>
 
                 <button
-                  class="btn btn-secondary"
+                  class="btn employee-all-button"
                   type="button"
                   onclick="clearEmployeeDateFilter()"
                 >
