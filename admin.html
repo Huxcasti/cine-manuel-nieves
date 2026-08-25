@@ -1996,6 +1996,26 @@
       }
     }
 
+
+    /* Ajuste compacto para los 4 botones del historial en iPhone */
+    @media (max-width: 520px) {
+      .scan-history-actions {
+        gap: 8px;
+      }
+
+      .scan-history-actions .btn {
+        min-height: 52px;
+        padding: 9px 10px;
+        font-size: 14px;
+        line-height: 1.15;
+        border-radius: 10px;
+      }
+
+      .scan-history-monthly-button {
+        font-size: 13px !important;
+        white-space: nowrap;
+      }
+    }
 </style>
   <!-- PDF mensual: se genera solamente en el navegador del administrador. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
