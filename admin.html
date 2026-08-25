@@ -2155,6 +2155,47 @@
       filter: brightness(1.08);
     }
 
+
+
+    /* =========================================================
+       COLORES DE CONTROLES - SECCIÓN PELÍCULAS
+    ========================================================= */
+    .movie-upload-button {
+      background: linear-gradient(135deg, #0f766e, #14b8a6);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(20, 184, 166, 0.20);
+    }
+
+    .movie-upload-button:hover {
+      filter: brightness(1.08);
+    }
+
+    .movie-clear-button {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #241500;
+      border: 1px solid rgba(251, 191, 36, 0.58);
+      box-shadow: 0 10px 24px rgba(249, 115, 22, 0.22);
+    }
+
+    .movie-clear-button:hover {
+      filter: brightness(1.06);
+    }
+
+    #moviesSection .duration-select,
+    #moviesSection .rating-select {
+      background: linear-gradient(135deg, #0f3f46, #0b5f64);
+      border-color: #14b8a6;
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.12);
+    }
+
+    #moviesSection .duration-select:focus,
+    #moviesSection .rating-select:focus {
+      border-color: #49cbc5;
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.12);
+    }
+
 </style>
   <!-- PDF mensual: se genera solamente en el navegador del administrador. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2581,7 +2622,7 @@
 
                   <button
                     id="uploadPosterButton"
-                    class="btn btn-secondary"
+                    class="btn movie-upload-button"
                     type="button"
                     onclick="uploadPoster()"
                   >
@@ -2608,7 +2649,7 @@
 
               <button
                 id="uploadTrailerButton"
-                class="btn btn-secondary"
+                class="btn movie-upload-button"
                 type="button"
                 onclick="uploadTrailer()"
               >
@@ -2707,11 +2748,11 @@
                 type="button"
                 onclick="saveMovie()"
               >
-                Guardar película
+                💾 Guardar película
               </button>
 
-              <button class="btn btn-secondary" type="button" onclick="resetMovieForm()">
-                Limpiar
+              <button class="btn movie-clear-button" type="button" onclick="resetMovieForm()">
+                🧹 Limpiar
               </button>
             </div>
 
