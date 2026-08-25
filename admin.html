@@ -3547,8 +3547,12 @@
       });
 
       renderReservations(filteredReservations);
-      // Buscar una fecha solo filtra la tabla. Las tarjetas siguen mostrando HOY.
-      updateTodayStatistics();
+
+      // Al buscar una fecha específica, las tarjetas superiores muestran
+      // los totales de ESE día seleccionado. Al salir de la búsqueda,
+      // vuelven automáticamente a representar solamente HOY.
+      setStatisticsLabels("selected");
+      updateStatistics(filteredReservations);
 
       const emptyMessage = document.getElementById("reservationEmptyMessage");
       const [year, month, day] = selectedDate.split("-");
