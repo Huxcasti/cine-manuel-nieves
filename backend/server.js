@@ -29,6 +29,11 @@ const QR_STORAGE_RETENTION_DAYS = Math.max(
   Number(process.env.QR_STORAGE_RETENTION_DAYS || 30)
 );
 
+// Carpeta principal donde se guardan los QR de las entradas.
+// "tickets" se mantiene como carpeta heredada para limpiar QR de versiones anteriores.
+const QR_STORAGE_FOLDER = "entradas";
+const QR_STORAGE_LEGACY_FOLDERS = ["tickets"];
+
 const PASSWORD_RESET_RETENTION_DAYS = Math.max(
   1,
   Number(process.env.PASSWORD_RESET_RETENTION_DAYS || 7)
@@ -533,18 +538,14 @@ async function deleteMovieStorageFiles(movie) {
   ]);
 }
 
-async function cleanupOldQrFiles() {
-  const cutoff = new Date(
-    Date.now() - QR_STORAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000
-  );
-
+async function listSupabaseFolderFiles(folderName) {
+  const allFiles = [];
   let offset = 0;
-  let deletedCount = 0;
 
   while (true) {
     const { data, error } = await supabase.storage
       .from(SUPABASE_POSTERS_BUCKET)
-      .list("tickets", {
+      .list(folderName, {
         limit: 100,
         offset,
         sortBy: { column: "created_at", order: "asc" }
@@ -560,28 +561,145 @@ async function cleanupOldQrFiles() {
       break;
     }
 
-    const oldPaths = files
-      .filter((file) => {
-        const createdAt = file?.created_at || file?.updated_at;
-        if (!createdAt) return false;
-        const fileDate = new Date(createdAt);
-        return Number.isFinite(fileDate.getTime()) && fileDate < cutoff;
-      })
-      .map((file) => `tickets/${file.name}`)
-      .filter(Boolean);
-
-    if (oldPaths.length > 0) {
-      deletedCount += await removeSupabaseObjects(
-        SUPABASE_POSTERS_BUCKET,
-        oldPaths
-      );
-    }
+    allFiles.push(...files);
 
     if (files.length < 100) {
       break;
     }
 
-    offset += 100;
+    offset += files.length;
+  }
+
+  return allFiles;
+}
+
+function getTicketIdFromQrFileName(fileName) {
+  const match = String(fileName || "").match(
+    /^([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})-qr\.png$/i
+  );
+
+  return match ? match[1] : "";
+}
+
+function getQrFallbackExpirationStamp(file) {
+  const createdAt = file?.created_at || file?.updated_at;
+
+  if (!createdAt) {
+    return null;
+  }
+
+  const fileStamp = new Date(createdAt).getTime();
+
+  if (!Number.isFinite(fileStamp)) {
+    return null;
+  }
+
+  return (
+    fileStamp +
+    QR_STORAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000
+  );
+}
+
+function getTicketQrExpirationStamp(showTime, file) {
+  const showParts = getTicketShowDateTimeParts(showTime);
+
+  if (showParts) {
+    return (
+      localDateTimePartsToStamp(showParts) +
+      QR_STORAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000
+    );
+  }
+
+  // Si por alguna razón un boleto viejo no tiene una fecha de tanda
+  // reconocible, usamos la fecha del archivo para que tampoco quede
+  // ocupando espacio para siempre.
+  return getQrFallbackExpirationStamp(file);
+}
+
+async function cleanupOldQrFiles() {
+  const foldersToCheck = [
+    QR_STORAGE_FOLDER,
+    ...QR_STORAGE_LEGACY_FOLDERS
+  ].filter(
+    (folder, index, folders) =>
+      folder && folders.indexOf(folder) === index
+  );
+
+  const nowPuertoRicoStamp = localDateTimePartsToStamp(
+    getPuertoRicoDateTimeParts()
+  );
+
+  let deletedCount = 0;
+
+  for (const folderName of foldersToCheck) {
+    const files = await listSupabaseFolderFiles(folderName);
+
+    if (files.length === 0) {
+      continue;
+    }
+
+    const ticketIds = [
+      ...new Set(
+        files
+          .map((file) => getTicketIdFromQrFileName(file?.name))
+          .filter(Boolean)
+      )
+    ];
+
+    const showTimeByTicketId = new Map();
+
+    // Consultamos los boletos en bloques para evitar una consulta demasiado grande.
+    for (let index = 0; index < ticketIds.length; index += 500) {
+      const ticketIdChunk = ticketIds.slice(index, index + 500);
+
+      if (ticketIdChunk.length === 0) {
+        continue;
+      }
+
+      const ticketResult = await pool.query(
+        `
+          SELECT id, show_time
+          FROM tickets
+          WHERE id = ANY($1::uuid[]);
+        `,
+        [ticketIdChunk]
+      );
+
+      for (const ticket of ticketResult.rows) {
+        showTimeByTicketId.set(
+          String(ticket.id),
+          ticket.show_time
+        );
+      }
+    }
+
+    const oldPaths = files
+      .filter((file) => {
+        const ticketId = getTicketIdFromQrFileName(file?.name);
+        const showTime = ticketId
+          ? showTimeByTicketId.get(ticketId)
+          : null;
+
+        const expirationStamp = showTime
+          ? getTicketQrExpirationStamp(showTime, file)
+          : getQrFallbackExpirationStamp(file);
+
+        return (
+          Number.isFinite(expirationStamp) &&
+          expirationStamp <= nowPuertoRicoStamp
+        );
+      })
+      .map((file) => `${folderName}/${file.name}`)
+      .filter(Boolean);
+
+    for (let index = 0; index < oldPaths.length; index += 100) {
+      const pathChunk = oldPaths.slice(index, index + 100);
+
+      deletedCount += await removeSupabaseObjects(
+        SUPABASE_POSTERS_BUCKET,
+        pathChunk
+      );
+    }
   }
 
   return deletedCount;
@@ -1358,7 +1476,7 @@ async function sendTicketEmail(ticket) {
   margin: 2
 });
 
-const qrFilePath = `tickets/${ticket.id}-qr.png`;
+const qrFilePath = `${QR_STORAGE_FOLDER}/${ticket.id}-qr.png`;
 const { error: qrUploadError } = await supabase.storage
   .from(SUPABASE_POSTERS_BUCKET)
   .upload(qrFilePath, qrBuffer, {
