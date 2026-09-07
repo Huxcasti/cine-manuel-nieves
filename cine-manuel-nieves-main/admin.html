@@ -1,0 +1,6462 @@
+
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#070b14" />
+  <title>Panel administrativo | Cine Teatro Manuel Nieves Quintero</title>
+  <link rel="icon" type="image/png" href="Logo.PNG" />
+
+  <style>
+
+  .btn-update {
+  background: linear-gradient(135deg, #ffd43b, #f5b700);
+  color: #1d1700;
+  box-shadow: 0 15px 32px rgba(245, 183, 0, 0.28);
+}
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --background: #070b14;
+      --background-soft: #0a1020;
+      --panel: #111827;
+      --panel-light: #182235;
+      --panel-dark: #0b1220;
+      --border: #2d3a55;
+      --text: #ffffff;
+      --muted: #aeb8cc;
+      --yellow: #ffc62a;
+      --yellow-dark: #e8a500;
+      --aqua: #49cbc5;
+      --aqua-dark: #249f9c;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(73, 203, 197, 0.09), transparent 28%),
+        radial-gradient(circle at 92% 0%, rgba(255, 198, 42, 0.08), transparent 27%),
+        linear-gradient(180deg, var(--background-soft), var(--background));
+      color: var(--text);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    main {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 30px;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      font-size: 22px;
+    }
+
+    h3 {
+      margin-bottom: 14px;
+      font-size: 18px;
+    }
+
+    .subtitle,
+    .muted {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .card {
+      margin-bottom: 20px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(17, 24, 39, 0.96);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    /* =========================================================
+       PANTALLA DE ACCESO
+    ========================================================= */
+
+    .login-wrapper {
+      display: flex;
+      min-height: calc(100vh - 40px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      position: relative;
+      width: 100%;
+      max-width: 590px;
+      margin: 20px auto;
+      padding: 30px;
+      overflow: hidden;
+      border: 1px solid rgba(73, 203, 197, 0.34);
+      border-radius: 25px;
+      background:
+        radial-gradient(circle at top right, rgba(73, 203, 197, 0.15), transparent 36%),
+        radial-gradient(circle at top left, rgba(255, 198, 42, 0.12), transparent 32%),
+        linear-gradient(180deg, rgba(20, 29, 46, 0.99), rgba(11, 18, 32, 0.99));
+      box-shadow: var(--shadow);
+    }
+
+    .login-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 8%;
+      width: 84%;
+      height: 3px;
+      border-radius: 0 0 999px 999px;
+      background: linear-gradient(90deg, transparent, var(--yellow), var(--aqua), transparent);
+    }
+
+    .login-logo-box {
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(174, 184, 204, 0.16);
+    }
+
+    .login-logo {
+      display: block;
+      width: 100%;
+      max-width: 470px;
+      max-height: 220px;
+      margin: 0 auto;
+      border-radius: 18px;
+      object-fit: contain;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.25);
+    }
+
+    .login-heading {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .access-pill {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      border: 1px solid rgba(73, 203, 197, 0.3);
+      border-radius: 999px;
+      background: rgba(73, 203, 197, 0.08);
+      color: #77e4df;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.7px;
+    }
+
+    .login-heading h1 {
+      margin-bottom: 9px;
+      font-size: 31px;
+      line-height: 1.15;
+    }
+
+    .login-heading p {
+      max-width: 430px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #e2e8f3;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      margin-bottom: 14px;
+      padding: 13px;
+      border: 1px solid #394765;
+      border-radius: 11px;
+      outline: none;
+      background: #0c111d;
+      color: white;
+      font-size: 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #7e899d;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--aqua);
+      background: #0a101b;
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    input[type="checkbox"] {
+      width: auto;
+      margin: 0 8px 0 0;
+    }
+
+    .password-field {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .password-field input {
+      height: 58px;
+      margin: 0;
+      padding-left: 50px;
+      border-radius: 14px;
+      background: rgba(7, 11, 20, 0.76);
+    }
+
+    .password-icon {
+      position: absolute;
+      top: 50%;
+      left: 16px;
+      width: 21px;
+      height: 21px;
+      color: #7e8ba4;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .password-field:focus-within .password-icon {
+      color: var(--aqua);
+    }
+
+    .login-button {
+      position: relative;
+      width: 100%;
+      min-height: 56px;
+      padding: 15px 52px 15px 20px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
+      color: #1d1700;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 15px 32px rgba(232, 165, 0, 0.23);
+      transition: filter 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .login-button::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      font-size: 24px;
+      transform: translateY(-53%);
+    }
+
+    .login-button:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+      box-shadow: 0 18px 38px rgba(232, 165, 0, 0.3);
+    }
+
+    .login-button:disabled {
+      background: #596274;
+      color: #d1d5db;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .login-button:disabled::after {
+      display: none;
+    }
+
+    /* =========================================================
+       BOTONES Y MENSAJES
+    ========================================================= */
+
+    .btn {
+      border-radius: 10px;
+      padding: 12px 17px;
+      font-size: 15px;
+      font-weight: 800;
+      transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .btn:hover {
+      filter: brightness(1.06);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #334155;
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--green);
+      color: #07100a;
+    }
+
+    .btn-danger {
+      background: var(--red);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--orange);
+      color: #241500;
+    }
+
+    .btn-brand {
+      background: linear-gradient(135deg, var(--aqua), var(--aqua-dark));
+      color: #041817;
+    }
+
+    .btn-small {
+      padding: 8px 11px;
+      font-size: 13px;
+    }
+
+    .btn:disabled {
+      background: #536076;
+      color: #aab2c0;
+      cursor: not-allowed;
+      opacity: 0.72;
+      transform: none;
+      filter: none;
+    }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 11px;
+      line-height: 1.45;
+    }
+
+    .message.error {
+      display: block;
+      border: 1px solid var(--red);
+      background: #3b1118;
+    }
+
+    .message.success {
+      display: block;
+      border: 1px solid var(--green);
+      background: #12351f;
+    }
+
+    .message.info {
+      display: block;
+      border: 1px solid var(--aqua);
+      background: #0d3335;
+    }
+
+    #loginMessage {
+      text-align: center;
+    }
+
+    /* =========================================================
+       DASHBOARD
+    ========================================================= */
+
+    #dashboard {
+      display: none;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(17, 24, 39, 0.92);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+    }
+
+    .dashboard-brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .dashboard-logo {
+      display: block;
+      width: 78px;
+      height: 62px;
+      flex: 0 0 78px;
+      border: 1px solid rgba(73, 203, 197, 0.24);
+      border-radius: 13px;
+      object-fit: cover;
+      background: #0c111d;
+    }
+
+    .dashboard-brand h1 {
+      margin-bottom: 5px;
+      font-size: 27px;
+    }
+
+    .header-actions,
+    .section-actions,
+    .form-actions,
+    .table-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .navigation {
+      display: flex;
+      gap: 9px;
+      margin-bottom: 20px;
+      padding: 8px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(17, 24, 39, 0.95);
+      scrollbar-width: thin;
+    }
+
+    .navigation button {
+      flex: 0 0 auto;
+      padding: 11px 15px;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .navigation button.active {
+      background: linear-gradient(135deg, var(--aqua), var(--aqua-dark));
+      color: #041817;
+    }
+
+    .loading {
+      display: none;
+      margin: 10px 0 16px;
+      color: var(--muted);
+    }
+
+    .page-section {
+      display: none;
+    }
+
+    .page-section.active {
+      display: block;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background:
+        linear-gradient(145deg, rgba(73, 203, 197, 0.06), transparent 56%),
+        var(--panel);
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stat-value {
+      font-size: 27px;
+      font-weight: 900;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .form-actions {
+      margin-top: 4px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      color: #dbe4f5;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 850px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 13px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    td {
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .badge.success {
+      background: #12351f;
+      color: #86efac;
+    }
+
+    .badge.warning {
+      background: #3b2a0b;
+      color: #fcd34d;
+    }
+
+    .badge.danger {
+      background: #3b1118;
+      color: #fca5a5;
+    }
+
+    .badge.info {
+      background: #0d3335;
+      color: #79e4df;
+    }
+
+    .empty {
+      padding: 34px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .poster-preview {
+      display: block;
+      width: 65px;
+      height: 95px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #0c111d;
+    }
+
+    .poster-uploader {
+      margin-bottom: 14px;
+      padding: 16px;
+      border: 1px dashed #52617e;
+      border-radius: 14px;
+      background: #0c111d;
+    }
+
+    .poster-upload-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .poster-form-preview {
+      display: none;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 320px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      object-fit: contain;
+      object-position: center;
+      background: #070b14;
+    }
+
+
+    .trailer-form-preview {
+      display: none;
+      width: 100%;
+      max-height: 320px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #000000;
+    }
+
+    .trailer-status {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .poster-help {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .danger-zone {
+      border-color: #7f1d1d;
+    }
+
+    @media (max-width: 850px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid-two {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 13px;
+        padding-top: max(13px, env(safe-area-inset-top));
+        padding-bottom: max(13px, env(safe-area-inset-bottom));
+      }
+
+      .login-wrapper {
+        min-height: calc(100vh - 26px);
+      }
+
+      .login-card {
+        margin: 14px auto;
+        padding: 20px 17px;
+        border-radius: 21px;
+      }
+
+      .login-logo-box {
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+      }
+
+      .login-logo {
+        border-radius: 14px;
+      }
+
+      .login-heading h1 {
+        font-size: 26px;
+      }
+
+      .login-heading p {
+        font-size: 14px;
+      }
+
+      .dashboard-header {
+        padding: 15px;
+      }
+
+      .dashboard-logo {
+        width: 64px;
+        height: 52px;
+        flex-basis: 64px;
+      }
+
+      .dashboard-brand h1 {
+        font-size: 22px;
+      }
+
+      .dashboard-brand .subtitle {
+        font-size: 13px;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .section-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .header-actions,
+      .section-actions,
+      .form-actions {
+        width: 100%;
+      }
+
+      .header-actions .btn,
+      .section-actions .btn,
+      .form-actions .btn {
+        flex: 1;
+      }
+    }
+
+
+    /* =========================================================
+       AJUSTE DE ANCHO DEL PANEL Y ÁREA DE EMPLEADOS
+       Hace que el encabezado, empleados e historial aprovechen
+       todo el ancho disponible sin dejar espacios vacíos.
+    ========================================================= */
+
+    body {
+      width: 100%;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #dashboard {
+      width: 100%;
+      max-width: none;
+    }
+
+    .dashboard-header {
+      width: 100%;
+      min-height: 122px;
+      padding: 24px;
+    }
+
+    .dashboard-brand {
+      flex: 1 1 auto;
+    }
+
+    .dashboard-logo {
+      width: 96px;
+      height: 78px;
+      flex-basis: 96px;
+      border-radius: 16px;
+    }
+
+    .dashboard-brand h1 {
+      font-size: clamp(27px, 3vw, 38px);
+    }
+
+    .dashboard-brand .subtitle {
+      max-width: 760px;
+      font-size: 16px;
+    }
+
+    .header-actions {
+      flex: 0 0 auto;
+      min-width: 350px;
+    }
+
+    .header-actions .btn {
+      flex: 1;
+      min-height: 52px;
+    }
+
+    .navigation {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .navigation button {
+      flex: 1 1 0;
+      text-align: center;
+    }
+
+    /* En empleados, las tarjetas ahora van una debajo de la otra
+       y ocupan el ancho completo. */
+    #employeesSection {
+      width: 100%;
+    }
+
+    #employeesSection > .grid-two {
+      display: grid;
+      grid-template-columns: 1fr;
+      width: 100%;
+      gap: 20px;
+    }
+
+    #employeesSection > .grid-two > .card,
+    #employeesSection > .card {
+      width: 100%;
+      max-width: none;
+    }
+
+    #employeesSection .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    #employeesSection table {
+      width: 100%;
+      min-width: 980px;
+      table-layout: auto;
+    }
+
+    #employeesSection th,
+    #employeesSection td {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    #employeesSection .section-header {
+      width: 100%;
+    }
+
+    @media (max-width: 850px) {
+      main,
+      #dashboard,
+      .dashboard-header,
+      #employeesSection,
+      #employeesSection > .grid-two,
+      #employeesSection > .grid-two > .card,
+      #employeesSection > .card {
+        width: 100%;
+        max-width: none;
+      }
+
+      .dashboard-header {
+        min-height: 0;
+        padding: 20px;
+      }
+
+      .header-actions {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .navigation {
+        justify-content: flex-start;
+      }
+
+      .navigation button {
+        flex: 0 0 auto;
+      }
+
+      #employeesSection table {
+        min-width: 900px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .dashboard-header {
+        padding: 18px;
+      }
+
+      .dashboard-logo {
+        width: 76px;
+        height: 62px;
+        flex-basis: 76px;
+      }
+
+      .dashboard-brand h1 {
+        font-size: 24px;
+      }
+
+      .dashboard-brand .subtitle {
+        font-size: 14px;
+      }
+
+      .header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .header-actions .btn {
+        width: 100%;
+      }
+
+      #employeesSection > .grid-two {
+        gap: 18px;
+      }
+
+      #employeesSection table {
+        min-width: 820px;
+      }
+    }
+
+
+    /* =========================================================
+       AFICHES ADAPTABLES EN PELÍCULAS REGISTRADAS
+       Muestra completa cualquier imagen horizontal, vertical
+       o cuadrada sin cortarla ni deformarla.
+    ========================================================= */
+
+    .poster-preview {
+      display: block;
+      width: 112px;
+      height: 112px;
+      max-width: 112px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      object-fit: contain !important;
+      object-position: center;
+      background:
+        radial-gradient(circle at center, #1d2a42, #0b1220);
+    }
+
+    .poster-preview.poster-landscape {
+      width: 150px;
+      max-width: 150px;
+      height: 90px;
+    }
+
+    .poster-preview.poster-portrait {
+      width: 88px;
+      max-width: 88px;
+      height: 132px;
+    }
+
+    .poster-preview.poster-square {
+      width: 108px;
+      max-width: 108px;
+      height: 108px;
+    }
+
+    #movieRows td:first-child {
+      width: 170px;
+      min-width: 170px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 850px) {
+      .poster-preview.poster-landscape {
+        width: 132px;
+        max-width: 132px;
+        height: 80px;
+      }
+
+      .poster-preview.poster-portrait {
+        width: 78px;
+        max-width: 78px;
+        height: 117px;
+      }
+
+      .poster-preview.poster-square {
+        width: 94px;
+        max-width: 94px;
+        height: 94px;
+      }
+
+      #movieRows td:first-child {
+        width: 150px;
+        min-width: 150px;
+      }
+    }
+
+   .rating-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.rating-button {
+  border: 2px solid #3a4d70;
+  border-radius: 12px;
+  padding: 14px 8px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.rating-button:hover {
+  border-color: #49cbc5;
+}
+
+.rating-button.selected {
+  border-color: #49cbc5;
+  background: rgba(73, 203, 197, 0.18);
+  box-shadow: 0 0 0 3px rgba(73, 203, 197, 0.1);
+} 
+
+.rating-select {
+  width: 220px;
+  max-width: 100%;
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border: 1px solid #3a4d70;
+  border-radius: 11px;
+  outline: none;
+  background: #384861;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.rating-select:focus {
+  border-color: #49cbc5;
+  box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+}
+
+.rating-select option {
+  background: #111827;
+  color: #ffffff;
+}
+
+.duration-select {
+  width: 220px;
+  max-width: 100%;
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border: 1px solid #3a4d70;
+  border-radius: 11px;
+  outline: none;
+  background: #384861;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.duration-select:focus {
+  border-color: #49cbc5;
+  box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+}
+
+.duration-select option {
+  background: #111827;
+  color: #ffffff;
+}
+
+.sales-filter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  background: #111a2b;
+  border: 1px solid #334766;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.sales-filter-card label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #eef4ff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.sales-date-input {
+  display: block;
+  width: 100%;
+  height: 68px;
+  max-width: none;
+  align-self: auto;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 42px 0 56px;
+  border: 2px solid #3b506f;
+  border-radius: 18px;
+  background: #0b1322;
+  color: #ffffff;
+  font-size: 1.15rem;
+  text-align: center;
+  outline: none;
+  min-width: 0;
+}
+
+.sales-date-input::-webkit-date-and-time-value {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  text-align: center;
+  transform: translateX(-10px);
+}
+
+    .sales-date-input::-webkit-calendar-picker-indicator {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+.sales-date-input:focus {
+  border-color: #42d4d1;
+}
+
+.sales-all-button {
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #42d4d1, #2aa9b4);
+  color: #07131c;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sales-all-button:active {
+  transform: scale(0.98);
+}
+
+  
+
+    /* Iconos del panel inspirados en la referencia */
+    .icon-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .button-icon {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .sales-date-wrap {
+      position: relative;
+      width: 72%;
+      max-width: 520px;
+      min-width: 280px;
+      margin: 0 auto 0 0;
+    }
+
+    .sales-date-icon {
+      position: absolute;
+      top: 50%;
+      left: 20px;
+      width: 22px;
+      height: 22px;
+      z-index: 2;
+      fill: none;
+      stroke: #aeb8cc;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .sales-date-wrap .sales-date-input {
+      padding-left: 56px;
+      padding-right: 42px;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .stats .stat {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .stats .stat-label {
+      margin: 0;
+    }
+
+    .stat-icon {
+      display: inline-flex;
+      width: 52px;
+      height: 52px;
+      flex: 0 0 52px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(73, 203, 197, 0.72);
+      border-radius: 50%;
+      background: rgba(7, 11, 20, 0.58);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .stat-icon svg {
+      width: 27px;
+      height: 27px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .stat-icon-ticket {
+      font-size: 25px;
+    }
+
+    .stat-icon-seats {
+      color: #39c7c1;
+    }
+
+    .stat-icon-money {
+      color: #22c55e;
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .stat-icon-used {
+      color: #ffc62a;
+    }
+
+    @media (max-width: 520px) {
+      .button-icon {
+        width: 20px;
+        height: 20px;
+        flex-basis: 20px;
+      }
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        flex-basis: 48px;
+      }
+
+      .stats .stat {
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .sales-date-wrap {
+        width: 74%;
+        max-width: 420px;
+        min-width: 250px;
+      }
+    }
+
+
+    .scan-history-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scan-history-date {
+      width: auto;
+      min-width: 175px;
+      height: 42px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid #3b506f;
+      border-radius: 10px;
+      background: #0b1322;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .scan-history-search {
+      background: linear-gradient(135deg, #ffd43b, #f5b700);
+      color: #1d1700;
+      box-shadow: 0 10px 24px rgba(245, 183, 0, 0.22);
+    }
+
+    @media (max-width: 520px) {
+      .scan-history-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .scan-history-date {
+        width: 100%;
+        grid-column: 1 / -1;
+      }
+
+      .scan-history-actions .btn {
+        width: 100%;
+      }
+    }
+
+
+    .reservation-search-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .reservation-date-picker {
+      display: block;
+    }
+
+    .reservation-date-picker.is-hidden {
+      display: none;
+    }
+
+    .reservation-history-date {
+      width: 190px;
+      height: 42px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid #3b506f;
+      border-radius: 10px;
+      background: #0b1322;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+      .reservation-search-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .reservation-date-picker {
+        grid-column: 1 / -1;
+      }
+
+      .reservation-history-date {
+        width: 100%;
+      }
+
+      .reservation-search-actions .btn {
+        width: 100%;
+      }
+    }
+
+
+    /* =========================================================
+       NAVEGACIÓN MENSUAL DE RESERVACIONES
+    ========================================================= */
+    .reservation-month-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 0 18px;
+      padding: 12px;
+      border: 1px solid #334766;
+      border-radius: 16px;
+      background: rgba(11, 19, 34, 0.84);
+    }
+
+    .reservation-month-button {
+      display: inline-flex;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #3b506f;
+      border-radius: 12px;
+      background: #111a2b;
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .reservation-month-button:hover {
+      border-color: var(--aqua);
+      background: #17243a;
+    }
+
+    .reservation-month-current {
+      min-width: 210px;
+      padding: 10px 18px;
+      border: 1px solid rgba(73, 203, 197, 0.42);
+      border-radius: 12px;
+      background: rgba(73, 203, 197, 0.08);
+      color: #eefcff;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 900;
+      text-transform: capitalize;
+    }
+
+    .reservation-period-copy {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+      .reservation-month-bar {
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .reservation-month-current {
+        min-width: 0;
+        flex: 1 1 auto;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 14px;
+      }
+    }
+
+
+
+    .reservation-all-button {
+      background: linear-gradient(135deg, #164e63, #0f766e);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+    }
+
+    .reservation-all-button:hover {
+      filter: brightness(1.08);
+    }
+
+    .reservation-all-button:active {
+      transform: scale(0.98);
+    }
+
+    .native-picker-input {
+      position: relative;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .native-picker-input::-webkit-calendar-picker-indicator {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .showtime-picker-select {
+      width: 100%;
+      margin-bottom: 14px;
+      padding: 13px 44px 13px 13px;
+      border: 1px solid #394765;
+      border-radius: 11px;
+      outline: none;
+      background: #0c111d;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      appearance: auto;
+      -webkit-appearance: menulist;
+    }
+
+    .showtime-picker-select:focus {
+      border-color: var(--aqua);
+      background: #0a101b;
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+    }
+
+    .showtime-picker-select option {
+      background: #111827;
+      color: #ffffff;
+    }
+
+
+    .poster-upload-row {
+      align-items: flex-start;
+    }
+
+    #moviePosterPreview {
+      flex: 0 1 auto;
+    }
+
+    @media (min-width: 700px) {
+      #moviePosterPreview {
+        max-width: 420px;
+      }
+    }
+
+    @media (max-width: 699px) {
+      #moviePosterPreview {
+        max-width: 100%;
+        max-height: 260px;
+      }
+    }
+
+
+    .employee-search-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .employee-date-picker {
+      display: block;
+    }
+
+    .employee-date-picker.is-hidden {
+      display: none;
+    }
+
+    .employee-history-date {
+      width: 190px;
+      height: 42px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid #3b506f;
+      border-radius: 10px;
+      background: #0b1322;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @media (max-width: 520px) {
+      .employee-search-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .employee-date-picker {
+        grid-column: 1 / -1;
+      }
+
+      .employee-history-date {
+        width: 100%;
+      }
+
+      .employee-search-actions .btn {
+        width: 100%;
+      }
+    }
+
+
+    .scan-history-date-picker {
+      display: block;
+    }
+
+    .scan-history-date-picker.is-hidden {
+      display: none;
+    }
+
+    .scan-history-date {
+      cursor: pointer;
+    }
+
+    @media (max-width: 520px) {
+      .scan-history-date-picker {
+        grid-column: 1 / -1;
+      }
+    }
+
+
+
+    /* =========================================================
+       HISTORIAL DE ESCANEOS - CONTROLES MENSUALES
+    ========================================================= */
+    .scan-history-all-button {
+      background: linear-gradient(135deg, #164e63, #0f766e);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+    }
+
+    .scan-history-monthly-button {
+      background: linear-gradient(135deg, #6d28d9, #4f46e5);
+      color: #ffffff;
+      border: 1px solid rgba(167, 139, 250, 0.58);
+      box-shadow: 0 10px 24px rgba(79, 70, 229, 0.24);
+    }
+
+    .scan-history-month-bar {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 0 18px;
+      padding: 12px;
+      border: 1px solid #334766;
+      border-radius: 16px;
+      background: rgba(11, 19, 34, 0.84);
+    }
+
+    .scan-history-month-bar.active {
+      display: flex;
+    }
+
+    .scan-history-month-nav {
+      display: inline-flex;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #3b506f;
+      border-radius: 12px;
+      background: #111a2b;
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .scan-history-month-current {
+      min-width: 210px;
+      padding: 10px 18px;
+      border: 1px solid rgba(167, 139, 250, 0.52);
+      border-radius: 12px;
+      background: rgba(109, 40, 217, 0.12);
+      color: #f5f3ff;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 900;
+      text-transform: capitalize;
+    }
+
+    @media (max-width: 520px) {
+      .scan-history-month-bar {
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .scan-history-month-current {
+        min-width: 0;
+        flex: 1 1 auto;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 14px;
+      }
+    }
+  
+    .forgot-password-button {
+      display: block;
+      margin: 14px auto 0;
+      padding: 8px 10px;
+      border: 0;
+      background: transparent;
+      color: #79e4df;
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+
+    .forgot-password-button:hover {
+      color: #ffffff;
+    }
+
+    .recovery-panel {
+      display: none;
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid rgba(73, 203, 197, 0.32);
+      border-radius: 16px;
+      background: rgba(7, 11, 20, 0.72);
+    }
+
+    .recovery-panel.active {
+      display: block;
+    }
+
+    .recovery-panel h2 {
+      margin-bottom: 8px;
+      font-size: 19px;
+    }
+
+    .recovery-panel .recovery-copy {
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .recovery-step {
+      display: none;
+    }
+
+    .recovery-step.active {
+      display: block;
+    }
+
+    .recovery-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .recovery-actions .btn {
+      flex: 1 1 160px;
+    }
+
+    .recovery-code-input {
+      letter-spacing: 0.28em;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    @media (max-width: 520px) {
+      .recovery-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .recovery-actions .btn {
+        width: 100%;
+      }
+    }
+
+
+    /* =========================================================
+       FONDO DECORATIVO DEL CINE
+       Mismo concepto visual de la página del cliente.
+    ========================================================= */
+
+    body {
+      position: relative;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+    }
+
+    .admin-background-logo {
+      position: fixed;
+      z-index: 0;
+      top: 50%;
+      width: clamp(280px, 31vw, 540px);
+      aspect-ratio: 1 / 1;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      pointer-events: none;
+      opacity: 0.14;
+      filter:
+        saturate(1.04)
+        contrast(1.04);
+    }
+
+    .admin-background-logo-left {
+      left: clamp(24px, 5vw, 90px);
+      background-image: url("Cineteatroizquierdo.png");
+      transform: translateY(-42%);
+    }
+
+    .admin-background-logo-right {
+      right: clamp(28px, 7vw, 120px);
+      width: clamp(300px, 36vw, 620px);
+      background-image: url("Cineteatro.PNG");
+      transform: translateY(-42%);
+      opacity: 0.16;
+    }
+
+    @media (max-width: 1100px) {
+      .admin-background-logo-left {
+        left: 24px;
+        width: min(34vw, 390px);
+        opacity: 0.09;
+      }
+
+      .admin-background-logo-right {
+        right: 24px;
+        width: min(40vw, 460px);
+        opacity: 0.10;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .admin-background-logo-left {
+        top: 72%;
+        left: 50%;
+        width: min(72vw, 480px);
+        opacity: 0.05;
+        transform: translate(-50%, -50%);
+      }
+
+      .admin-background-logo-right {
+        top: 54%;
+        right: 50%;
+        width: min(76vw, 520px);
+        opacity: 0.07;
+        transform: translate(50%, -50%);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .admin-background-logo-left {
+        display: none;
+      }
+
+      .admin-background-logo-right {
+        top: 57%;
+        width: 82vw;
+        opacity: 0.055;
+      }
+    }
+
+
+
+    /* =========================================================
+       REPORTE PDF MENSUAL DE RESERVACIONES
+       Se genera bajo demanda; no se guarda en servidor ni DB.
+    ========================================================= */
+    .reservation-month-current {
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+    }
+
+    .reservation-month-current:hover {
+      border-color: var(--aqua);
+      background: rgba(73, 203, 197, 0.14);
+    }
+
+    .reservation-month-current:active {
+      transform: scale(0.99);
+    }
+
+    .reservation-report-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(2, 6, 14, 0.78);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .reservation-report-modal.active {
+      display: flex;
+    }
+
+    .reservation-report-dialog {
+      width: min(100%, 470px);
+      padding: 24px;
+      border: 1px solid rgba(73, 203, 197, 0.42);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top right, rgba(73, 203, 197, 0.13), transparent 38%),
+        linear-gradient(180deg, #131d30, #0b1220);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+    }
+
+    .reservation-report-dialog h3 {
+      margin-bottom: 8px;
+      font-size: 22px;
+      text-transform: capitalize;
+    }
+
+    .reservation-report-dialog p {
+      margin-bottom: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .reservation-report-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .reservation-report-summary > div {
+      padding: 12px;
+      border: 1px solid #334766;
+      border-radius: 12px;
+      background: rgba(7, 11, 20, 0.58);
+    }
+
+    .reservation-report-summary span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .reservation-report-summary strong {
+      font-size: 18px;
+    }
+
+    .reservation-report-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .reservation-report-download {
+      background: linear-gradient(135deg, #49cbc5, #249f9c);
+      color: #041817;
+    }
+
+    @media (max-width: 520px) {
+      .reservation-report-dialog {
+        padding: 20px;
+      }
+
+      .reservation-report-summary,
+      .reservation-report-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
+    /* Ajuste compacto para los 4 botones del historial en iPhone */
+    @media (max-width: 520px) {
+      .scan-history-actions {
+        gap: 8px;
+      }
+
+      .scan-history-actions .btn {
+        min-height: 52px;
+        padding: 9px 10px;
+        font-size: 14px;
+        line-height: 1.15;
+        border-radius: 10px;
+      }
+
+      .scan-history-monthly-button {
+        font-size: 13px !important;
+        white-space: nowrap;
+      }
+    }
+
+
+    /* =========================================================
+       REPORTE PDF MENSUAL DE ESCANEOS
+       Se genera bajo demanda y no se guarda en el sistema.
+    ========================================================= */
+    .scan-history-month-current {
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+    }
+
+    .scan-history-month-current:hover {
+      border-color: #8b5cf6;
+      background: rgba(124, 58, 237, 0.16);
+    }
+
+    .scan-history-month-current:active {
+      transform: scale(0.99);
+    }
+
+    .scan-report-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(2, 6, 14, 0.80);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .scan-report-modal.active {
+      display: flex;
+    }
+
+    .scan-report-dialog {
+      width: min(100%, 470px);
+      padding: 24px;
+      border: 1px solid rgba(139, 92, 246, 0.55);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top right, rgba(124, 58, 237, 0.18), transparent 40%),
+        linear-gradient(180deg, #151b31, #0b1220);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.50);
+    }
+
+    .scan-report-dialog h3 {
+      margin-bottom: 18px;
+      font-size: 22px;
+      text-transform: capitalize;
+    }
+
+    .scan-report-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .scan-report-summary > div {
+      padding: 12px;
+      border: 1px solid #334766;
+      border-radius: 12px;
+      background: rgba(7, 11, 20, 0.62);
+    }
+
+    .scan-report-summary span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .scan-report-summary strong {
+      font-size: 18px;
+    }
+
+    .scan-report-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .scan-report-download {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #ffffff;
+      box-shadow: 0 10px 24px rgba(79, 70, 229, 0.24);
+    }
+
+    @media (max-width: 520px) {
+      .scan-report-dialog {
+        padding: 20px;
+      }
+
+      .scan-report-summary,
+      .scan-report-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
+
+    /* =========================================================
+       COLORES DE ACCIONES EN EMPLEADOS
+    ========================================================= */
+    .employee-clear-button {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #241500;
+      border: 1px solid rgba(251, 191, 36, 0.58);
+      box-shadow: 0 10px 24px rgba(217, 119, 6, 0.20);
+    }
+
+    .employee-clear-button:hover {
+      filter: brightness(1.06);
+    }
+
+    .employee-all-button {
+      background: linear-gradient(135deg, #164e63, #0f766e);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+    }
+
+    .employee-all-button:hover {
+      filter: brightness(1.08);
+    }
+
+
+
+    /* =========================================================
+       COLORES DE CONTROLES - SECCIÓN PELÍCULAS
+    ========================================================= */
+    .movie-upload-button {
+      background: linear-gradient(135deg, #0f766e, #14b8a6);
+      color: #ffffff;
+      border: 1px solid rgba(73, 203, 197, 0.48);
+      box-shadow: 0 10px 24px rgba(20, 184, 166, 0.20);
+    }
+
+    .movie-upload-button:hover {
+      filter: brightness(1.08);
+    }
+
+    .movie-clear-button {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #241500;
+      border: 1px solid rgba(251, 191, 36, 0.58);
+      box-shadow: 0 10px 24px rgba(249, 115, 22, 0.22);
+    }
+
+    .movie-clear-button:hover {
+      filter: brightness(1.06);
+    }
+
+    #moviesSection .duration-select,
+    #moviesSection .rating-select {
+      background: linear-gradient(135deg, #0f3f46, #0b5f64);
+      border-color: #14b8a6;
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.12);
+    }
+
+    #moviesSection .duration-select:focus,
+    #moviesSection .rating-select:focus {
+      border-color: #49cbc5;
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.12);
+    }
+
+</style>
+  <!-- PDF mensual: se genera solamente en el navegador del administrador. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+  <div
+    class="admin-background-logo admin-background-logo-left"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    class="admin-background-logo admin-background-logo-right"
+    aria-hidden="true"
+  ></div>
+
+  <main>
+    <!-- ======================================================
+         ACCESO ADMINISTRATIVO
+    ======================================================= -->
+    <div class="login-wrapper" id="loginWrapper">
+      <section class="login-card" id="loginSection">
+        <div class="login-logo-box">
+          <img
+            class="login-logo"
+            src="Logo.PNG"
+            alt="Cine Teatro Manuel Nieves Quintero"
+          />
+        </div>
+
+        <div class="login-heading">
+          <span class="access-pill">ACCESO SEGURO</span>
+          <h1>Panel administrativo</h1>
+          <p>
+            Gestiona reservaciones, películas, tandas y empleados
+            desde un solo lugar.
+          </p>
+        </div>
+
+        <label for="adminKey">Contraseña del administrador</label>
+
+        <div class="password-field">
+          <svg
+            class="password-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <rect x="4" y="10" width="16" height="11" rx="2"></rect>
+            <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+          </svg>
+
+          <input
+            id="adminKey"
+            type="password"
+            placeholder="Escribe la contraseña"
+            autocomplete="current-password"
+            enterkeyhint="go"
+          />
+        </div>
+
+        <button
+          id="loginButton"
+          class="login-button"
+          type="button"
+          onclick="login()"
+        >
+          Entrar al panel
+        </button>
+
+        <div class="message" id="loginMessage" aria-live="polite"></div>
+        <button
+          class="forgot-password-button"
+          type="button"
+          onclick="openPasswordRecovery()"
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
+
+        <section class="recovery-panel" id="passwordRecoveryPanel" aria-live="polite">
+          <div id="recoveryRequestStep" class="recovery-step active">
+            <h2>Recuperar contraseña</h2>
+            <p class="recovery-copy">
+              Escribe el correo autorizado del administrador. Te enviaremos un
+              código de 6 dígitos que vence en 15 minutos.
+            </p>
+
+            <label for="recoveryEmail">Correo del administrador</label>
+            <input
+              id="recoveryEmail"
+              type="email"
+              autocomplete="email"
+              placeholder="administrador@correo.com"
+            />
+
+            <div class="recovery-actions">
+              <button
+                id="sendRecoveryCodeButton"
+                class="btn btn-brand"
+                type="button"
+                onclick="requestPasswordRecoveryCode()"
+              >
+                Enviar código
+              </button>
+
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="closePasswordRecovery()"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          <div id="recoveryResetStep" class="recovery-step">
+            <h2>Escribe el código</h2>
+            <p class="recovery-copy">
+              Revisa el correo del administrador. El código solo puede usarse
+              una vez y vence en 15 minutos.
+            </p>
+
+            <label for="recoveryCode">Código de 6 dígitos</label>
+            <input
+              id="recoveryCode"
+              class="recovery-code-input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              placeholder="000000"
+            />
+
+            <label for="recoveryNewPassword">Nueva contraseña</label>
+            <input
+              id="recoveryNewPassword"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Mínimo 8 caracteres"
+            />
+
+            <label for="recoveryConfirmPassword">Confirmar nueva contraseña</label>
+            <input
+              id="recoveryConfirmPassword"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Repite la nueva contraseña"
+            />
+
+            <div class="recovery-actions">
+              <button
+                id="resetPasswordButton"
+                class="btn btn-success"
+                type="button"
+                onclick="completePasswordRecovery()"
+              >
+                Cambiar contraseña
+              </button>
+
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="backToRecoveryEmail()"
+              >
+                Volver
+              </button>
+            </div>
+          </div>
+
+          <div class="message" id="recoveryMessage"></div>
+        </section>
+
+      </section>
+    </div>
+
+    <!-- ======================================================
+         DASHBOARD
+    ======================================================= -->
+    <section id="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <img
+            class="dashboard-logo"
+            src="Logo.PNG"
+            alt="Logo del Cine Teatro Manuel Nieves Quintero"
+          />
+
+          <div>
+            <h1>Administración del cine</h1>
+            <p class="subtitle">
+              Reservaciones, películas, tandas, empleados y configuración.
+            </p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn btn-update icon-button"
+           type="button" onclick="refreshCurrentSection()">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11a8 8 0 0 0-14.7-4.4L3 9"></path>
+              <path d="M3 4v5h5"></path>
+              <path d="M4 13a8 8 0 0 0 14.7 4.4L21 15"></path>
+              <path d="M21 20v-5h-5"></path>
+            </svg>
+            <span>Actualizar</span>
+          </button>
+          <button class="btn btn-danger icon-button" type="button" onclick="logout()">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 17l5-5-5-5"></path>
+              <path d="M15 12H3"></path>
+              <path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"></path>
+            </svg>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      </header>
+
+      <nav class="navigation">
+        <button id="navReservations" class="active" type="button" onclick="showSection('reservations')">
+          🎟 Reservaciones
+        </button>
+        <button id="navMovies" type="button" onclick="showSection('movies')">
+          🎬 Películas
+        </button>
+        <button id="navShowtimes" type="button" onclick="showSection('showtimes')">
+          🕒 Tandas
+        </button>
+        <button id="navEmployees" type="button" onclick="showSection('employees')">
+          👥 Empleados
+        </button>
+        <button id="navPassword" type="button" onclick="showSection('password')">
+          🔐 Contraseña
+        </button>
+      </nav>
+
+      <p class="loading" id="loadingMessage">Cargando información...</p>
+
+      <!-- RESERVACIONES -->
+      <section id="reservationsSection" class="page-section active">
+<div class="stats">
+          <article class="stat">
+            <span class="stat-icon stat-icon-ticket" aria-hidden="true">🎟️</span>
+            <span class="stat-label" id="reservationStatLabel">Reservaciones de hoy</span>
+            <strong class="stat-value" id="reservationCount">0</strong>
+          </article>
+
+          <article class="stat">
+            <span class="stat-icon stat-icon-seats" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 4h3v5H7z"></path>
+                <path d="M14 4h3v5h-3z"></path>
+                <path d="M5 11h14v4H5z"></path>
+                <path d="M7 15v4"></path>
+                <path d="M17 15v4"></path>
+              </svg>
+            </span>
+            <span class="stat-label" id="ticketStatLabel">Taquillas vendidas hoy</span>
+            <strong class="stat-value" id="ticketCount">0</strong>
+          </article>
+
+          <article class="stat">
+            <span class="stat-icon stat-icon-money" aria-hidden="true">$</span>
+            <span class="stat-label" id="salesStatLabel">Ventas pagadas hoy</span>
+            <strong class="stat-value" id="salesTotal">$0.00</strong>
+          </article>
+
+          <article class="stat">
+            <span class="stat-icon stat-icon-used" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="9" cy="8" r="3"></circle>
+                <circle cx="16.5" cy="9" r="2.5"></circle>
+                <path d="M3.5 19c.6-4 2.5-6 5.5-6s4.9 2 5.5 6"></path>
+                <path d="M13 14c3.2-.2 5.4 1.5 6.2 5"></path>
+              </svg>
+            </span>
+            <span class="stat-label" id="usedStatLabel">Entradas utilizadas hoy</span>
+            <strong class="stat-value" id="usedCount">0</strong>
+          </article>
+        </div>
+
+        <section class="card">
+          <div class="section-header">
+            <div>
+              <h2>Reservaciones</h2>
+              <p class="subtitle">Ventas y entradas registradas.</p>
+              <p class="reservation-period-copy" id="reservationPeriodLabel">Mes actual</p>
+            </div>
+
+            <div class="reservation-search-actions">
+              <button
+                class="btn scan-history-search"
+                type="button"
+                onclick="toggleReservationDatePicker()"
+              >
+                🔎 Buscar por fecha
+              </button>
+
+              <div id="reservationDatePickerWrap" class="reservation-date-picker is-hidden">
+                <input
+                  id="reservationHistoryDate"
+                  class="reservation-history-date"
+                  type="date"
+                  aria-label="Buscar reservaciones por fecha de compra"
+                  onchange="filterReservationsByDate()"
+                />
+              </div>
+
+              <button
+                id="reservationMonthSalesButton"
+                class="btn btn-brand"
+                type="button"
+                onclick="showReservationMonthSales()"
+              >
+                📊 Ventas del mes
+              </button>
+
+              <button
+                class="btn reservation-all-button"
+                type="button"
+                onclick="clearReservationDateFilter()"
+              >
+                Ver todas
+              </button>
+
+              <button
+                class="btn btn-primary"
+                type="button"
+                onclick="loadReservations()"
+              >
+                Actualizar
+              </button>
+            </div>
+          </div>
+
+          <div class="reservation-month-bar" aria-label="Navegar por meses de reservaciones">
+            <button
+              class="reservation-month-button"
+              type="button"
+              onclick="changeReservationMonth(-1)"
+              aria-label="Mes anterior"
+              title="Mes anterior"
+            >
+              ‹
+            </button>
+
+            <button
+              class="reservation-month-current"
+              id="reservationMonthLabel"
+              type="button"
+              onclick="openReservationMonthReportModal()"
+              aria-label="Abrir opciones del reporte mensual"
+              title="Descargar reporte PDF de este mes"
+            >Mes actual</button>
+
+            <button
+              class="reservation-month-button"
+              type="button"
+              onclick="changeReservationMonth(1)"
+              aria-label="Mes siguiente"
+              title="Mes siguiente"
+            >
+              ›
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Película</th>
+                  <th>Tanda</th>
+                  <th>Asientos</th>
+                  <th>Total</th>
+                  <th>Pago</th>
+                  <th>Entrada</th>
+                </tr>
+              </thead>
+              <tbody id="reservationRows"></tbody>
+            </table>
+
+            <div class="empty" id="reservationEmptyMessage">
+              Todavía no hay reservaciones.
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- PELÍCULAS -->
+      <section id="moviesSection" class="page-section">
+        <div class="grid-two">
+          <section class="card">
+            <h2 id="movieFormTitle">Añadir película</h2>
+            <input id="movieId" type="hidden" />
+
+            <label for="movieTitle">Título</label>
+            <input id="movieTitle" type="text" placeholder="Nombre de la película" />
+
+            <label for="movieDescription">Descripción</label>
+            <textarea id="movieDescription" placeholder="Sinopsis o información"></textarea>
+
+            <label for="moviePosterFile">Afiche de la película</label>
+            <div class="poster-uploader">
+              <div class="poster-upload-row">
+                <img
+                  id="moviePosterPreview"
+                  class="poster-form-preview"
+                  alt="Vista previa del afiche"
+                />
+
+                <div>
+                  <input
+                    id="moviePosterFile"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onchange="previewSelectedPoster()"
+                  />
+
+                  <button
+                    id="uploadPosterButton"
+                    class="btn movie-upload-button"
+                    type="button"
+                    onclick="uploadPoster()"
+                  >
+                    📷 Subir afiche
+                  </button>
+                </div>
+              </div>
+
+              <p class="poster-help">
+                Formatos permitidos: JPG, PNG o WEBP. Tamaño máximo: 6 MB.
+              </p>
+            </div>
+
+            <input id="moviePosterUrl" type="hidden" />
+
+            <label for="movieTrailerFile">Tráiler de la película</label>
+            <div class="poster-uploader">
+              <input
+                id="movieTrailerFile"
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime"
+                onchange="previewSelectedTrailer()"
+              />
+
+              <button
+                id="uploadTrailerButton"
+                class="btn movie-upload-button"
+                type="button"
+                onclick="uploadTrailer()"
+              >
+                🎥 Subir tráiler
+              </button>
+
+              <video
+                id="movieTrailerPreview"
+                class="trailer-form-preview"
+                controls
+                playsinline
+              ></video>
+
+              <p class="trailer-status" id="trailerStatus">
+                Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 50 MB.
+                Puedes subir un tráiler diferente para cada película. Los videos anteriores no se reemplazarán.
+              </p>
+            </div>
+
+            <input id="movieTrailerUrl" type="hidden" />
+
+            <label for="movieDuration">
+  Duración
+</label>
+
+<select
+  id="movieDuration"
+  class="duration-select"
+>
+  <option value="">
+    Seleccionar duración
+  </option>
+
+  <option value="60">60 minutos</option>
+  <option value="65">65 minutos</option>
+  <option value="70">70 minutos</option>
+  <option value="75">75 minutos</option>
+  <option value="80">80 minutos</option>
+  <option value="85">85 minutos</option>
+  <option value="90">90 minutos</option>
+  <option value="105">105 minutos</option>
+  <option value="110">110 minutos</option>
+  <option value="115">115 minutos</option>
+  <option value="120">120 minutos</option>
+  <option value="125">125 minutos</option>
+  <option value="130">130 minutos</option>
+  <option value="135">135 minutos</option>
+  <option value="140">140 minutos</option>
+  <option value="145">145 minutos</option>
+  <option value="150">150 minutos</option>
+  <option value="155">155 minutos</option>
+  <option value="160">160 minutos</option>
+  <option value="165">165 minutos</option>
+  <option value="170">170 minutos</option>
+  <option value="175">175 minutos</option>
+  <option value="180">180 minutos</option>
+  <option value="other">Otro...</option>
+</select>
+
+<input
+  id="movieDurationCustom"
+  type="number"
+  min="1"
+  placeholder="Escribe la duración en minutos"
+  style="display: none;"
+/>
+
+            <label for="movieRating">Clasificación</label>
+
+<select id="movieRating" class="rating-select">
+  <option value="">Seleccionar clasificación</option>
+  <option value="G">G</option>
+  <option value="PG">PG</option>
+  <option value="PG-13">PG-13</option>
+  <option value="R">R</option>
+</select>
+            <label class="checkbox-row">
+              <input id="movieActive" type="checkbox" checked />
+              Película activa y visible
+            </label>
+
+            <label class="checkbox-row">
+              <input id="movieComingSoon" type="checkbox" />
+              Mostrar como “Próximamente”
+            </label>
+
+            <p class="poster-help" style="margin-top:-8px;margin-bottom:16px;">
+              Las películas marcadas como próximamente aparecerán en la cartelera,
+              pero los clientes no podrán seleccionar tandas todavía.
+            </p>
+
+            <div class="form-actions">
+              <button
+                id="saveMovieButton"
+                class="btn btn-primary"
+                type="button"
+                onclick="saveMovie()"
+              >
+                💾 Guardar película
+              </button>
+
+              <button class="btn movie-clear-button" type="button" onclick="resetMovieForm()">
+                🧹 Limpiar
+              </button>
+            </div>
+
+            <div class="message" id="movieMessage"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <div>
+                <h2>Películas registradas</h2>
+                <p class="subtitle">Edita, activa o elimina películas.</p>
+              </div>
+
+              <button class="btn btn-primary" type="button" onclick="loadMovies()">
+                Actualizar
+              </button>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Afiche</th>
+                    <th>Película</th>
+                    <th>Duración</th>
+                    <th>Tráiler</th>
+                    <th>Publicación</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="movieRows"></tbody>
+              </table>
+
+              <div class="empty" id="movieEmptyMessage">
+                Todavía no hay películas.
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- TANDAS -->
+      <section id="showtimesSection" class="page-section">
+        <section class="card" style="margin-bottom: 22px;">
+          <div class="section-header">
+            <div>
+              <h2>Precios generales de taquillas</h2>
+              <p class="subtitle">
+                Estos precios se aplican automáticamente a todas las tandas.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-three" style="gap: 14px;">
+            <div>
+              <label for="globalAdultPrice">Adulto</label>
+              <input id="globalAdultPrice" type="number" min="0" step="0.01" placeholder="8.25" />
+            </div>
+            <div>
+              <label for="globalChildPrice">Niño</label>
+              <input id="globalChildPrice" type="number" min="0" step="0.01" placeholder="6.00" />
+            </div>
+            <div>
+              <label for="globalSeniorPrice">Senior</label>
+              <input id="globalSeniorPrice" type="number" min="0" step="0.01" placeholder="6.00" />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="saveGlobalPricesButton" class="btn btn-primary" type="button" onclick="saveGlobalPrices()">
+              Guardar precios
+            </button>
+          </div>
+
+          <div class="message" id="globalPricesMessage"></div>
+        </section>
+
+        <div class="grid-two">
+          <section class="card">
+            <h2 id="showtimeFormTitle">Añadir tanda</h2>
+            <input id="showtimeId" type="hidden" />
+
+            <label for="showtimeMovie">Película</label>
+            <select id="showtimeMovie">
+              <option value="">Selecciona una película</option>
+            </select>
+
+            <label for="showtimeDate">Fecha</label>
+            <select id="showtimeDate" class="showtime-picker-select">
+  <option value="">Selecciona una fecha</option>
+</select>
+
+            <label for="showtimeTime">Hora</label>
+            <select id="showtimeTime" class="showtime-picker-select">
+  <option value="">Selecciona una hora</option>
+</select>
+
+            <div class="notice" style="margin-top: 16px;">
+              Esta tanda utilizará automáticamente los precios generales del cine.
+            </div>
+
+            <label for="showtimeLanguage">Idioma de la tanda</label>
+            <select id="showtimeLanguage">
+              <option value="spanish">Español</option>
+              <option value="english">Inglés</option>
+              <option value="english_subtitled">Inglés con subtítulos en español</option>
+            </select>
+
+            <label class="checkbox-row">
+              <input id="showtimeActive" type="checkbox" checked />
+              Tanda activa y disponible
+            </label>
+
+            <div class="form-actions">
+              <button
+                id="saveShowtimeButton"
+                class="btn btn-primary"
+                type="button"
+                onclick="saveShowtime()"
+              >
+                Guardar tanda
+              </button>
+
+              <button class="btn btn-secondary" type="button" onclick="resetShowtimeForm()">
+                Limpiar
+              </button>
+            </div>
+
+            <div class="message" id="showtimeMessage"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <div>
+                <h2>Tandas registradas</h2>
+                <p class="subtitle">Horarios disponibles para cada película.</p>
+              </div>
+
+              <div class="section-actions">
+                <button class="btn btn-primary" type="button" onclick="loadShowtimes()">
+                  Actualizar
+                </button>
+                <button class="btn btn-danger" type="button" onclick="deleteAllShowtimes()">
+                  Eliminar todo
+                </button>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Película</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Idioma</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="showtimeRows"></tbody>
+              </table>
+
+              <div class="empty" id="showtimeEmptyMessage">
+                Todavía no hay tandas.
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- EMPLEADOS -->
+      <section id="employeesSection" class="page-section">
+        <div class="grid-two">
+          <section class="card">
+            <h2 id="employeeFormTitle">Añadir empleado</h2>
+            <input id="employeeId" type="hidden" />
+
+            <label for="employeeName">Nombre completo</label>
+            <input id="employeeName" type="text" placeholder="Ej. María López" />
+
+            <label for="employeeUsername">Usuario</label>
+            <input id="employeeUsername" type="text" placeholder="Ej. maria" autocomplete="off" />
+
+            <label for="employeePassword">Contraseña</label>
+            <input
+              id="employeePassword"
+              type="password"
+              minlength="8"
+              placeholder="Mínimo 8 caracteres"
+              autocomplete="new-password"
+            />
+
+            <p class="poster-help">
+              Al editar, deja la contraseña vacía para conservar la actual.
+            </p>
+
+            <label class="checkbox-row">
+              <input id="employeeActive" type="checkbox" checked />
+              Empleado activo
+            </label>
+
+            <div class="form-actions">
+              <button
+                id="saveEmployeeButton"
+                class="btn btn-primary"
+                type="button"
+                onclick="saveEmployee()"
+              >
+                Guardar empleado
+              </button>
+
+              <button class="btn employee-clear-button" type="button" onclick="resetEmployeeForm()">
+                Limpiar
+              </button>
+            </div>
+
+            <div class="message" id="employeeMessage"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <div>
+                <h2>Empleados y escaneos</h2>
+                <p class="subtitle">Cada asiento validado cuenta como una taquilla.</p>
+              </div>
+
+              <div class="employee-search-actions">
+                <button
+                  class="btn scan-history-search"
+                  type="button"
+                  onclick="toggleEmployeeDatePicker()"
+                >
+                  🔎 Buscar por fecha
+                </button>
+
+                <div id="employeeDatePickerWrap" class="employee-date-picker is-hidden">
+                  <input
+                    id="employeeHistoryDate"
+                    class="employee-history-date"
+                    type="date"
+                    aria-label="Buscar actividad de empleados por fecha"
+                    onchange="filterEmployeesByDate()"
+                  />
+                </div>
+
+                <button
+                  class="btn employee-all-button"
+                  type="button"
+                  onclick="clearEmployeeDateFilter()"
+                >
+                  Ver todos
+                </button>
+
+                <button
+                  class="btn btn-primary"
+                  type="button"
+                  onclick="refreshEmployeeArea()"
+                >
+                  Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Empleado</th>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                    <th>Escaneos</th>
+                    <th>Taquillas</th>
+                    <th>Último escaneo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="employeeRows"></tbody>
+              </table>
+
+              <div class="empty" id="employeeEmptyMessage">
+                Todavía no hay empleados.
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="section-header">
+            <div>
+              <h2>Historial de escaneos</h2>
+              <p class="subtitle">Últimos 200 registros de entrada.</p>
+            </div>
+
+            <div class="scan-history-actions">
+              <button
+                class="btn scan-history-search"
+                type="button"
+                onclick="toggleScanHistoryDatePicker()"
+              >
+                🔎 Buscar por fecha
+              </button>
+
+              <div id="scanHistoryDatePickerWrap" class="scan-history-date-picker is-hidden">
+                <input
+                  id="scanHistoryDate"
+                  class="scan-history-date"
+                  type="date"
+                  aria-label="Fecha del historial de escaneos"
+                  onchange="filterCheckinsByDate()"
+                />
+              </div>
+
+              <button
+                class="btn scan-history-all-button"
+                type="button"
+                onclick="clearCheckinDateFilter()"
+              >
+                Ver todos
+              </button>
+
+              <button
+                id="scanHistoryMonthlyButton"
+                class="btn scan-history-monthly-button"
+                type="button"
+                onclick="showMonthlyCheckins()"
+              >
+                📅 Escaneos mensuales
+              </button>
+
+              <button
+                class="btn btn-primary"
+                type="button"
+                onclick="loadCheckins()"
+              >
+                Actualizar
+              </button>
+            </div>
+          </div>
+
+          <div id="scanHistoryMonthBar" class="scan-history-month-bar" aria-label="Navegar por meses del historial de escaneos">
+            <button
+              class="scan-history-month-nav"
+              type="button"
+              onclick="changeScanHistoryMonth(-1)"
+              aria-label="Mes anterior"
+              title="Mes anterior"
+            >‹</button>
+
+            <button
+              id="scanHistoryMonthLabel"
+              class="scan-history-month-current"
+              type="button"
+              onclick="openScanMonthReportModal()"
+              aria-label="Abrir reporte mensual de escaneos"
+              title="Descargar reporte PDF de escaneos de este mes"
+            >Mes actual</button>
+
+            <button
+              class="scan-history-month-nav"
+              type="button"
+              onclick="changeScanHistoryMonth(1)"
+              aria-label="Mes siguiente"
+              title="Mes siguiente"
+            >›</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Empleado</th>
+                  <th>Película</th>
+                  <th>Tanda</th>
+                  <th>Asientos</th>
+                  <th>Taquillas</th>
+                </tr>
+              </thead>
+              <tbody id="checkinRows"></tbody>
+            </table>
+
+            <div class="empty" id="checkinEmptyMessage">
+              Todavía no hay escaneos.
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- CONTRASEÑA -->
+      <section id="passwordSection" class="page-section">
+        <section class="card danger-zone">
+          <h2>Cambiar contraseña</h2>
+          <p class="subtitle">
+            La nueva contraseña debe tener al menos ocho caracteres.
+          </p>
+          <br />
+
+          <label for="currentPassword">Contraseña actual</label>
+          <input id="currentPassword" type="password" autocomplete="current-password" />
+
+          <label for="newPassword">Nueva contraseña</label>
+          <input id="newPassword" type="password" minlength="8" autocomplete="new-password" />
+
+          <label for="confirmPassword">Confirmar nueva contraseña</label>
+          <input id="confirmPassword" type="password" minlength="8" autocomplete="new-password" />
+
+          <button
+            id="changePasswordButton"
+            class="btn btn-warning"
+            type="button"
+            onclick="changePassword()"
+          >
+            Cambiar contraseña
+          </button>
+
+          <div class="message" id="passwordMessage"></div>
+        </section>
+      </section>
+    </section>
+
+    <div
+      class="scan-report-modal"
+      id="scanReportModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scanReportTitle"
+      onclick="handleScanReportBackdrop(event)"
+    >
+      <div class="scan-report-dialog">
+        <h3 id="scanReportTitle">Reporte mensual de escaneos</h3>
+
+        <div class="scan-report-summary">
+          <div>
+            <span>Escaneos</span>
+            <strong id="scanReportScans">0</strong>
+          </div>
+          <div>
+            <span>Taquillas validadas</span>
+            <strong id="scanReportTickets">0</strong>
+          </div>
+          <div>
+            <span>Empleados</span>
+            <strong id="scanReportEmployees">0</strong>
+          </div>
+          <div>
+            <span>Películas</span>
+            <strong id="scanReportMovies">0</strong>
+          </div>
+        </div>
+
+        <div class="scan-report-actions">
+          <button
+            id="scanReportDownloadButton"
+            class="btn scan-report-download"
+            type="button"
+            onclick="downloadScanMonthPdf()"
+          >
+            📄 Descargar PDF
+          </button>
+
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeScanMonthReportModal()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="reservation-report-modal"
+      id="reservationReportModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reservationReportTitle"
+      onclick="handleReservationReportBackdrop(event)"
+    >
+      <div class="reservation-report-dialog">
+        <h3 id="reservationReportTitle">Reporte mensual</h3>
+        <div class="reservation-report-summary">
+          <div>
+            <span>Reservaciones</span>
+            <strong id="reservationReportReservations">0</strong>
+          </div>
+          <div>
+            <span>Taquillas pagadas</span>
+            <strong id="reservationReportTickets">0</strong>
+          </div>
+          <div>
+            <span>Ventas pagadas</span>
+            <strong id="reservationReportSales">$0.00</strong>
+          </div>
+          <div>
+            <span>Entradas utilizadas</span>
+            <strong id="reservationReportUsed">0</strong>
+          </div>
+        </div>
+
+        <div class="reservation-report-actions">
+          <button
+            id="reservationReportDownloadButton"
+            class="btn reservation-report-download"
+            type="button"
+            onclick="downloadReservationMonthPdf()"
+          >
+            📄 Descargar PDF
+          </button>
+
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeReservationMonthReportModal()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const API_URL = "https://cine-manuel-nieves.onrender.com";
+
+    let currentAdminToken = "";
+    let currentSection = "reservations";
+    let reservationsLiveTimer = null;
+    let moviesCache = [];
+    let showtimesCache = [];
+    let employeesCache = [];
+    let reservationsCache = [];
+    let checkinsCache = [];
+    let scanHistoryMonthDate = new Date();
+    let scanHistoryMode = "all";
+    let scanMonthReportRowsCache = [];
+    let reservationViewMode = "month";
+    let reservationStatisticsMode = "today";
+    let reservationSelectedMonth = "";
+    let reservationCurrentMonthKey = "";
+
+    function setLoading(visible) {
+      document.getElementById("loadingMessage").style.display = visible ? "block" : "none";
+    }
+
+    function setMessage(elementId, type, message) {
+      const box = document.getElementById(elementId);
+      box.className = message ? `message ${type}` : "message";
+      box.textContent = message || "";
+    }
+
+    async function parseResponse(response) {
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch (error) {
+        data = {};
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || "Ocurrió un error.");
+      }
+
+      return data;
+    }
+
+    async function adminFetch(path, options = {}) {
+      const headers = {
+        ...(options.headers || {}),
+        "x-admin-token": currentAdminToken
+      };
+
+      if (
+        options.body &&
+        !(options.body instanceof FormData) &&
+        !headers["Content-Type"]
+      ) {
+        headers["Content-Type"] = "application/json";
+      }
+
+      const response = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        await logout(false);
+        throw new Error("La sesión administrativa no es válida.");
+      }
+
+      return parseResponse(response);
+    }
+
+
+    function setRecoveryStep(step) {
+      const requestStep = document.getElementById("recoveryRequestStep");
+      const resetStep = document.getElementById("recoveryResetStep");
+
+      requestStep.classList.toggle("active", step === "request");
+      resetStep.classList.toggle("active", step === "reset");
+    }
+
+    function openPasswordRecovery() {
+      const panel = document.getElementById("passwordRecoveryPanel");
+      panel.classList.add("active");
+      setRecoveryStep("request");
+      setMessage("recoveryMessage", "", "");
+
+      window.setTimeout(() => {
+        document.getElementById("recoveryEmail")?.focus();
+      }, 50);
+    }
+
+    function closePasswordRecovery() {
+      const panel = document.getElementById("passwordRecoveryPanel");
+
+      panel.classList.remove("active");
+      setRecoveryStep("request");
+      setMessage("recoveryMessage", "", "");
+
+      document.getElementById("recoveryCode").value = "";
+      document.getElementById("recoveryNewPassword").value = "";
+      document.getElementById("recoveryConfirmPassword").value = "";
+    }
+
+    function backToRecoveryEmail() {
+      setRecoveryStep("request");
+      setMessage("recoveryMessage", "", "");
+      document.getElementById("recoveryCode").value = "";
+      document.getElementById("recoveryNewPassword").value = "";
+      document.getElementById("recoveryConfirmPassword").value = "";
+      document.getElementById("recoveryEmail")?.focus();
+    }
+
+    async function requestPasswordRecoveryCode() {
+      const emailInput = document.getElementById("recoveryEmail");
+      const button = document.getElementById("sendRecoveryCodeButton");
+      const email = emailInput.value.trim().toLowerCase();
+
+      if (!email || !emailInput.checkValidity()) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "Escribe un correo electrónico válido."
+        );
+        emailInput.focus();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Enviando...";
+      setMessage("recoveryMessage", "", "");
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/admin/password/forgot`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email })
+          }
+        );
+
+        await parseResponse(response);
+
+        setRecoveryStep("reset");
+        setMessage(
+          "recoveryMessage",
+          "success",
+          "Si el correo coincide con el administrador, recibirás un código de recuperación."
+        );
+
+        window.setTimeout(() => {
+          document.getElementById("recoveryCode")?.focus();
+        }, 100);
+      } catch (error) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          error.message || "No se pudo enviar el código."
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent = "Enviar código";
+      }
+    }
+
+    async function completePasswordRecovery() {
+      const email = document
+        .getElementById("recoveryEmail")
+        .value
+        .trim()
+        .toLowerCase();
+
+      const codeInput = document.getElementById("recoveryCode");
+      const newPasswordInput =
+        document.getElementById("recoveryNewPassword");
+      const confirmPasswordInput =
+        document.getElementById("recoveryConfirmPassword");
+      const button = document.getElementById("resetPasswordButton");
+
+      const code = codeInput.value.replace(/\D/g, "").slice(0, 6);
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      codeInput.value = code;
+
+      if (!/^\d{6}$/.test(code)) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "Escribe el código de 6 dígitos."
+        );
+        codeInput.focus();
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "La nueva contraseña debe tener al menos 8 caracteres."
+        );
+        newPasswordInput.focus();
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          "Las contraseñas nuevas no coinciden."
+        );
+        confirmPasswordInput.focus();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Cambiando...";
+      setMessage("recoveryMessage", "", "");
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/admin/password/reset`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              email,
+              code,
+              newPassword
+            })
+          }
+        );
+
+        await parseResponse(response);
+
+        document.getElementById("adminKey").value = newPassword;
+
+        setMessage(
+          "recoveryMessage",
+          "success",
+          "Contraseña actualizada. Ya puedes entrar con la nueva contraseña."
+        );
+
+        window.setTimeout(() => {
+          closePasswordRecovery();
+          setMessage(
+            "loginMessage",
+            "success",
+            "Contraseña actualizada. Presiona “Entrar al panel”."
+          );
+          document.getElementById("adminKey")?.focus();
+        }, 1400);
+      } catch (error) {
+        setMessage(
+          "recoveryMessage",
+          "error",
+          error.message || "No se pudo cambiar la contraseña."
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent = "Cambiar contraseña";
+      }
+    }
+
+    async function login() {
+      const keyInput = document.getElementById("adminKey");
+      const loginButton = document.getElementById("loginButton");
+      const key = keyInput.value.trim();
+
+      if (!key) {
+        setMessage("loginMessage", "error", "Escribe la contraseña del administrador.");
+        return;
+      }
+
+      loginButton.disabled = true;
+      loginButton.textContent = "Verificando...";
+      setMessage("loginMessage", "", "");
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: key })
+        });
+
+        const data = await parseResponse(response);
+
+        currentAdminToken = data.token;
+        sessionStorage.setItem("cineAdminToken", data.token);
+
+        keyInput.value = "";
+
+        openDashboard();
+        await loadReservations();
+      } catch (error) {
+        currentAdminToken = "";
+        sessionStorage.removeItem("cineAdminToken");
+        setMessage("loginMessage", "error", error.message);
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = "Entrar al panel";
+      }
+    }
+
+    function openDashboard() {
+      document.getElementById("loginWrapper").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      window.scrollTo({ top: 0, behavior: "instant" });
+
+      // Reservaciones es la sección inicial. Arrancamos aquí mismo
+      // la actualización automática para que funcione desde que el
+      // administrador abre el portal, sin tocar "Actualizar".
+      if (currentSection === "reservations") {
+        startReservationsLiveUpdates();
+      }
+    }
+
+    async function logout(notifyServer = true) {
+      stopReservationsLiveUpdates();
+
+      const token = currentAdminToken;
+
+      currentAdminToken = "";
+      sessionStorage.removeItem("cineAdminToken");
+
+      if (notifyServer && token) {
+        try {
+          await fetch(`${API_URL}/api/admin/logout`, {
+            method: "POST",
+            headers: {
+              "x-admin-token": token
+            }
+          });
+        } catch (error) {
+          console.warn(
+            "No se pudo cerrar la sesión en el servidor:",
+            error
+          );
+        }
+      }
+
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("loginWrapper").style.display = "flex";
+      document.getElementById("adminKey").value = "";
+
+      setMessage("loginMessage", "", "");
+
+      window.scrollTo({
+        top: 0,
+        behavior: "instant"
+      });
+    }
+
+    async function restoreSession() {
+      const savedToken = sessionStorage.getItem("cineAdminToken");
+
+      if (!savedToken) {
+        return;
+      }
+
+      currentAdminToken = savedToken;
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/admin/me`,
+          {
+            method: "GET",
+            headers: {
+              "x-admin-token": savedToken
+            }
+          }
+        );
+
+        await parseResponse(response);
+
+        openDashboard();
+        await loadReservations();
+      } catch (error) {
+        await logout(false);
+      }
+    }
+
+    function showSection(sectionName) {
+      if (sectionName !== "reservations") {
+        stopReservationsLiveUpdates();
+      }
+      currentSection = sectionName;
+      const names = ["reservations", "movies", "showtimes", "employees", "password"];
+
+      names.forEach((name) => {
+        document.getElementById(`${name}Section`).classList.toggle("active", name === sectionName);
+        document.getElementById(`nav${capitalize(name)}`).classList.toggle("active", name === sectionName);
+      });
+
+      if (sectionName === "reservations") {
+        loadReservations();
+        startReservationsLiveUpdates();
+      }
+      if (sectionName === "movies") loadMovies();
+      if (sectionName === "showtimes") {
+        loadMoviesForSelect();
+        loadGlobalPrices();
+        loadShowtimes();
+      }
+      if (sectionName === "employees") {
+        loadEmployees();
+        loadCheckins();
+      }
+    }
+
+    function startReservationsLiveUpdates() {
+      if (reservationsLiveTimer) {
+        clearInterval(reservationsLiveTimer);
+      }
+
+      // La carga inicial ya se realiza al abrir la sección.
+      // Luego vuelve a consultar cada 5 segundos sin mostrar
+      // "Cargando información..." ni mover el contenido.
+      reservationsLiveTimer = window.setInterval(() => {
+        if (
+          currentSection === "reservations" &&
+          document.visibilityState === "visible"
+        ) {
+          loadReservations({ silent: true });
+        }
+      }, 5000);
+    }
+
+    function stopReservationsLiveUpdates() {
+      if (reservationsLiveTimer) {
+        clearInterval(reservationsLiveTimer);
+        reservationsLiveTimer = null;
+      }
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeReservationMonthReportModal();
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (
+        document.visibilityState === "visible" &&
+        currentSection === "reservations" &&
+        currentAdminToken
+      ) {
+        loadReservations({ silent: true });
+      }
+    });
+
+    async function refreshCurrentSection() {
+      if (currentSection === "reservations") await loadReservations();
+      if (currentSection === "movies") await loadMovies();
+      if (currentSection === "showtimes") {
+        await loadMoviesForSelect();
+        await loadGlobalPrices();
+        await loadShowtimes();
+      }
+      if (currentSection === "employees") {
+        await loadEmployees();
+        await loadCheckins();
+      }
+    }
+
+    function getTodayPuertoRicoDateKey() {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(new Date());
+
+      const values = {};
+
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          values[part.type] = part.value;
+        }
+      });
+
+      return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function getCurrentPuertoRicoMonthKey() {
+      return getTodayPuertoRicoDateKey().slice(0, 7);
+    }
+
+    function getReservationMonthKey(value) {
+      const dateKey = getPuertoRicoDateKey(value);
+      return dateKey ? dateKey.slice(0, 7) : "";
+    }
+
+    function formatReservationMonthLabel(monthKey) {
+      const match = String(monthKey || "").match(/^(\d{4})-(\d{2})$/);
+      if (!match) return "Mes actual";
+
+      const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1, 12));
+
+      return new Intl.DateTimeFormat("es-PR", {
+        timeZone: "America/Puerto_Rico",
+        month: "long",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function ensureReservationSelectedMonth() {
+      const currentMonthKey = getCurrentPuertoRicoMonthKey();
+
+      // Si el panel quedó abierto al cambiar de mes y el administrador
+      // todavía estaba mirando el mes que era actual, avanzamos
+      // automáticamente al nuevo mes. Si estaba consultando un mes
+      // histórico, respetamos esa selección.
+      if (
+        reservationCurrentMonthKey &&
+        reservationSelectedMonth === reservationCurrentMonthKey &&
+        reservationCurrentMonthKey !== currentMonthKey
+      ) {
+        reservationSelectedMonth = currentMonthKey;
+      }
+
+      if (!/^\d{4}-\d{2}$/.test(reservationSelectedMonth)) {
+        reservationSelectedMonth = currentMonthKey;
+      }
+
+      reservationCurrentMonthKey = currentMonthKey;
+    }
+
+    function updateReservationMonthLabel() {
+      ensureReservationSelectedMonth();
+      const label = document.getElementById("reservationMonthLabel");
+      if (label) {
+        label.textContent = formatReservationMonthLabel(reservationSelectedMonth);
+      }
+    }
+
+    function setReservationPeriodLabel(text) {
+      const label = document.getElementById("reservationPeriodLabel");
+      if (label) {
+        label.textContent = text || "";
+      }
+    }
+
+    function setStatisticsLabels(mode = "today") {
+      const reservationLabel = document.getElementById("reservationStatLabel");
+      const ticketLabel = document.getElementById("ticketStatLabel");
+      const salesLabel = document.getElementById("salesStatLabel");
+      const usedLabel = document.getElementById("usedStatLabel");
+
+      const labels = {
+        today: [
+          "Reservaciones de hoy",
+          "Taquillas vendidas hoy",
+          "Ventas pagadas hoy",
+          "Entradas utilizadas hoy"
+        ],
+        selected: [
+          "Reservaciones del día",
+          "Taquillas vendidas del día",
+          "Ventas pagadas del día",
+          "Entradas utilizadas del día"
+        ],
+        month: [
+          "Reservaciones del mes",
+          "Taquillas vendidas del mes",
+          "Ventas pagadas del mes",
+          "Entradas utilizadas del mes"
+        ],
+        all: [
+          "Reservaciones totales",
+          "Taquillas vendidas totales",
+          "Ventas pagadas totales",
+          "Entradas utilizadas totales"
+        ]
+      };
+
+      const selectedLabels = labels[mode] || labels.today;
+
+      if (reservationLabel) reservationLabel.textContent = selectedLabels[0];
+      if (ticketLabel) ticketLabel.textContent = selectedLabels[1];
+      if (salesLabel) salesLabel.textContent = selectedLabels[2];
+      if (usedLabel) usedLabel.textContent = selectedLabels[3];
+    }
+
+    function updateReservationMonthSalesButton() {
+      const button = document.getElementById("reservationMonthSalesButton");
+      if (!button) return;
+
+      const showingMonthTotals = reservationStatisticsMode === "month";
+      button.textContent = showingMonthTotals
+        ? "📊 Viendo ventas del mes"
+        : "📊 Ventas del mes";
+      button.setAttribute("aria-pressed", showingMonthTotals ? "true" : "false");
+      button.style.boxShadow = showingMonthTotals
+        ? "0 0 0 3px rgba(73, 203, 197, 0.24), 0 10px 24px rgba(36, 159, 156, 0.18)"
+        : "";
+    }
+
+    function updateTodayStatistics() {
+      const todayKey = getTodayPuertoRicoDateKey();
+      const todayReservations = reservationsCache.filter((ticket) => {
+        return getPuertoRicoDateKey(ticket.created) === todayKey;
+      });
+
+      reservationStatisticsMode = "today";
+      setStatisticsLabels("today");
+      updateStatistics(todayReservations);
+      updateReservationMonthSalesButton();
+    }
+
+    function applyReservationMonthView() {
+      ensureReservationSelectedMonth();
+      reservationViewMode = "month";
+
+      const input = document.getElementById("reservationHistoryDate");
+      const wrap = document.getElementById("reservationDatePickerWrap");
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
+
+      if (input) input.value = "";
+      if (wrap) wrap.classList.add("is-hidden");
+
+      const filteredReservations = reservationsCache.filter((ticket) => {
+        return getReservationMonthKey(ticket.created) === reservationSelectedMonth;
+      });
+
+      updateReservationMonthLabel();
+      renderReservations(filteredReservations);
+
+      const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
+
+      // Por defecto las tarjetas continúan mostrando HOY. Pero si el
+      // administrador activó "Ventas del mes", conservamos ese modo
+      // incluso al cambiar de mes o al refrescar automáticamente.
+      if (reservationStatisticsMode === "month") {
+        setStatisticsLabels("month");
+        updateStatistics(filteredReservations);
+        updateReservationMonthSalesButton();
+        setReservationPeriodLabel(`Mostrando ${monthLabel} • Totales del mes`);
+      } else {
+        updateTodayStatistics();
+        setReservationPeriodLabel(`Mostrando ${monthLabel}`);
+      }
+
+      if (!filteredReservations.length && emptyMessage) {
+        emptyMessage.textContent = `No hay compras registradas en ${monthLabel}.`;
+      }
+    }
+
+    function getReservationMonthRows(monthKey = reservationSelectedMonth) {
+      ensureReservationSelectedMonth();
+      const targetMonth = /^\d{4}-\d{2}$/.test(String(monthKey || ""))
+        ? String(monthKey)
+        : reservationSelectedMonth;
+
+      return reservationsCache.filter((ticket) => {
+        return getReservationMonthKey(ticket.created) === targetMonth;
+      });
+    }
+
+    function getReservationReportSummary(reservations) {
+      const safeReservations = Array.isArray(reservations) ? reservations : [];
+      const paidReservations = safeReservations.filter((ticket) =>
+        isPaidPaymentStatus(ticket.paymentStatus)
+      );
+
+      const tickets = paidReservations.reduce((total, ticket) => {
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
+
+      const sales = paidReservations.reduce((total, ticket) => {
+        return total + Number(ticket.total || 0);
+      }, 0);
+
+      const used = paidReservations.reduce((total, ticket) => {
+        if (!ticket.used) return total;
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
+
+      return {
+        reservations: safeReservations.length,
+        tickets,
+        sales,
+        used
+      };
+    }
+
+    function openReservationMonthReportModal() {
+      ensureReservationSelectedMonth();
+
+      const modal = document.getElementById("reservationReportModal");
+      const title = document.getElementById("reservationReportTitle");
+      const monthReservations = getReservationMonthRows();
+      const summary = getReservationReportSummary(monthReservations);
+      const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
+
+      if (title) title.textContent = `Reporte de ${monthLabel}`;
+      document.getElementById("reservationReportReservations").textContent =
+        String(summary.reservations);
+      document.getElementById("reservationReportTickets").textContent =
+        String(summary.tickets);
+      document.getElementById("reservationReportSales").textContent =
+        `$${summary.sales.toFixed(2)}`;
+      document.getElementById("reservationReportUsed").textContent =
+        String(summary.used);
+
+      if (modal) {
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+    }
+
+    function closeReservationMonthReportModal() {
+      const modal = document.getElementById("reservationReportModal");
+      if (modal) modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function handleReservationReportBackdrop(event) {
+      if (event?.target?.id === "reservationReportModal") {
+        closeReservationMonthReportModal();
+      }
+    }
+
+    function getReservationPdfSafeText(value) {
+      return String(value ?? "")
+        .replace(/\s+/g, " ")
+        .trim() || "—";
+    }
+
+    function getReservationReportFileName(monthKey) {
+      const monthLabel = formatReservationMonthLabel(monthKey)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .toLowerCase();
+
+      return `ventas_${monthLabel || monthKey}.pdf`;
+    }
+
+    async function downloadReservationMonthPdf() {
+      ensureReservationSelectedMonth();
+
+      const button = document.getElementById("reservationReportDownloadButton");
+      const monthReservations = getReservationMonthRows();
+      const monthLabel = formatReservationMonthLabel(reservationSelectedMonth);
+
+      if (!monthReservations.length) {
+        alert(`No hay reservaciones registradas en ${monthLabel}.`);
+        return;
+      }
+
+      if (!window.jspdf?.jsPDF) {
+        alert("No se pudo cargar el generador de PDF. Revisa la conexión a internet e intenta nuevamente.");
+        return;
+      }
+
+      const previousText = button?.textContent || "📄 Descargar PDF";
+
+      try {
+        if (button) {
+          button.disabled = true;
+          button.textContent = "Generando PDF...";
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "landscape",
+          unit: "pt",
+          format: "letter",
+          compress: true
+        });
+
+        if (typeof doc.autoTable !== "function") {
+          throw new Error("El módulo de tablas del PDF no está disponible.");
+        }
+
+        const summary = getReservationReportSummary(monthReservations);
+        const paidReservations = monthReservations.filter((ticket) =>
+          isPaidPaymentStatus(ticket.paymentStatus)
+        );
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const generatedAt = new Intl.DateTimeFormat("es-PR", {
+          timeZone: "America/Puerto_Rico",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "numeric",
+          minute: "2-digit"
+        }).format(new Date());
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text("Cine Teatro Manuel Nieves Quintero", 36, 38);
+
+        doc.setFontSize(15);
+        doc.text(`Reporte de ventas - ${monthLabel}`, 36, 61);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Generado: ${generatedAt}`, pageWidth - 36, 38, { align: "right" });
+        doc.text("Documento generado bajo demanda. No se almacena una copia en el sistema.", pageWidth - 36, 54, { align: "right" });
+
+        doc.setDrawColor(45, 58, 85);
+        doc.line(36, 72, pageWidth - 36, 72);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text(`Reservaciones: ${summary.reservations}`, 36, 92);
+        doc.text(`Taquillas pagadas: ${summary.tickets}`, 190, 92);
+        doc.text(`Ventas pagadas: $${summary.sales.toFixed(2)}`, 355, 92);
+        doc.text(`Entradas utilizadas: ${summary.used}`, 545, 92);
+
+        const body = monthReservations.map((ticket) => {
+          const seats = Array.isArray(ticket.seats) && ticket.seats.length
+            ? ticket.seats.join(", ")
+            : "—";
+          const paymentStatus = getPaymentStatusPresentation(ticket.paymentStatus);
+
+          return [
+            getReservationPdfSafeText(formatPuertoRicoDateTime(ticket.created)),
+            getReservationPdfSafeText(ticket.customer?.name),
+            getReservationPdfSafeText(ticket.customer?.email),
+            getReservationPdfSafeText(ticket.movie),
+            getReservationPdfSafeText(formatCheckinShowtime(ticket.time)),
+            getReservationPdfSafeText(seats),
+            `$${Number(ticket.total || 0).toFixed(2)}`,
+            getReservationPdfSafeText(paymentStatus.label),
+            ticket.used ? "Utilizada" : "Disponible"
+          ];
+        });
+
+        doc.autoTable({
+          startY: 108,
+          head: [[
+            "Fecha compra",
+            "Cliente",
+            "Correo",
+            "Pelicula",
+            "Tanda",
+            "Asientos",
+            "Total",
+            "Pago",
+            "Entrada"
+          ]],
+          body,
+          theme: "grid",
+          styles: {
+            font: "helvetica",
+            fontSize: 6.8,
+            cellPadding: 3,
+            overflow: "linebreak",
+            valign: "top"
+          },
+          headStyles: {
+            fillColor: [17, 24, 39],
+            textColor: [255, 255, 255],
+            fontStyle: "bold"
+          },
+          alternateRowStyles: {
+            fillColor: [245, 247, 250]
+          },
+          columnStyles: {
+            0: { cellWidth: 72 },
+            1: { cellWidth: 76 },
+            2: { cellWidth: 110 },
+            3: { cellWidth: 68 },
+            4: { cellWidth: 76 },
+            5: { cellWidth: 70 },
+            6: { cellWidth: 48, halign: "right" },
+            7: { cellWidth: 48 },
+            8: { cellWidth: 52 }
+          },
+          margin: { left: 28, right: 28, bottom: 32 },
+          didDrawPage: (data) => {
+            const pageNumber = doc.internal.getNumberOfPages();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7);
+            doc.setTextColor(90);
+            doc.text(`Pagina ${pageNumber}`, pageWidth - 30, pageHeight - 14, { align: "right" });
+          }
+        });
+
+        const finalY = doc.lastAutoTable?.finalY || 108;
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        if (finalY > pageHeight - 90) {
+          doc.addPage();
+        }
+
+        const totalY = (doc.lastAutoTable?.finalY && doc.lastAutoTable.finalY <= pageHeight - 90)
+          ? doc.lastAutoTable.finalY + 22
+          : 46;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(0);
+        doc.text(`TOTAL PAGADO DEL MES: $${summary.sales.toFixed(2)}`, 36, totalY);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Reservaciones pagadas: ${paidReservations.length} | Taquillas pagadas: ${summary.tickets}`, 36, totalY + 16);
+
+        doc.save(getReservationReportFileName(reservationSelectedMonth));
+        closeReservationMonthReportModal();
+      } catch (error) {
+        console.error("Error generando reporte PDF mensual:", error);
+        alert(error.message || "No se pudo generar el PDF mensual.");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = previousText;
+        }
+      }
+    }
+
+    function changeReservationMonth(delta) {
+      ensureReservationSelectedMonth();
+
+      const [year, month] = reservationSelectedMonth.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1 + Number(delta || 0), 1, 12));
+
+      reservationSelectedMonth = `${date.getUTCFullYear()}-${String(
+        date.getUTCMonth() + 1
+      ).padStart(2, "0")}`;
+
+      applyReservationMonthView();
+    }
+
+    function showReservationMonthSales() {
+      ensureReservationSelectedMonth();
+      reservationViewMode = "month";
+      reservationStatisticsMode = "month";
+      applyReservationMonthView();
+    }
+
+    async function loadReservations(options = {}) {
+      const silent = Boolean(options.silent);
+
+      if (!silent) {
+        setLoading(true);
+      }
+
+      try {
+        const reservations = await adminFetch(
+          "/api/admin/reservations"
+        );
+
+        reservationsCache = Array.isArray(reservations)
+          ? reservations
+          : [];
+
+        if (reservationViewMode === "date") {
+          filterReservationsByDate(false);
+        } else if (reservationViewMode === "all") {
+          showAllReservations();
+        } else {
+          applyReservationMonthView();
+        }
+      } catch (error) {
+        if (silent) {
+          console.warn("No se pudieron actualizar las reservaciones:", error);
+        } else {
+          alert(error.message);
+        }
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        }
+      }
+    }
+
+    function isPaidPaymentStatus(status) {
+      return ["paid", "approved"].includes(
+        String(status || "").trim().toLowerCase()
+      );
+    }
+
+    function getPaymentStatusPresentation(status) {
+      const normalized = String(status || "").trim().toLowerCase();
+
+      if (isPaidPaymentStatus(normalized)) {
+        return { badge: "success", label: "Pagado" };
+      }
+
+      if (normalized === "pending") {
+        return { badge: "warning", label: "Pendiente" };
+      }
+
+      if (normalized === "payment_review") {
+        return { badge: "danger", label: "Pago recibido: revisar" };
+      }
+
+      if (normalized === "expired") {
+        return { badge: "warning", label: "Vencido" };
+      }
+
+      if (normalized === "refunded") {
+        return { badge: "info", label: "Reembolsado" };
+      }
+
+      if (normalized === "reversed") {
+        return { badge: "danger", label: "Revertido" };
+      }
+
+      if (["failed", "denied", "declined"].includes(normalized)) {
+        return { badge: "danger", label: "Fallido" };
+      }
+
+      if (["cancelled", "canceled"].includes(normalized)) {
+        return { badge: "danger", label: "Cancelado" };
+      }
+
+      return {
+        badge: "warning",
+        label: normalized ? capitalize(normalized) : "Desconocido"
+      };
+    }
+
+    function formatPuertoRicoDateTime(value) {
+      if (!value) return "—";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "—";
+
+      return new Intl.DateTimeFormat("es-PR", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "numeric",
+        minute: "2-digit"
+      }).format(date);
+    }
+
+    function renderReservations(reservations) {
+      const rows = document.getElementById("reservationRows");
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
+      rows.innerHTML = "";
+
+      if (!Array.isArray(reservations) || reservations.length === 0) {
+        emptyMessage.style.display = "block";
+        return;
+      }
+
+      emptyMessage.style.display = "none";
+      emptyMessage.textContent = "Todavía no hay reservaciones.";
+
+      reservations.forEach((ticket) => {
+        const row = document.createElement("tr");
+        const createdDate = formatPuertoRicoDateTime(ticket.created);
+        const seats = Array.isArray(ticket.seats) ? ticket.seats.join(", ") : "—";
+        const paymentStatus =
+          getPaymentStatusPresentation(ticket.paymentStatus);
+        const used = Boolean(ticket.used);
+        const usable = isPaidPaymentStatus(ticket.paymentStatus);
+        const reviewDetails = ticket.paymentStatus === "payment_review"
+          ? `<br /><span class="muted">${escapeHtml(ticket.customer?.paymentReviewReason || "Contactar al cliente.")}<br />Referencia: ${escapeHtml(ticket.id)}<br />Pago PayPal: ${escapeHtml(ticket.customer?.paypalCaptureId || "—")}</span>`
+          : "";
+
+        row.innerHTML = `
+          <td>${escapeHtml(createdDate)}</td>
+          <td>
+            <strong>${escapeHtml(ticket.customer?.name || "—")}</strong><br />
+            <span class="muted">${escapeHtml(ticket.customer?.email || "—")}</span>
+          </td>
+          <td>${escapeHtml(ticket.movie || "—")}</td>
+          <td>${escapeHtml(formatCheckinShowtime(ticket.time))}</td>
+          <td>${escapeHtml(seats)}</td>
+          <td>$${Number(ticket.total || 0).toFixed(2)}</td>
+          <td><span class="badge ${paymentStatus.badge}">${escapeHtml(paymentStatus.label)}</span>${reviewDetails}</td>
+          <td><span class="badge ${used ? "info" : usable ? "success" : "warning"}">${used ? "Utilizada" : usable ? "Disponible" : "No válida"}</span></td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+    function updateStatistics(reservations) {
+      const safeReservations = Array.isArray(reservations) ? reservations : [];
+
+      const paidReservations = safeReservations.filter((ticket) =>
+        isPaidPaymentStatus(ticket.paymentStatus)
+      );
+
+      const ticketCount = paidReservations.reduce((total, ticket) => {
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
+
+      const salesTotal = paidReservations.reduce((total, ticket) => {
+        return total + Number(ticket.total || 0);
+      }, 0);
+
+      const usedCount = paidReservations.reduce((total, ticket) => {
+        if (!ticket.used) return total;
+        return total + (Array.isArray(ticket.seats) ? ticket.seats.length : 0);
+      }, 0);
+
+      document.getElementById("reservationCount").textContent = safeReservations.length;
+      document.getElementById("ticketCount").textContent = ticketCount;
+      document.getElementById("salesTotal").textContent = `$${salesTotal.toFixed(2)}`;
+      document.getElementById("usedCount").textContent = usedCount;
+    }
+
+    function toggleReservationDatePicker() {
+      const wrap = document.getElementById("reservationDatePickerWrap");
+      const input = document.getElementById("reservationHistoryDate");
+
+      if (!wrap || !input) return;
+
+      wrap.classList.remove("is-hidden");
+
+      window.setTimeout(() => {
+        input.focus();
+
+        if (typeof input.showPicker === "function") {
+          try {
+            input.showPicker();
+          } catch (error) {
+            // El selector queda visible aunque el navegador no permita
+            // abrirlo automáticamente.
+          }
+        }
+      }, 50);
+    }
+
+    function filterReservationsByDate(showAlert = true) {
+      const input = document.getElementById("reservationHistoryDate");
+      const selectedDate = input?.value || "";
+
+      if (!selectedDate) {
+        if (showAlert) {
+          alert("Selecciona una fecha para buscar.");
+          input?.focus();
+        }
+        return;
+      }
+
+      reservationViewMode = "date";
+
+      const filteredReservations = reservationsCache.filter((ticket) => {
+        return getPuertoRicoDateKey(ticket.created) === selectedDate;
+      });
+
+      renderReservations(filteredReservations);
+
+      // Al buscar una fecha específica, las tarjetas superiores muestran
+      // los totales de ESE día seleccionado.
+      reservationStatisticsMode = "date";
+      setStatisticsLabels("selected");
+      updateStatistics(filteredReservations);
+      updateReservationMonthSalesButton();
+
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
+      const [year, month, day] = selectedDate.split("-");
+
+      setReservationPeriodLabel(`Mostrando ${month}/${day}/${year}`);
+
+      if (!filteredReservations.length && emptyMessage) {
+        emptyMessage.textContent =
+          `No hay compras registradas para ${month}/${day}/${year}.`;
+      }
+    }
+
+    function showAllReservations() {
+      reservationViewMode = "all";
+
+      const input = document.getElementById("reservationHistoryDate");
+      const wrap = document.getElementById("reservationDatePickerWrap");
+      const emptyMessage = document.getElementById("reservationEmptyMessage");
+
+      if (input) input.value = "";
+      if (wrap) wrap.classList.add("is-hidden");
+
+      if (emptyMessage) {
+        emptyMessage.textContent = "Todavía no hay reservaciones.";
+      }
+
+      renderReservations(reservationsCache);
+      // Al salir de filtros o de los totales mensuales, las tarjetas
+      // regresan automáticamente a representar solamente HOY.
+      updateTodayStatistics();
+      setReservationPeriodLabel("Mostrando todo el historial");
+      updateReservationMonthLabel();
+    }
+
+    function clearReservationDateFilter() {
+      showAllReservations();
+    }
+
+    async function loadMovies() {
+      setLoading(true);
+
+      try {
+        const movies = await adminFetch("/api/admin/movies");
+        moviesCache = Array.isArray(movies) ? movies : [];
+        renderMovies(moviesCache);
+        renderMovieOptions();
+      } catch (error) {
+        setMessage("movieMessage", "error", error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function loadMoviesForSelect() {
+      try {
+        const movies = await adminFetch("/api/admin/movies");
+        moviesCache = Array.isArray(movies) ? movies : [];
+        renderMovieOptions();
+      } catch (error) {
+        setMessage("showtimeMessage", "error", error.message);
+      }
+    }
+
+    function adaptAdminPoster(image) {
+      image.classList.remove(
+        "poster-landscape",
+        "poster-portrait",
+        "poster-square"
+      );
+
+      const width =
+        Number(image.naturalWidth || 0);
+
+      const height =
+        Number(image.naturalHeight || 0);
+
+      if (!width || !height) {
+        image.classList.add(
+          "poster-square"
+        );
+        return;
+      }
+
+      const ratio =
+        width / height;
+
+      if (ratio >= 1.2) {
+        image.classList.add(
+          "poster-landscape"
+        );
+      } else if (ratio <= 0.85) {
+        image.classList.add(
+          "poster-portrait"
+        );
+      } else {
+        image.classList.add(
+          "poster-square"
+        );
+      }
+    }
+
+    function renderMovies(movies) {
+      const rows = document.getElementById("movieRows");
+      const emptyMessage = document.getElementById("movieEmptyMessage");
+      rows.innerHTML = "";
+
+      if (!Array.isArray(movies) || movies.length === 0) {
+        emptyMessage.style.display = "block";
+        return;
+      }
+
+      emptyMessage.style.display = "none";
+
+      movies.forEach((movie) => {
+        const row = document.createElement("tr");
+        const poster = movie.posterUrl
+          ? `<img
+              class="poster-preview"
+              src="${escapeHtml(movie.posterUrl)}"
+              alt="Afiche"
+              onload="adaptAdminPoster(this)"
+              onerror="this.style.display='none'"
+            />`
+          : `<span class="muted">Sin afiche</span>`;
+
+        row.innerHTML = `
+          <td>${poster}</td>
+          <td>
+            <strong>${escapeHtml(movie.title)}</strong><br />
+            <span class="muted">${escapeHtml(movie.rating || "Sin clasificación")}</span>
+          </td>
+          <td>${movie.durationMinutes ? `${movie.durationMinutes} min` : "—"}</td>
+          <td>
+            ${
+              movie.trailerUrl
+                ? `<a href="${escapeHtml(movie.trailerUrl)}" target="_blank" rel="noopener" style="color:#79e4df;font-weight:800;">Ver tráiler</a>`
+                : `<span class="muted">Sin tráiler</span>`
+            }
+          </td>
+          <td>
+            <span class="badge ${movie.comingSoon ? "warning" : "info"}">
+              ${movie.comingSoon ? "Próximamente" : "En cartelera"}
+            </span>
+          </td>
+          <td><span class="badge ${movie.active ? "success" : "danger"}">${movie.active ? "Activa" : "Inactiva"}</span></td>
+          <td>
+            <div class="table-actions">
+              <button class="btn btn-small btn-primary" type="button" onclick="editMovie('${movie.id}')">Editar</button>
+              <button class="btn btn-small btn-danger" type="button" onclick="deleteMovie('${movie.id}')">Eliminar</button>
+            </div>
+          </td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+    function renderMovieOptions() {
+      const select = document.getElementById("showtimeMovie");
+      const currentValue = select.value;
+      select.innerHTML = `<option value="">Selecciona una película</option>`;
+
+      moviesCache.forEach((movie) => {
+        const option = document.createElement("option");
+        option.value = movie.id;
+        option.textContent = movie.active ? movie.title : `${movie.title} (inactiva)`;
+        select.appendChild(option);
+      });
+
+      select.value = currentValue;
+    }
+
+    function showPosterPreview(url) {
+      const preview = document.getElementById("moviePosterPreview");
+
+      if (!url) {
+        preview.removeAttribute("src");
+        preview.style.display = "none";
+        return;
+      }
+
+      preview.src = url;
+      preview.style.display = "block";
+    }
+
+    function previewSelectedPoster() {
+      const input = document.getElementById("moviePosterFile");
+      const file = input.files?.[0];
+
+      if (!file) {
+        showPosterPreview(document.getElementById("moviePosterUrl").value);
+        return;
+      }
+
+      showPosterPreview(URL.createObjectURL(file));
+    }
+
+    async function uploadPoster() {
+      const input = document.getElementById("moviePosterFile");
+      const file = input.files?.[0];
+
+      if (!file) {
+        setMessage("movieMessage", "error", "Selecciona una imagen primero.");
+        return;
+      }
+
+      if (file.size > 6 * 1024 * 1024) {
+        setMessage("movieMessage", "error", "El afiche no puede superar 6 MB.");
+        return;
+      }
+
+      const button = document.getElementById("uploadPosterButton");
+      button.disabled = true;
+      button.textContent = "Subiendo...";
+      setMessage("movieMessage", "info", "Subiendo afiche...");
+
+      try {
+        const formData = new FormData();
+        formData.append("poster", file);
+
+        const data = await adminFetch("/api/admin/posters", {
+          method: "POST",
+          body: formData
+        });
+
+        document.getElementById("moviePosterUrl").value = data.posterUrl;
+        showPosterPreview(data.posterUrl);
+        setMessage(
+          "movieMessage",
+          "success",
+          "Afiche subido correctamente. Ahora guarda la película."
+        );
+      } catch (error) {
+        setMessage("movieMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = "📷 Subir afiche";
+      }
+    }
+
+
+    function showTrailerPreview(url) {
+      const preview =
+        document.getElementById(
+          "movieTrailerPreview"
+        );
+
+      const status =
+        document.getElementById(
+          "trailerStatus"
+        );
+
+      if (!url) {
+        preview.pause();
+        preview.removeAttribute("src");
+        preview.style.display = "none";
+        status.textContent =
+          "Formatos permitidos: MP4, WEBM o MOV. Tamaño máximo: 50 MB.";
+        return;
+      }
+
+      preview.src = url;
+      preview.style.display = "block";
+      preview.load();
+
+      status.textContent =
+        "Vista previa del tráiler seleccionado.";
+    }
+
+    function previewSelectedTrailer() {
+      const input =
+        document.getElementById(
+          "movieTrailerFile"
+        );
+
+      const file =
+        input.files?.[0];
+
+      if (!file) {
+        showTrailerPreview(
+          document.getElementById(
+            "movieTrailerUrl"
+          ).value
+        );
+        return;
+      }
+
+      showTrailerPreview(
+        URL.createObjectURL(file)
+      );
+    }
+
+    async function uploadTrailer() {
+      const input =
+        document.getElementById(
+          "movieTrailerFile"
+        );
+
+      const file =
+        input.files?.[0];
+
+      if (!file) {
+        setMessage(
+          "movieMessage",
+          "error",
+          "Selecciona un video primero."
+        );
+        return;
+      }
+
+      if (
+        file.size >
+        50 * 1024 * 1024
+      ) {
+        setMessage(
+          "movieMessage",
+          "error",
+          "El tráiler no puede superar 50 MB."
+        );
+        return;
+      }
+
+      const button =
+        document.getElementById(
+          "uploadTrailerButton"
+        );
+
+      button.disabled = true;
+      button.textContent =
+        "Subiendo tráiler...";
+
+      setMessage(
+        "movieMessage",
+        "info",
+        "Subiendo tráiler. No cierres esta página..."
+      );
+
+      try {
+        const formData =
+          new FormData();
+
+        formData.append(
+          "trailer",
+          file
+        );
+
+        const data =
+          await adminFetch(
+            "/api/admin/trailers",
+            {
+              method: "POST",
+              body: formData
+            }
+          );
+
+        document.getElementById(
+          "movieTrailerUrl"
+        ).value =
+          data.trailerUrl;
+
+        showTrailerPreview(
+          data.trailerUrl
+        );
+
+        setMessage(
+          "movieMessage",
+          "success",
+          "Tráiler subido correctamente. Ahora guarda o actualiza esta película."
+        );
+      } catch (error) {
+        setMessage(
+          "movieMessage",
+          "error",
+          error.message
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          "🎥 Subir tráiler";
+      }
+    }
+
+    async function saveMovie() {
+      const id = document.getElementById("movieId").value;
+      const title = document.getElementById("movieTitle").value.trim();
+      const description = document.getElementById("movieDescription").value.trim();
+      const posterUrl = document.getElementById("moviePosterUrl").value.trim();
+      const trailerUrl = document.getElementById("movieTrailerUrl").value.trim();
+      const selectedPosterFile = document.getElementById("moviePosterFile").files?.[0];
+      const selectedTrailerFile = document.getElementById("movieTrailerFile").files?.[0];
+      const durationSelect =
+  document.getElementById("movieDuration");
+
+const durationCustom =
+  document.getElementById("movieDurationCustom");
+
+const durationValue =
+  durationSelect.value === "other"
+    ? durationCustom.value
+    : durationSelect.value;
+
+      const durationMinutes =
+        durationValue === "" ? null : Number(durationValue);
+
+      if (
+        durationMinutes !== null &&
+        (
+          !Number.isInteger(durationMinutes) ||
+          durationMinutes <= 0
+        )
+      ) {
+        setMessage(
+          "movieMessage",
+          "error",
+          "La duración debe ser un número entero mayor que cero."
+        );
+        return;
+      }
+
+      const rating = document.getElementById("movieRating").value.trim();
+      const active = document.getElementById("movieActive").checked;
+      const comingSoon = document.getElementById("movieComingSoon").checked;
+
+      if (selectedPosterFile && !posterUrl) {
+        setMessage("movieMessage", "error", "Pulsa “Subir afiche” antes de guardar la película.");
+        return;
+      }
+
+      if (selectedTrailerFile && !trailerUrl) {
+        setMessage("movieMessage", "error", "Pulsa “Subir tráiler” antes de guardar la película.");
+        return;
+      }
+
+      if (!title) {
+        setMessage("movieMessage", "error", "Escribe el título de la película.");
+        return;
+      }
+
+      const button = document.getElementById("saveMovieButton");
+      button.disabled = true;
+      button.textContent = "Guardando...";
+      setMessage("movieMessage", "", "");
+
+      try {
+        const body = {
+          title,
+          description,
+          posterUrl,
+          trailerUrl,
+          durationMinutes,
+          rating,
+          active,
+          comingSoon
+        };
+
+        if (id) {
+          await adminFetch(`/api/admin/movies/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(body)
+          });
+          setMessage("movieMessage", "success", "Película actualizada correctamente.");
+        } else {
+          await adminFetch("/api/admin/movies", {
+            method: "POST",
+            body: JSON.stringify(body)
+          });
+          setMessage("movieMessage", "success", "Película creada correctamente.");
+        }
+
+        resetMovieForm(false);
+        await loadMovies();
+      } catch (error) {
+        setMessage("movieMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = id ? "Actualizar película" : "Guardar película";
+      }
+    }
+
+    function setMovieDurationFields(durationMinutes) {
+      const select = document.getElementById("movieDuration");
+      const custom = document.getElementById("movieDurationCustom");
+
+      if (!select || !custom) return;
+
+      const normalized =
+        durationMinutes === null ||
+        durationMinutes === undefined ||
+        durationMinutes === ""
+          ? ""
+          : String(durationMinutes);
+
+      const hasStandardOption = Array.from(select.options).some(
+        (option) =>
+          option.value &&
+          option.value !== "other" &&
+          option.value === normalized
+      );
+
+      if (!normalized) {
+        select.value = "";
+        custom.value = "";
+        custom.style.display = "none";
+        return;
+      }
+
+      if (hasStandardOption) {
+        select.value = normalized;
+        custom.value = "";
+        custom.style.display = "none";
+        return;
+      }
+
+      select.value = "other";
+      custom.value = normalized;
+      custom.style.display = "block";
+    }
+
+    function editMovie(id) {
+      const movie = moviesCache.find((item) => item.id === id);
+      if (!movie) return;
+
+      document.getElementById("movieId").value = movie.id;
+      document.getElementById("movieTitle").value = movie.title || "";
+      document.getElementById("movieDescription").value = movie.description || "";
+      document.getElementById("moviePosterUrl").value = movie.posterUrl || "";
+      document.getElementById("moviePosterFile").value = "";
+      showPosterPreview(movie.posterUrl || "");
+
+      document.getElementById("movieTrailerUrl").value = movie.trailerUrl || "";
+      document.getElementById("movieTrailerFile").value = "";
+      showTrailerPreview(movie.trailerUrl || "");
+
+      setMovieDurationFields(movie.durationMinutes);
+      document.getElementById("movieRating").value = movie.rating || "";
+      document.getElementById("movieActive").checked = Boolean(movie.active);
+      document.getElementById("movieComingSoon").checked = Boolean(movie.comingSoon);
+      document.getElementById("movieFormTitle").textContent = "Editar película";
+      document.getElementById("saveMovieButton").textContent = "Actualizar película";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetMovieForm(clearMessage = true) {
+      document.getElementById("movieId").value = "";
+      document.getElementById("movieTitle").value = "";
+      document.getElementById("movieDescription").value = "";
+      document.getElementById("moviePosterUrl").value = "";
+      document.getElementById("moviePosterFile").value = "";
+      showPosterPreview("");
+
+      document.getElementById("movieTrailerUrl").value = "";
+      document.getElementById("movieTrailerFile").value = "";
+      showTrailerPreview("");
+
+      setMovieDurationFields("");
+      document.getElementById("movieRating").value = "";
+      document.getElementById("movieActive").checked = true;
+      document.getElementById("movieComingSoon").checked = false;
+      document.getElementById("movieFormTitle").textContent = "Añadir película";
+      document.getElementById("saveMovieButton").textContent = "Guardar película";
+      if (clearMessage) setMessage("movieMessage", "", "");
+    }
+
+    async function deleteMovie(id) {
+      const movie = moviesCache.find((item) => item.id === id);
+      const confirmed = confirm(
+        `¿Eliminar la película "${movie?.title || ""}"?\n\nTambién se eliminarán sus tandas.`
+      );
+
+      if (!confirmed) return;
+
+      try {
+        await adminFetch(`/api/admin/movies/${id}`, { method: "DELETE" });
+        resetMovieForm();
+        await loadMovies();
+        alert("Película eliminada correctamente.");
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function loadGlobalPrices() {
+      try {
+        const prices = await adminFetch("/api/admin/ticket-prices");
+        document.getElementById("globalAdultPrice").value = Number(prices.adultPrice || 0).toFixed(2);
+        document.getElementById("globalChildPrice").value = Number(prices.childPrice || 0).toFixed(2);
+        document.getElementById("globalSeniorPrice").value = Number(prices.seniorPrice || 0).toFixed(2);
+        setMessage("globalPricesMessage", "", "");
+      } catch (error) {
+        setMessage("globalPricesMessage", "error", error.message);
+      }
+    }
+
+    async function saveGlobalPrices() {
+      const adultPrice = Number(document.getElementById("globalAdultPrice").value);
+      const childPrice = Number(document.getElementById("globalChildPrice").value);
+      const seniorPrice = Number(document.getElementById("globalSeniorPrice").value);
+
+      if (
+        !Number.isFinite(adultPrice) ||
+        !Number.isFinite(childPrice) ||
+        !Number.isFinite(seniorPrice) ||
+        adultPrice < 0 ||
+        childPrice < 0 ||
+        seniorPrice < 0
+      ) {
+        setMessage("globalPricesMessage", "error", "Escribe precios válidos para adulto, niño y senior.");
+        return;
+      }
+
+      const button = document.getElementById("saveGlobalPricesButton");
+      button.disabled = true;
+      button.textContent = "Guardando...";
+      setMessage("globalPricesMessage", "", "");
+
+      try {
+        await adminFetch("/api/admin/ticket-prices", {
+          method: "PUT",
+          body: JSON.stringify({ adultPrice, childPrice, seniorPrice })
+        });
+        setMessage("globalPricesMessage", "success", "Precios generales actualizados correctamente.");
+        await loadShowtimes();
+      } catch (error) {
+        setMessage("globalPricesMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = "Guardar precios";
+      }
+    }
+
+    async function loadShowtimes() {
+      setLoading(true);
+
+      try {
+        const showtimes = await adminFetch("/api/admin/showtimes");
+        showtimesCache = Array.isArray(showtimes) ? showtimes : [];
+        renderShowtimes(showtimesCache);
+      } catch (error) {
+        setMessage("showtimeMessage", "error", error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function getShowtimeLanguageLabel(showtime) {
+      const labels = {
+        spanish: "Español",
+        english: "Inglés",
+        english_subtitled: "Inglés con subtítulos en español",
+        english_sub_es: "Inglés con subtítulos en español"
+      };
+
+      return labels[showtime?.language] || "Español";
+    }
+
+    function renderShowtimes(showtimes) {
+      const rows = document.getElementById("showtimeRows");
+      const emptyMessage = document.getElementById("showtimeEmptyMessage");
+      rows.innerHTML = "";
+
+      if (!Array.isArray(showtimes) || showtimes.length === 0) {
+        emptyMessage.style.display = "block";
+        return;
+      }
+
+      emptyMessage.style.display = "none";
+
+      showtimes.forEach((showtime) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td><strong>${escapeHtml(showtime.movieTitle || "—")}</strong></td>
+          <td>${escapeHtml(formatDate(showtime.showDate))}</td>
+          <td>${escapeHtml(formatTime(showtime.showTime))}</td>
+          <td><span class="badge info">${escapeHtml(getShowtimeLanguageLabel(showtime))}</span></td>
+          <td><span class="badge ${showtime.active ? "success" : "danger"}">${showtime.active ? "Activa" : "Inactiva"}</span></td>
+          <td>
+            <div class="table-actions">
+              <button class="btn btn-small btn-primary" type="button" onclick="editShowtime('${showtime.id}')">Editar</button>
+              <button class="btn btn-small btn-danger" type="button" onclick="deleteShowtime('${showtime.id}')">Eliminar</button>
+            </div>
+          </td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+
+    function openNativePicker(input, event) {
+      if (!input) return;
+
+      if (event) {
+        event.preventDefault();
+      }
+
+      try {
+        input.focus({ preventScroll: true });
+      } catch (error) {
+        input.focus();
+      }
+
+      try {
+        if (typeof input.showPicker === "function") {
+          input.showPicker();
+          return;
+        }
+      } catch (error) {
+        // Algunas versiones de Safari/iPhone no permiten showPicker().
+      }
+
+      // Alternativa para navegadores que no soportan showPicker().
+      input.click();
+    }
+
+    function pad2(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function formatDateOptionLabel(date) {
+      return new Intl.DateTimeFormat("es-PR", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function formatTimeOptionLabel(value) {
+      const [hoursText, minutesText] = String(value || "").split(":");
+      const hours24 = Number(hoursText);
+      const minutes = Number(minutesText);
+
+      if (
+        !Number.isInteger(hours24) ||
+        !Number.isInteger(minutes)
+      ) {
+        return value;
+      }
+
+      const period = hours24 >= 12 ? "p. m." : "a. m.";
+      const hours12 = hours24 % 12 || 12;
+
+      return `${hours12}:${pad2(minutes)} ${period}`;
+    }
+
+    function ensureSelectOption(select, value, label) {
+      if (!select || !value) return;
+
+      const exists = Array.from(select.options)
+        .some((option) => option.value === value);
+
+      if (!exists) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label || value;
+        select.appendChild(option);
+      }
+    }
+
+    function getPuertoRicoCurrentDateTime() {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      }).formatToParts(new Date());
+
+      const values = {};
+
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          values[part.type] = part.value;
+        }
+      });
+
+      return {
+        date: `${values.year}-${values.month}-${values.day}`,
+        time: `${values.hour}:${values.minute}`
+      };
+    }
+
+    function showtimeHasStartedInPuertoRico(showDate, showTime) {
+      const now = getPuertoRicoCurrentDateTime();
+      const normalizedDate = String(showDate || "").slice(0, 10);
+      const normalizedTime = String(showTime || "").slice(0, 5);
+
+      if (!normalizedDate || !normalizedTime) {
+        return false;
+      }
+
+      return (
+        normalizedDate < now.date ||
+        (
+          normalizedDate === now.date &&
+          normalizedTime <= now.time
+        )
+      );
+    }
+
+    function populateShowtimePickers() {
+      const dateSelect = document.getElementById("showtimeDate");
+      const timeSelect = document.getElementById("showtimeTime");
+
+      if (dateSelect) {
+        const previousValue = dateSelect.value;
+
+        dateSelect.innerHTML =
+          '<option value="">Selecciona una fecha</option>';
+
+        const [year, month, day] =
+          getTodayPuertoRicoDateKey().split("-").map(Number);
+
+        const today = new Date(year, month - 1, day, 12, 0, 0, 0);
+
+        for (let offset = 0; offset <= 365; offset += 1) {
+          const date = new Date(today);
+          date.setDate(today.getDate() + offset);
+
+          const value =
+            `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = formatDateOptionLabel(date);
+          dateSelect.appendChild(option);
+        }
+
+        if (previousValue) {
+          ensureSelectOption(
+            dateSelect,
+            previousValue,
+            previousValue
+          );
+          dateSelect.value = previousValue;
+        }
+      }
+
+      if (timeSelect) {
+        const previousValue = timeSelect.value;
+
+        timeSelect.innerHTML =
+          '<option value="">Selecciona una hora</option>';
+
+        for (let minutes = 0; minutes < 24 * 60; minutes += 5) {
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          const value = `${pad2(hours)}:${pad2(mins)}`;
+
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = formatTimeOptionLabel(value);
+          timeSelect.appendChild(option);
+        }
+
+        if (previousValue) {
+          ensureSelectOption(
+            timeSelect,
+            previousValue,
+            formatTimeOptionLabel(previousValue)
+          );
+          timeSelect.value = previousValue;
+        }
+      }
+    }
+
+    async function saveShowtime() {
+      const id = document.getElementById("showtimeId").value;
+      const movieId = document.getElementById("showtimeMovie").value;
+      const showDate = document.getElementById("showtimeDate").value;
+      const showTime = document.getElementById("showtimeTime").value;
+      const language = document.getElementById("showtimeLanguage").value;
+      const active = document.getElementById("showtimeActive").checked;
+
+      if (!movieId || !showDate || !showTime) {
+        setMessage("showtimeMessage", "error", "Completa los datos de la tanda.");
+        return;
+      }
+
+      if (!id && showtimeHasStartedInPuertoRico(showDate, showTime)) {
+        setMessage(
+          "showtimeMessage",
+          "error",
+          "No puedes crear una tanda para una fecha u hora que ya pasó en Puerto Rico."
+        );
+        return;
+      }
+
+      const button = document.getElementById("saveShowtimeButton");
+      button.disabled = true;
+      button.textContent = "Guardando...";
+      setMessage("showtimeMessage", "", "");
+
+      try {
+        const body = {
+          movieId,
+          showDate,
+          showTime,
+          language,
+          active
+        };
+
+        if (id) {
+          await adminFetch(`/api/admin/showtimes/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(body)
+          });
+          setMessage("showtimeMessage", "success", "Tanda actualizada correctamente.");
+        } else {
+          await adminFetch("/api/admin/showtimes", {
+            method: "POST",
+            body: JSON.stringify(body)
+          });
+          setMessage("showtimeMessage", "success", "Tanda creada correctamente.");
+        }
+
+        resetShowtimeForm(false);
+        await loadShowtimes();
+      } catch (error) {
+        setMessage("showtimeMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = id ? "Actualizar tanda" : "Guardar tanda";
+      }
+    }
+
+    function editShowtime(id) {
+      const normalizedId = String(id || "");
+
+      const showtime = showtimesCache.find(
+        (item) => String(item.id || "") === normalizedId
+      );
+
+      if (!showtime) {
+        alert("No se pudo encontrar esta tanda. Pulsa Actualizar e inténtalo nuevamente.");
+        return;
+      }
+
+      const idInput = document.getElementById("showtimeId");
+      const movieInput = document.getElementById("showtimeMovie");
+      const dateInput = document.getElementById("showtimeDate");
+      const timeInput = document.getElementById("showtimeTime");
+      const languageInput = document.getElementById("showtimeLanguage");
+      const activeInput = document.getElementById("showtimeActive");
+      const title = document.getElementById("showtimeFormTitle");
+      const saveButton = document.getElementById("saveShowtimeButton");
+
+      if (
+        !idInput ||
+        !movieInput ||
+        !dateInput ||
+        !timeInput ||
+        !languageInput ||
+        !activeInput ||
+        !title ||
+        !saveButton
+      ) {
+        alert("No se encontró el formulario para editar la tanda.");
+        return;
+      }
+
+      idInput.value = showtime.id || "";
+      movieInput.value = showtime.movieId || "";
+      const normalizedDate = normalizeDate(showtime.showDate);
+      const normalizedTime = normalizeTime(showtime.showTime);
+
+      ensureSelectOption(
+        dateInput,
+        normalizedDate,
+        normalizedDate
+      );
+
+      ensureSelectOption(
+        timeInput,
+        normalizedTime,
+        formatTimeOptionLabel(normalizedTime)
+      );
+
+      dateInput.value = normalizedDate;
+      timeInput.value = normalizedTime;
+      languageInput.value = showtime.language || "spanish";
+      activeInput.checked = Boolean(showtime.active);
+
+      title.textContent = "Editar tanda";
+      saveButton.textContent = "Actualizar tanda";
+
+      setMessage(
+        "showtimeMessage",
+        "success",
+        `Editando: ${showtime.movieTitle || "tanda seleccionada"}`
+      );
+
+      const formCard = title.closest(".card") || title;
+
+      window.setTimeout(() => {
+        formCard.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+
+        window.setTimeout(() => {
+          dateInput.focus({ preventScroll: true });
+        }, 450);
+      }, 50);
+    }
+
+    function resetShowtimeForm(clearMessage = true) {
+      document.getElementById("showtimeId").value = "";
+      document.getElementById("showtimeMovie").value = "";
+      document.getElementById("showtimeDate").value = "";
+      document.getElementById("showtimeTime").value = "";
+      document.getElementById("showtimeLanguage").value = "spanish";
+      document.getElementById("showtimeActive").checked = true;
+      document.getElementById("showtimeFormTitle").textContent = "Añadir tanda";
+      document.getElementById("saveShowtimeButton").textContent = "Guardar tanda";
+      if (clearMessage) setMessage("showtimeMessage", "", "");
+    }
+
+    async function deleteAllShowtimes() {
+      if (showtimesCache.length === 0) {
+        alert("No hay tandas para eliminar.");
+        return;
+      }
+
+      const confirmed = confirm(
+        `¿Seguro que deseas eliminar las ${showtimesCache.length} tandas registradas?\n\nEsta acción no se puede deshacer.`
+      );
+
+      if (!confirmed) return;
+      if (!confirm("Confirmación final: ¿eliminar todas las tandas?")) return;
+
+      try {
+        const result = await adminFetch("/api/admin/showtimes", { method: "DELETE" });
+        resetShowtimeForm();
+        await loadShowtimes();
+        alert(result.message || "Todas las tandas fueron eliminadas.");
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function deleteShowtime(id) {
+      const showtime = showtimesCache.find((item) => item.id === id);
+      if (!confirm(`¿Eliminar la tanda de "${showtime?.movieTitle || ""}"?`)) return;
+
+      try {
+        await adminFetch(`/api/admin/showtimes/${id}`, { method: "DELETE" });
+        resetShowtimeForm();
+        await loadShowtimes();
+        alert("Tanda eliminada correctamente.");
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+
+    function toggleEmployeeDatePicker() {
+      const wrap = document.getElementById("employeeDatePickerWrap");
+      const input = document.getElementById("employeeHistoryDate");
+
+      if (!wrap || !input) return;
+
+      wrap.classList.remove("is-hidden");
+
+      window.setTimeout(() => {
+        input.focus();
+
+        if (typeof input.showPicker === "function") {
+          try {
+            input.showPicker();
+          } catch (error) {
+            // El campo queda visible aunque el navegador no abra
+            // el selector automáticamente.
+          }
+        }
+      }, 50);
+    }
+
+    function buildEmployeesForSelectedDate(selectedDate) {
+      return employeesCache.map((employee) => {
+        const employeeUsername = String(employee.username || "").toLowerCase();
+        const employeeName = String(employee.name || "").trim().toLowerCase();
+
+        const employeeCheckins = checkinsCache.filter((checkin) => {
+          if (getPuertoRicoDateKey(checkin.scannedAt) !== selectedDate) {
+            return false;
+          }
+
+          const checkinUsername =
+            String(checkin.employeeUsername || "").toLowerCase();
+
+          const checkinName =
+            String(checkin.employeeName || "").trim().toLowerCase();
+
+          return (
+            (employeeUsername && checkinUsername === employeeUsername) ||
+            (!employeeUsername && employeeName && checkinName === employeeName)
+          );
+        });
+
+        const scans = employeeCheckins.length;
+
+        const ticketsScanned = employeeCheckins.reduce(
+          (sum, checkin) => sum + Number(checkin.seatsCount || 0),
+          0
+        );
+
+        const lastScan = employeeCheckins.reduce((latest, checkin) => {
+          if (!checkin.scannedAt) return latest;
+
+          const current = new Date(checkin.scannedAt);
+
+          if (Number.isNaN(current.getTime())) {
+            return latest;
+          }
+
+          if (!latest || current > latest) {
+            return current;
+          }
+
+          return latest;
+        }, null);
+
+        return {
+          ...employee,
+          scans,
+          ticketsScanned,
+          lastScan: lastScan ? lastScan.toISOString() : null
+        };
+      });
+    }
+
+    function filterEmployeesByDate(showAlert = true) {
+      const input = document.getElementById("employeeHistoryDate");
+      const selectedDate = input?.value || "";
+
+      if (!selectedDate) {
+        if (showAlert) {
+          alert("Selecciona una fecha para buscar.");
+          input?.focus();
+        }
+        return;
+      }
+
+      const filteredEmployees =
+        buildEmployeesForSelectedDate(selectedDate);
+
+      renderEmployees(filteredEmployees);
+    }
+
+    function clearEmployeeDateFilter() {
+      const input = document.getElementById("employeeHistoryDate");
+      const wrap = document.getElementById("employeeDatePickerWrap");
+
+      if (input) {
+        input.value = "";
+      }
+
+      if (wrap) {
+        wrap.classList.add("is-hidden");
+      }
+
+      renderEmployees(employeesCache);
+    }
+
+    async function refreshEmployeeArea() {
+      await Promise.all([
+        loadEmployees(),
+        loadCheckins()
+      ]);
+
+      const selectedDate =
+        document.getElementById("employeeHistoryDate")?.value || "";
+
+      if (selectedDate) {
+        filterEmployeesByDate(false);
+      }
+    }
+
+    async function loadEmployees() {
+      setLoading(true);
+
+      try {
+        const employees = await adminFetch("/api/admin/employees");
+        employeesCache = Array.isArray(employees) ? employees : [];
+        renderEmployees(employeesCache);
+      } catch (error) {
+        setMessage("employeeMessage", "error", error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderEmployees(employees) {
+      const rows = document.getElementById("employeeRows");
+      const empty = document.getElementById("employeeEmptyMessage");
+      rows.innerHTML = "";
+
+      if (!employees.length) {
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+
+      employees.forEach((employee) => {
+        const row = document.createElement("tr");
+        const lastScan = formatPuertoRicoDateTime(employee.lastScan);
+
+        row.innerHTML = `
+          <td><strong>${escapeHtml(employee.name)}</strong></td>
+          <td>${escapeHtml(employee.username)}</td>
+          <td><span class="badge ${employee.active ? "success" : "danger"}">${employee.active ? "Activo" : "Inactivo"}</span></td>
+          <td>${Number(employee.scans || 0)}</td>
+          <td><strong>${Number(employee.ticketsScanned || 0)}</strong></td>
+          <td>${escapeHtml(lastScan)}</td>
+          <td>
+            <div class="table-actions">
+              <button class="btn btn-small btn-primary" type="button" onclick="editEmployee('${employee.id}')">Editar</button>
+              <button class="btn btn-small btn-danger" type="button" onclick="deleteEmployee('${employee.id}')">Eliminar</button>
+            </div>
+          </td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+    async function saveEmployee() {
+      const id = document.getElementById("employeeId").value;
+      const name = document.getElementById("employeeName").value.trim();
+      const username = document.getElementById("employeeUsername").value.trim().toLowerCase();
+      const password = document.getElementById("employeePassword").value;
+      const active = document.getElementById("employeeActive").checked;
+
+      if (!name || !username) {
+        setMessage("employeeMessage", "error", "Escribe el nombre y el usuario.");
+        return;
+      }
+
+      if ((!id && password.length < 8) || (id && password && password.length < 8)) {
+        setMessage("employeeMessage", "error", "La contraseña debe tener al menos 8 caracteres.");
+        return;
+      }
+
+      const button = document.getElementById("saveEmployeeButton");
+      button.disabled = true;
+      button.textContent = "Guardando...";
+      setMessage("employeeMessage", "", "");
+
+      try {
+        await adminFetch(id ? `/api/admin/employees/${id}` : "/api/admin/employees", {
+          method: id ? "PUT" : "POST",
+          body: JSON.stringify({ name, username, password, active })
+        });
+
+        setMessage(
+          "employeeMessage",
+          "success",
+          id ? "Empleado actualizado correctamente." : "Empleado creado correctamente."
+        );
+
+        resetEmployeeForm(false);
+        await loadEmployees();
+      } catch (error) {
+        setMessage("employeeMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = id ? "Actualizar empleado" : "Guardar empleado";
+      }
+    }
+
+    function editEmployee(id) {
+      const employee = employeesCache.find((item) => item.id === id);
+      if (!employee) return;
+
+      document.getElementById("employeeId").value = employee.id;
+      document.getElementById("employeeName").value = employee.name || "";
+      document.getElementById("employeeUsername").value = employee.username || "";
+      document.getElementById("employeePassword").value = "";
+      document.getElementById("employeeActive").checked = Boolean(employee.active);
+      document.getElementById("employeeFormTitle").textContent = "Editar empleado";
+      document.getElementById("saveEmployeeButton").textContent = "Actualizar empleado";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetEmployeeForm(clearMessage = true) {
+      document.getElementById("employeeId").value = "";
+      document.getElementById("employeeName").value = "";
+      document.getElementById("employeeUsername").value = "";
+      document.getElementById("employeePassword").value = "";
+      document.getElementById("employeeActive").checked = true;
+      document.getElementById("employeeFormTitle").textContent = "Añadir empleado";
+      document.getElementById("saveEmployeeButton").textContent = "Guardar empleado";
+      if (clearMessage) setMessage("employeeMessage", "", "");
+    }
+
+    async function deleteEmployee(id) {
+      const employee = employeesCache.find((item) => item.id === id);
+
+      if (!confirm(`¿Eliminar al empleado "${employee?.name || ""}"?\n\nSu historial de escaneos se conservará.`)) {
+        return;
+      }
+
+      try {
+        await adminFetch(`/api/admin/employees/${id}`, { method: "DELETE" });
+        resetEmployeeForm();
+        await loadEmployees();
+        await loadCheckins();
+        alert("Empleado eliminado correctamente.");
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function loadCheckins() {
+      try {
+        const checkins = await adminFetch("/api/admin/checkins?limit=1000");
+        checkinsCache = Array.isArray(checkins) ? checkins : [];
+
+        const selectedDate = document.getElementById("scanHistoryDate")?.value || "";
+
+        if (selectedDate) {
+          scanHistoryMode = "date";
+          renderCheckins(
+            checkinsCache.filter((checkin) =>
+              getPuertoRicoDateKey(checkin.scannedAt) === selectedDate
+            )
+          );
+        } else if (scanHistoryMode === "month") {
+          renderMonthlyCheckins();
+        } else {
+          scanHistoryMode = "all";
+          renderCheckins(checkinsCache);
+        }
+
+        const employeeSelectedDate =
+          document.getElementById("employeeHistoryDate")?.value || "";
+
+        if (employeeSelectedDate) {
+          filterEmployeesByDate(false);
+        }
+      } catch (error) {
+        setMessage("employeeMessage", "error", error.message);
+      }
+    }
+
+    function getPuertoRicoDateKey(value) {
+      if (!value) return "";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Puerto_Rico",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(date);
+
+      const values = {};
+
+      parts.forEach((part) => {
+        if (part.type !== "literal") {
+          values[part.type] = part.value;
+        }
+      });
+
+      return `${values.year}-${values.month}-${values.day}`;
+    }
+
+
+    function toggleScanHistoryDatePicker() {
+      const wrap =
+        document.getElementById("scanHistoryDatePickerWrap");
+      const input =
+        document.getElementById("scanHistoryDate");
+
+      if (!wrap || !input) return;
+
+      wrap.classList.remove("is-hidden");
+
+      window.setTimeout(() => {
+        input.focus();
+
+        if (typeof input.showPicker === "function") {
+          try {
+            input.showPicker();
+          } catch (error) {
+            // Si el navegador no permite abrirlo automáticamente,
+            // el selector queda visible y listo para tocar.
+          }
+        }
+      }, 50);
+    }
+
+    function filterCheckinsByDate() {
+      const input = document.getElementById("scanHistoryDate");
+      const selectedDate = input?.value || "";
+
+      if (!selectedDate) {
+        alert("Selecciona una fecha para buscar.");
+        input?.focus();
+        return;
+      }
+
+      scanHistoryMode = "date";
+      document.getElementById("scanHistoryMonthBar")?.classList.remove("active");
+
+      const filtered = checkinsCache.filter(
+        (checkin) => getPuertoRicoDateKey(checkin.scannedAt) === selectedDate
+      );
+
+      renderCheckins(filtered);
+
+      const empty = document.getElementById("checkinEmptyMessage");
+      if (!filtered.length) {
+        const [year, month, day] = selectedDate.split("-");
+        empty.textContent = `No hay escaneos registrados para ${month}/${day}/${year}.`;
+      }
+    }
+
+    function clearCheckinDateFilter() {
+      const input = document.getElementById("scanHistoryDate");
+      const wrap =
+        document.getElementById("scanHistoryDatePickerWrap");
+
+      if (input) {
+        input.value = "";
+      }
+
+      if (wrap) {
+        wrap.classList.add("is-hidden");
+      }
+
+      document.getElementById("scanHistoryMonthBar")?.classList.remove("active");
+      scanHistoryMode = "all";
+
+      const empty =
+        document.getElementById("checkinEmptyMessage");
+
+      empty.textContent = "Todavía no hay escaneos.";
+
+      renderCheckins(checkinsCache);
+    }
+
+    function getScanHistoryMonthKey(value) {
+      const dateKey = getPuertoRicoDateKey(value);
+      return dateKey ? dateKey.slice(0, 7) : "";
+    }
+
+    function getSelectedScanHistoryMonthKey() {
+      const year = scanHistoryMonthDate.getFullYear();
+      const month = String(scanHistoryMonthDate.getMonth() + 1).padStart(2, "0");
+      return `${year}-${month}`;
+    }
+
+    function updateScanHistoryMonthLabel() {
+      const label = document.getElementById("scanHistoryMonthLabel");
+      if (!label) return;
+
+      label.textContent = new Intl.DateTimeFormat("es-PR", {
+        month: "long",
+        year: "numeric"
+      }).format(scanHistoryMonthDate);
+    }
+
+    function renderMonthlyCheckins() {
+      const monthKey = getSelectedScanHistoryMonthKey();
+      const filtered = checkinsCache.filter(
+        (checkin) => getScanHistoryMonthKey(checkin.scannedAt) === monthKey
+      );
+
+      updateScanHistoryMonthLabel();
+      renderCheckins(filtered);
+
+      const empty = document.getElementById("checkinEmptyMessage");
+      if (!filtered.length && empty) {
+        const monthName = new Intl.DateTimeFormat("es-PR", {
+          month: "long",
+          year: "numeric"
+        }).format(scanHistoryMonthDate);
+        empty.textContent = `No hay escaneos registrados en ${monthName}.`;
+      }
+    }
+
+    function showMonthlyCheckins() {
+      const input = document.getElementById("scanHistoryDate");
+      const wrap = document.getElementById("scanHistoryDatePickerWrap");
+
+      if (input) input.value = "";
+      if (wrap) wrap.classList.add("is-hidden");
+
+      if (scanHistoryMode !== "month") {
+        const now = new Date();
+        scanHistoryMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      scanHistoryMode = "month";
+      document.getElementById("scanHistoryMonthBar")?.classList.add("active");
+      renderMonthlyCheckins();
+    }
+
+    function changeScanHistoryMonth(delta) {
+      scanHistoryMode = "month";
+      scanHistoryMonthDate = new Date(
+        scanHistoryMonthDate.getFullYear(),
+        scanHistoryMonthDate.getMonth() + Number(delta || 0),
+        1
+      );
+
+      document.getElementById("scanHistoryMonthBar")?.classList.add("active");
+      renderMonthlyCheckins();
+    }
+
+
+
+    function formatScanHistoryMonthLabel(date = scanHistoryMonthDate) {
+      return new Intl.DateTimeFormat("es-PR", {
+        month: "long",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function getScanMonthReportSummary(rows) {
+      const safeRows = Array.isArray(rows) ? rows : [];
+      const employees = new Set();
+      const movies = new Set();
+      let tickets = 0;
+
+      safeRows.forEach((checkin) => {
+        tickets += Number(checkin.seatsCount || 0);
+
+        const employeeKey = String(
+          checkin.employeeUsername || checkin.employeeName || ""
+        ).trim().toLowerCase();
+        if (employeeKey) employees.add(employeeKey);
+
+        const movie = String(checkin.movie || "").trim().toLowerCase();
+        if (movie) movies.add(movie);
+      });
+
+      return {
+        scans: safeRows.length,
+        tickets,
+        employees: employees.size,
+        movies: movies.size
+      };
+    }
+
+    async function fetchScanMonthReportRows() {
+      const monthKey = getSelectedScanHistoryMonthKey();
+      const rows = await adminFetch(
+        `/api/admin/checkins?month=${encodeURIComponent(monthKey)}`
+      );
+      return Array.isArray(rows) ? rows : [];
+    }
+
+    async function openScanMonthReportModal() {
+      const modal = document.getElementById("scanReportModal");
+      const title = document.getElementById("scanReportTitle");
+      const monthLabel = formatScanHistoryMonthLabel();
+
+      try {
+        scanMonthReportRowsCache = await fetchScanMonthReportRows();
+        const summary = getScanMonthReportSummary(scanMonthReportRowsCache);
+
+        if (title) title.textContent = `Reporte de ${monthLabel}`;
+        document.getElementById("scanReportScans").textContent = String(summary.scans);
+        document.getElementById("scanReportTickets").textContent = String(summary.tickets);
+        document.getElementById("scanReportEmployees").textContent = String(summary.employees);
+        document.getElementById("scanReportMovies").textContent = String(summary.movies);
+
+        if (modal) {
+          modal.classList.add("active");
+          document.body.style.overflow = "hidden";
+        }
+      } catch (error) {
+        alert(error.message || "No se pudo preparar el reporte mensual de escaneos.");
+      }
+    }
+
+    function closeScanMonthReportModal() {
+      const modal = document.getElementById("scanReportModal");
+      if (modal) modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function handleScanReportBackdrop(event) {
+      if (event?.target?.id === "scanReportModal") {
+        closeScanMonthReportModal();
+      }
+    }
+
+    function getScanReportFileName() {
+      const monthLabel = formatScanHistoryMonthLabel()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .toLowerCase();
+
+      return `escaneos_${monthLabel || getSelectedScanHistoryMonthKey()}.pdf`;
+    }
+
+    function getScanPdfSafeText(value) {
+      return String(value ?? "")
+        .replace(/\s+/g, " ")
+        .trim() || "—";
+    }
+
+    async function downloadScanMonthPdf() {
+      const button = document.getElementById("scanReportDownloadButton");
+      const monthLabel = formatScanHistoryMonthLabel();
+
+      if (!window.jspdf?.jsPDF) {
+        alert("No se pudo cargar el generador de PDF. Revisa la conexión a internet e intenta nuevamente.");
+        return;
+      }
+
+      const previousText = button?.textContent || "📄 Descargar PDF";
+
+      try {
+        if (button) {
+          button.disabled = true;
+          button.textContent = "Generando PDF...";
+        }
+
+        // Se vuelve a consultar el mes al descargar para que el PDF contenga
+        // los registros más recientes aunque el modal lleve un rato abierto.
+        const monthRows = await fetchScanMonthReportRows();
+        scanMonthReportRowsCache = monthRows;
+
+        if (!monthRows.length) {
+          alert(`No hay escaneos registrados en ${monthLabel}.`);
+          return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "landscape",
+          unit: "pt",
+          format: "letter",
+          compress: true
+        });
+
+        if (typeof doc.autoTable !== "function") {
+          throw new Error("El módulo de tablas del PDF no está disponible.");
+        }
+
+        const summary = getScanMonthReportSummary(monthRows);
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const generatedAt = new Intl.DateTimeFormat("es-PR", {
+          timeZone: "America/Puerto_Rico",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "numeric",
+          minute: "2-digit"
+        }).format(new Date());
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text("Cine Teatro Manuel Nieves Quintero", 36, 38);
+
+        doc.setFontSize(15);
+        doc.text(`Reporte de escaneos - ${monthLabel}`, 36, 61);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Generado: ${generatedAt}`, pageWidth - 36, 38, { align: "right" });
+
+        doc.setDrawColor(45, 58, 85);
+        doc.line(36, 72, pageWidth - 36, 72);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text(`Escaneos: ${summary.scans}`, 36, 92);
+        doc.text(`Taquillas validadas: ${summary.tickets}`, 160, 92);
+        doc.text(`Empleados: ${summary.employees}`, 340, 92);
+        doc.text(`Películas: ${summary.movies}`, 460, 92);
+
+        const body = monthRows.map((checkin) => {
+          const seats = Array.isArray(checkin.seats) && checkin.seats.length
+            ? checkin.seats.join(", ")
+            : "—";
+
+          return [
+            getScanPdfSafeText(formatPuertoRicoDateTime(checkin.scannedAt)),
+            getScanPdfSafeText(checkin.employeeName),
+            getScanPdfSafeText(checkin.employeeUsername),
+            getScanPdfSafeText(checkin.movie),
+            getScanPdfSafeText(formatCheckinShowtime(checkin.showTime)),
+            getScanPdfSafeText(seats),
+            String(Number(checkin.seatsCount || 0))
+          ];
+        });
+
+        doc.autoTable({
+          startY: 108,
+          head: [["Fecha", "Empleado", "Usuario", "Película", "Tanda", "Asientos", "Taquillas"]],
+          body,
+          theme: "grid",
+          styles: {
+            font: "helvetica",
+            fontSize: 7.5,
+            cellPadding: 4,
+            overflow: "linebreak",
+            valign: "middle"
+          },
+          headStyles: {
+            fillColor: [79, 70, 229],
+            textColor: [255, 255, 255],
+            fontStyle: "bold"
+          },
+          columnStyles: {
+            0: { cellWidth: 104 },
+            1: { cellWidth: 82 },
+            2: { cellWidth: 78 },
+            3: { cellWidth: 112 },
+            4: { cellWidth: 92 },
+            5: { cellWidth: 118 },
+            6: { cellWidth: 58, halign: "center" }
+          },
+          margin: { left: 36, right: 36 },
+          didDrawPage: (data) => {
+            const height = doc.internal.pageSize.getHeight();
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(
+              `Página ${doc.internal.getNumberOfPages()}`,
+              pageWidth - 36,
+              height - 18,
+              { align: "right" }
+            );
+          }
+        });
+
+        const finalY = doc.lastAutoTable?.finalY || 120;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let totalY = finalY + 20;
+
+        if (totalY > pageHeight - 42) {
+          doc.addPage();
+          totalY = 42;
+        }
+
+        doc.setTextColor(0);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(`TOTAL DE TAQUILLAS VALIDADAS: ${summary.tickets}`, 36, totalY);
+
+        doc.save(getScanReportFileName());
+        closeScanMonthReportModal();
+      } catch (error) {
+        console.error("Error generando PDF mensual de escaneos:", error);
+        alert(error.message || "No se pudo generar el PDF de escaneos.");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = previousText;
+        }
+      }
+    }
+
+    // Evita que Safari interprete dos toques rápidos en las flechas mensuales como zoom.
+    document.addEventListener("dblclick", (event) => {
+      const monthlyArrow = event.target.closest(
+        ".scan-history-month-nav, .reservation-month-button"
+      );
+
+      if (monthlyArrow) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+
+    function formatCheckinShowtime(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "—";
+
+      let year = null;
+      let month = null;
+      let day = null;
+
+      const isoMatch = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+
+      if (isoMatch) {
+        year = Number(isoMatch[1]);
+        month = Number(isoMatch[2]);
+        day = Number(isoMatch[3]);
+      } else {
+        const englishMatch = raw.match(
+          /\b(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/i
+        );
+
+        if (englishMatch) {
+          const months = {
+            jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+            jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
+          };
+
+          month = months[englishMatch[1].toLowerCase()];
+          day = Number(englishMatch[2]);
+          year = Number(englishMatch[3]);
+        }
+      }
+
+      const timeMatches = [
+        ...raw.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)
+      ];
+
+      const lastTime = timeMatches.length
+        ? timeMatches[timeMatches.length - 1]
+        : null;
+
+      let prettyTime = "";
+
+      if (lastTime) {
+        const hour24 = Number(lastTime[1]);
+        const minute = lastTime[2];
+        const suffix = hour24 >= 12 ? "p. m." : "a. m.";
+        const hour12 = hour24 % 12 || 12;
+        prettyTime = `${hour12}:${minute} ${suffix}`;
+      }
+
+      let prettyDate = "";
+
+      if (
+        Number.isInteger(year) &&
+        Number.isInteger(month) &&
+        Number.isInteger(day)
+      ) {
+        prettyDate =
+          `${String(day).padStart(2, "0")}/` +
+          `${String(month).padStart(2, "0")}/` +
+          `${year}`;
+      }
+
+      if (prettyDate && prettyTime) {
+        return `${prettyDate} • ${prettyTime}`;
+      }
+
+      return prettyDate || prettyTime || raw;
+    }
+
+    function renderCheckins(checkins) {
+      const rows = document.getElementById("checkinRows");
+      const empty = document.getElementById("checkinEmptyMessage");
+      rows.innerHTML = "";
+
+      if (!checkins.length) {
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+
+      checkins.forEach((checkin) => {
+        const row = document.createElement("tr");
+        const scannedAt = formatPuertoRicoDateTime(checkin.scannedAt);
+        const seats = Array.isArray(checkin.seats) ? checkin.seats.join(", ") : "—";
+
+        row.innerHTML = `
+          <td>${escapeHtml(scannedAt)}</td>
+          <td>
+            <strong>${escapeHtml(checkin.employeeName || "—")}</strong><br />
+            <span class="muted">${escapeHtml(checkin.employeeUsername || "—")}</span>
+          </td>
+          <td>${escapeHtml(checkin.movie || "—")}</td>
+          <td>${escapeHtml(formatCheckinShowtime(checkin.showTime))}</td>
+          <td>${escapeHtml(seats)}</td>
+          <td><strong>${Number(checkin.seatsCount || 0)}</strong></td>
+        `;
+
+        rows.appendChild(row);
+      });
+    }
+
+    async function changePassword() {
+      const currentPassword = document.getElementById("currentPassword").value;
+      const newPassword = document.getElementById("newPassword").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        setMessage("passwordMessage", "error", "Completa todos los campos.");
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        setMessage(
+          "passwordMessage",
+          "error",
+          "La nueva contraseña debe tener al menos ocho caracteres."
+        );
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setMessage(
+          "passwordMessage",
+          "error",
+          "Las contraseñas nuevas no coinciden."
+        );
+        return;
+      }
+
+      const button = document.getElementById("changePasswordButton");
+      button.disabled = true;
+      button.textContent = "Cambiando...";
+      setMessage("passwordMessage", "", "");
+
+      try {
+        await adminFetch("/api/admin/password", {
+          method: "PUT",
+          body: JSON.stringify({
+            currentPassword,
+            newPassword
+          })
+        });
+
+        document.getElementById("currentPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("confirmPassword").value = "";
+
+        alert(
+          "Contraseña actualizada. Inicia sesión nuevamente."
+        );
+
+        await logout(false);
+      } catch (error) {
+        setMessage("passwordMessage", "error", error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = "Cambiar contraseña";
+      }
+    }
+
+    function normalizeDate(value) {
+      return value ? String(value).slice(0, 10) : "";
+    }
+
+    function normalizeTime(value) {
+      return value ? String(value).slice(0, 5) : "";
+    }
+
+    function formatDate(value) {
+      const normalized = normalizeDate(value);
+      if (!normalized) return "—";
+      const parts = normalized.split("-");
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : normalized;
+    }
+
+    function formatTime(value) {
+      const normalized = normalizeTime(value);
+      if (!normalized) return "—";
+
+      const [hourString, minute] = normalized.split(":");
+      const hour = Number(hourString);
+      if (!Number.isFinite(hour)) return normalized;
+
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minute} ${suffix}`;
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    document.getElementById("adminKey").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") login();
+    });
+
+    restoreSession();
+
+const movieDurationSelect =
+  document.getElementById("movieDuration");
+
+const movieDurationCustom =
+  document.getElementById("movieDurationCustom");
+
+movieDurationSelect?.addEventListener("change", () => {
+  if (!movieDurationCustom) return;
+
+  if (movieDurationSelect.value === "other") {
+    movieDurationCustom.style.display = "block";
+    movieDurationCustom.focus();
+  } else {
+    movieDurationCustom.style.display = "none";
+    movieDurationCustom.value = "";
+  }
+});
+
+  
+    document.getElementById("recoveryCode")?.addEventListener(
+      "input",
+      (event) => {
+        event.target.value = event.target.value
+          .replace(/\D/g, "")
+          .slice(0, 6);
+      }
+    );
+
+    window.addEventListener("DOMContentLoaded", () => {
+      populateShowtimePickers();
+    });
+
+</script>
+</body>
+</html>

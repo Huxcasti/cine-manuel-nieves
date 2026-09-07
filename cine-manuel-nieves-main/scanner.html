@@ -1,0 +1,2762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#070b14" />
+  <title>Portal del empleado | Cine Teatro Manuel Nieves Quintero</title>
+  <link rel="icon" type="image/png" href="Logo.PNG" />
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
+
+  <style>
+
+  .session-status-inline {
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(134, 239, 172, 0.25);
+  color: #86efac;
+  font-size: 0.9rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+}
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --background: #070b14;
+      --background-soft: #0a1020;
+      --panel: #111827;
+      --panel-light: #182235;
+      --panel-dark: #0b1220;
+      --border: #2d3a55;
+      --text: #ffffff;
+      --muted: #aeb8cc;
+      --yellow: #ffc62a;
+      --yellow-dark: #e8a500;
+      --aqua: #49cbc5;
+      --aqua-dark: #249f9c;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --green: #22c55e;
+      --green-soft: #86efac;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+      --shadow-soft: 0 16px 36px rgba(0, 0, 0, 0.2);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(73, 203, 197, 0.09), transparent 28%),
+        radial-gradient(circle at 92% 0%, rgba(255, 198, 42, 0.08), transparent 27%),
+        linear-gradient(180deg, var(--background-soft), var(--background));
+      color: var(--text);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    main {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 30px;
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      font-size: 24px;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .subtitle,
+    .muted {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .card {
+      margin-bottom: 20px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(17, 24, 39, 0.96);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(73, 203, 197, 0.34);
+      border-radius: 25px;
+      background:
+        radial-gradient(circle at top right, rgba(73, 203, 197, 0.15), transparent 36%),
+        radial-gradient(circle at top left, rgba(255, 198, 42, 0.12), transparent 32%),
+        linear-gradient(180deg, rgba(20, 29, 46, 0.99), rgba(11, 18, 32, 0.99));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 8%;
+      width: 84%;
+      height: 3px;
+      border-radius: 0 0 999px 999px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        var(--yellow),
+        var(--aqua),
+        transparent
+      );
+    }
+
+    .brand-logo-large {
+      display: block;
+      width: 100%;
+      max-width: 470px;
+      max-height: 220px;
+      margin: 0 auto 22px;
+      border-radius: 18px;
+      object-fit: contain;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand-divider {
+      margin: 0 0 24px;
+      border: none;
+      border-top: 1px solid rgba(174, 184, 204, 0.16);
+    }
+
+    .access-pill {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      border: 1px solid rgba(73, 203, 197, 0.3);
+      border-radius: 999px;
+      background: rgba(73, 203, 197, 0.08);
+      color: #77e4df;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.7px;
+    }
+
+    .center-header {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .center-header h1 {
+      margin-bottom: 9px;
+      font-size: 31px;
+      line-height: 1.15;
+    }
+
+    .center-header p {
+      max-width: 520px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #e2e8f3;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      margin-bottom: 14px;
+      padding: 13px;
+      border: 1px solid #394765;
+      border-radius: 11px;
+      outline: none;
+      background: #0c111d;
+      color: white;
+      font-size: 16px;
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #7e899d;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--aqua);
+      background: #0a101b;
+      box-shadow: 0 0 0 4px rgba(73, 203, 197, 0.11);
+    }
+
+    .two-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .input-with-icon {
+      position: relative;
+    }
+
+    .input-with-icon input {
+      margin-bottom: 0;
+      height: 58px;
+      padding-left: 50px;
+      border-radius: 14px;
+      background: rgba(7, 11, 20, 0.76);
+    }
+
+    .field-icon {
+      position: absolute;
+      top: 50%;
+      left: 16px;
+      width: 20px;
+      height: 20px;
+      color: #7e8ba4;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .input-with-icon:focus-within .field-icon {
+      color: var(--aqua);
+    }
+
+    .btn {
+      border-radius: 10px;
+      padding: 12px 17px;
+      font-size: 15px;
+      font-weight: 800;
+      transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .btn:hover {
+      filter: brightness(1.06);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-secondary{
+    background: linear-gradient(135deg,#ffd54a,#ffc107);
+    color:#111827;
+    border:1px solid #ffca28;
+    box-shadow:0 10px 25px rgba(255,193,7,.25);
+}
+
+.btn-secondary:hover{
+    background: linear-gradient(135deg,#ffe082,#ffca28);
+    transform:translateY(-1px);
+}
+    .btn-success {
+      background: var(--green);
+      color: #07100a;
+    }
+
+    .btn-danger {
+      background: var(--red);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--orange);
+      color: #241500;
+    }
+
+    .btn-brand {
+      background: linear-gradient(135deg, var(--yellow), var(--yellow-dark));
+      color: #1d1700;
+      box-shadow: 0 15px 32px rgba(232, 165, 0, 0.23);
+    }
+
+    .btn-aqua {
+      background: linear-gradient(135deg, var(--aqua), var(--aqua-dark));
+      color: #041817;
+      box-shadow: 0 15px 32px rgba(36, 159, 156, 0.22);
+    }
+
+    .btn-wide {
+      width: 100%;
+      min-height: 56px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .btn:disabled {
+      background: #536076;
+      color: #aab2c0;
+      cursor: not-allowed;
+      opacity: 0.72;
+      transform: none;
+      filter: none;
+      box-shadow: none;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .message {
+      display: none;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 11px;
+      line-height: 1.45;
+    }
+
+    .message.error {
+      display: block;
+      border: 1px solid var(--red);
+      background: #3b1118;
+    }
+
+    .message.success {
+      display: block;
+      border: 1px solid var(--green);
+      background: #12351f;
+    }
+
+    .message.info {
+      display: block;
+      border: 1px solid var(--aqua);
+      background: #0d3335;
+    }
+
+    /* VISTA LOGIN */
+    .auth-wrapper {
+      display: flex;
+      min-height: calc(100vh - 40px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* VISTA PORTAL */
+    .portal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(17, 24, 39, 0.92);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .portal-brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .portal-logo {
+      display: block;
+      width: 78px;
+      height: 62px;
+      flex: 0 0 78px;
+      border: 1px solid rgba(73, 203, 197, 0.24);
+      border-radius: 13px;
+      object-fit: cover;
+      background: #0c111d;
+    }
+
+    .portal-brand h1 {
+      margin-bottom: 5px;
+      font-size: 27px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .employee-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      border: 1px solid rgba(73, 203, 197, 0.22);
+      border-radius: 999px;
+      background: rgba(73, 203, 197, 0.08);
+      color: #dcfdfb;
+      font-weight: 800;
+      flex-wrap: nowrap;
+    }
+
+    .session-status {
+  padding: 10px 14px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #86efac;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+    .session-badge strong {
+      font-size: 1.1rem;
+      color: var(--green-soft);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .strip-note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .scanner-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 18px;
+    }
+
+    .scanner-shell {
+      position: relative;
+      overflow: hidden;
+      padding: 16px;
+      border: 1px solid rgba(73, 203, 197, 0.2);
+      border-radius: 18px;
+      background:
+        linear-gradient(145deg, rgba(73, 203, 197, 0.05), transparent 56%),
+        rgba(10, 16, 28, 0.95);
+    }
+
+    .scanner-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid rgba(174, 184, 204, 0.18);
+      border-radius: 16px;
+      background: #0c111d;
+    }
+
+    #reader {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    #reader > div,
+    #reader__scan_region {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    #reader video {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      border-radius: 16px;
+      object-fit: cover !important;
+    }
+
+    .scanner-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      background:
+        linear-gradient(180deg, rgba(17, 24, 39, 0.86), rgba(9, 13, 22, 0.92));
+      z-index: 2;
+    }
+
+    .scanner-placeholder svg {
+      width: 90px;
+      height: 90px;
+      color: #95a3bb;
+    }
+
+    .camera-frame {
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      top: 18%;
+      bottom: 18%;
+      border: 2px solid rgba(73, 203, 197, 0.34);
+      border-radius: 18px;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.08);
+      z-index: 3;
+    }
+
+    .scanner-helper {
+      margin-top: 14px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.55;
+    }
+
+    .status-card {
+      position: sticky;
+      top: 16px;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .mini-stat {
+      padding: 14px;
+      border: 1px solid rgba(174, 184, 204, 0.12);
+      border-radius: 14px;
+      background: rgba(12, 17, 29, 0.9);
+    }
+
+    .mini-stat-label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .mini-stat-value {
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .result-card {
+      border: 1px solid rgba(73, 203, 197, 0.22);
+      background:
+        linear-gradient(145deg, rgba(73, 203, 197, 0.05), transparent 70%),
+        rgba(17, 24, 39, 0.95);
+    }
+
+    .result-state {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.7px;
+    }
+
+    .result-state.success {
+      background: #12351f;
+      color: #86efac;
+    }
+
+    .result-state.error {
+      background: #3b1118;
+      color: #fca5a5;
+    }
+
+    .result-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .result-item {
+      padding: 12px 13px;
+      border: 1px solid rgba(174, 184, 204, 0.1);
+      border-radius: 12px;
+      background: rgba(12, 17, 29, 0.88);
+    }
+
+    .result-item span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .result-item strong {
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .manual-card input {
+      margin-bottom: 0;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .history-empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 26px 12px;
+    }
+
+    .history-item {
+      padding: 14px;
+      border: 1px solid rgba(174, 184, 204, 0.12);
+      border-radius: 14px;
+      background: rgba(12, 17, 29, 0.9);
+    }
+
+    .history-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .history-title {
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .history-time {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .history-meta {
+      color: #d6e2f5;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .info-banner {
+      color: #a7f3d0;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+      .scanner-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status-card {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .two-fields {
+        grid-template-columns: 1fr;
+      }
+
+      .portal-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .portal-brand h1 {
+        font-size: 23px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 13px;
+        padding-top: max(13px, env(safe-area-inset-top));
+        padding-bottom: max(13px, env(safe-area-inset-bottom));
+      }
+
+      .auth-wrapper {
+        min-height: calc(100vh - 26px);
+      }
+
+      .hero-card,
+      .card {
+        padding: 16px;
+      }
+
+      .brand-logo-large {
+        margin-bottom: 18px;
+        border-radius: 14px;
+      }
+
+      .center-header h1 {
+        font-size: 26px;
+      }
+
+      .center-header p {
+        font-size: 14px;
+      }
+
+      .portal-logo {
+        width: 64px;
+        height: 52px;
+        flex-basis: 64px;
+      }
+
+      .portal-brand h1 {
+        font-size: 21px;
+      }
+
+      .portal-brand .subtitle {
+        font-size: 13px;
+      }
+
+      .scanner-box,
+      #reader {
+        min-height: 300px;
+      }
+
+      .camera-frame {
+        inset: 16px;
+      }
+
+      .header-actions,
+      .row-actions {
+        width: 100%;
+      }
+
+      .header-actions .btn,
+      .row-actions .btn {
+        flex: 1;
+      }
+    }
+  
+    /* =========================================================
+       FONDO DECORATIVO DEL CINE - LADOS
+       Igual al panel administrativo.
+    ========================================================= */
+
+    body {
+      position: relative;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+    }
+
+    .employee-background-logo {
+      position: fixed;
+      z-index: 0;
+      top: 50%;
+      width: clamp(280px, 31vw, 540px);
+      aspect-ratio: 1 / 1;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      pointer-events: none;
+      opacity: 0.14;
+      filter:
+        saturate(1.04)
+        contrast(1.04);
+    }
+
+    .employee-background-logo-left {
+      left: clamp(24px, 5vw, 90px);
+      background-image: url("Cineteatroizquierdo.png");
+      transform: translateY(-42%);
+    }
+
+    .employee-background-logo-right {
+      right: clamp(28px, 7vw, 120px);
+      width: clamp(300px, 36vw, 620px);
+      background-image: url("Cineteatro.PNG");
+      transform: translateY(-42%);
+      opacity: 0.16;
+    }
+
+    @media (max-width: 1100px) {
+      .employee-background-logo-left {
+        left: 24px;
+        width: min(34vw, 390px);
+        opacity: 0.09;
+      }
+
+      .employee-background-logo-right {
+        right: 24px;
+        width: min(40vw, 460px);
+        opacity: 0.10;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .employee-background-logo-left {
+        top: 72%;
+        left: 50%;
+        width: min(72vw, 480px);
+        opacity: 0.05;
+        transform: translate(-50%, -50%);
+      }
+
+      .employee-background-logo-right {
+        top: 54%;
+        right: 50%;
+        width: min(76vw, 520px);
+        opacity: 0.07;
+        transform: translate(50%, -50%);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .employee-background-logo-left {
+        display: none;
+      }
+
+      .employee-background-logo-right {
+        top: 57%;
+        width: 82vw;
+        opacity: 0.055;
+      }
+    }
+
+</style>
+</head>
+
+<body>
+  <div
+    class="employee-background-logo employee-background-logo-left"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    class="employee-background-logo employee-background-logo-right"
+    aria-hidden="true"
+  ></div>
+
+  <main>
+    <!-- ======================================================
+         LOGIN EMPLEADO
+    ======================================================= -->
+    <section id="authSection" class="auth-wrapper">
+      <div class="hero-card card" style="max-width: 640px; width: 100%;">
+        <img
+          class="brand-logo-large"
+          src="Logo.PNG"
+          alt="Cine Teatro Manuel Nieves Quintero"
+        />
+
+        <hr class="brand-divider" />
+
+        <div class="center-header">
+          <span class="access-pill">ACCESO EMPLEADOS</span>
+          <h1>Portal del empleado</h1>
+          <p>
+            Inicia sesión para escanear taquillas, validar QR y registrar
+            cada entrada del cine de forma rápida y profesional.
+          </p>
+        </div>
+
+        <div class="two-fields">
+          <div>
+            <label for="employeeUsername">Usuario</label>
+            <div class="input-with-icon">
+              <svg
+                class="field-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                <circle cx="12" cy="8" r="4"></circle>
+              </svg>
+
+              <input
+                id="employeeUsername"
+                type="text"
+                autocomplete="username"
+                placeholder="Escribe tu usuario"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="employeePassword">Contraseña</label>
+            <div class="input-with-icon">
+              <svg
+                class="field-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <rect x="4" y="10" width="16" height="11" rx="2"></rect>
+                <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+              </svg>
+
+              <input
+                id="employeePassword"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Escribe tu contraseña"
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          id="loginButton"
+          class="btn btn-brand btn-wide"
+          type="button"
+          onclick="loginEmployee()"
+          style="margin-top: 16px;"
+        >
+          Entrar al portal
+        </button>
+
+        <div class="message" id="loginMessage"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         PORTAL EMPLEADO
+    ======================================================= -->
+    <section id="portalSection" class="hidden">
+      <header class="portal-header">
+        <div class="portal-brand">
+          <img
+            class="portal-logo"
+            src="Logo.PNG"
+            alt="Logo del Cine Teatro Manuel Nieves Quintero"
+          />
+
+          <div>
+            <h1>Escáner de taquillas</h1>
+            <p class="subtitle">
+              Valida QR, registra la entrada y lleva el control del acceso del público.
+            </p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="restartCamera()"
+          >
+            Reiniciar cámara
+          </button>
+
+          <button
+            class="btn btn-danger"
+            type="button"
+            onclick="logoutEmployee()"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="employee-strip">
+  <div class="session-badge">
+    <span>👤</span>
+    <strong id="sessionEmployeeName">Empleado</strong>
+
+    <span class="session-status-inline">
+      <span class="status-dot"></span>
+      En línea
+    </span>
+  </div>
+</div>
+      </section>
+
+      <div class="scanner-grid">
+        <div>
+          <section class="card scanner-shell">
+            <div class="scanner-box">
+              <div class="scanner-placeholder" id="scannerPlaceholder">
+                <svg
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  aria-hidden="true"
+                >
+                  <rect x="20" y="8" width="24" height="40" rx="4"></rect>
+                  <path d="M27 15h10"></path>
+                  <rect x="26" y="24" width="4" height="4"></rect>
+                  <rect x="34" y="24" width="4" height="4"></rect>
+                  <path d="M26 34h4v4"></path>
+                  <path d="M38 38h-4v-4"></path>
+                  <path d="M14 44c2-5 7-8 12-8"></path>
+                  <path d="M50 38c0 8-4 15-10 20"></path>
+                </svg>
+
+                <div>
+                  <h3 style="margin-bottom: 8px;">Escaneo rápido de QR</h3>
+                  <p class="muted" style="max-width: 430px;">
+                    Pulsa el botón para activar la cámara y coloca el código
+                    QR dentro del cuadro.
+                  </p>
+                </div>
+
+                <button
+                  id="startScannerButton"
+                  class="btn btn-aqua btn-wide"
+                  type="button"
+                  onclick="startScanner()"
+                  style="max-width: 360px;"
+                >
+                  Solicitar permiso y activar cámara
+                </button>
+              </div>
+
+              <div id="reader"></div>
+              <div class="camera-frame"></div>
+            </div>
+
+            <p class="scanner-helper">
+              Acerca el QR hasta que ocupe buena parte del cuadro. Mantén la cámara estable
+              y evita reflejos fuertes. Si el QR está en otra pantalla, sube el brillo de esa pantalla.
+            </p>
+          </section>
+
+          <section class="card manual-card">
+            <h2>Validación manual</h2>
+            <p class="subtitle" style="margin-bottom: 14px;">
+              Escribe el código manual de 5 dígitos o pega el enlace completo del QR.
+            </p>
+
+            <label for="manualCode">Código manual o enlace del QR</label>
+            <input
+              id="manualCode"
+              type="text"
+              placeholder="Ejemplo: 48217"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="200"
+            />
+
+            <div class="row-actions">
+              <button
+                id="manualValidateButton"
+                class="btn btn-success btn-wide"
+                type="button"
+                onclick="validateManualCode()"
+              >
+                Validar entrada
+              </button>
+            </div>
+
+            <div class="message" id="manualMessage"></div>
+          </section>
+
+          <section class="card result-card">
+            <h2>Resultado de la última validación</h2>
+            <div id="resultContent">
+              <p class="muted">
+                Todavía no se ha validado ninguna entrada en esta sesión.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <p class="info-banner">
+              🔒 Cada entrada queda registrada con el nombre del empleado,
+              la fecha, la hora y la cantidad de asientos del boleto.
+            </p>
+          </section>
+        </div>
+
+        <div>
+          <section class="card status-card">
+            <h2>Resumen de sesión</h2>
+
+            <div class="status-list">
+              <article class="mini-stat">
+                <span class="mini-stat-label">Empleado</span>
+                <div class="mini-stat-value" id="summaryEmployeeName">—</div>
+              </article>
+
+              <article class="mini-stat">
+                <span class="mini-stat-label">Taquillas escaneadas</span>
+                <div class="mini-stat-value" id="summaryTickets">0</div>
+              </article>
+
+              <article class="mini-stat">
+                <span class="mini-stat-label">Escaneos realizados</span>
+                <div class="mini-stat-value" id="summaryScans">0</div>
+              </article>
+
+              <article class="mini-stat">
+                <span class="mini-stat-label">Último acceso</span>
+                <div class="mini-stat-value" id="summaryLastTime" style="font-size: 16px;">
+                  —
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>Actividad reciente</h2>
+            <div class="history-list" id="historyList">
+              <div class="history-empty">
+                Aquí aparecerán las últimas validaciones hechas por este empleado.
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://cine-manuel-nieves.onrender.com";
+    const SCANNER_BUILD = "tanda-formateada-v3";
+    console.log("Scanner build:", SCANNER_BUILD);
+
+    const LOGIN_ENDPOINTS = [
+      "/api/employee/login"
+    ];
+
+    const VALIDATE_ENDPOINTS = [
+      "/api/employee/checkin"
+    ];
+
+    const SESSION_SUMMARY_ENDPOINT =
+      "/api/employee/session-summary";
+    const SESSION_ME_ENDPOINT =
+      "/api/employee/me";
+    const LOGOUT_ENDPOINT =
+      "/api/employee/logout";
+
+    let employeeSession = null;
+    let html5QrScanner = null;
+    let qrFallbackTimer = null;
+    let qrFallbackCanvas = null;
+    let qrFallbackContext = null;
+    let scannerStarted = false;
+    let scanCooldown = false;
+    let validationInProgress = false;
+    let lastScannedCode = "";
+    let lastScanAt = 0;
+    let recentHistory = [];
+    let sessionScans = 0;
+    let sessionTickets = 0;
+
+    function setMessage(elementId, type, message) {
+      const box = document.getElementById(elementId);
+      box.className = message ? `message ${type}` : "message";
+      box.textContent = message || "";
+    }
+
+    async function safeJson(response) {
+      try {
+        return await response.json();
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function extractErrorMessage(data) {
+      return (
+        data?.error ||
+        data?.message ||
+        data?.detail ||
+        "Ocurrió un error."
+      );
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "—";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+
+      return date.toLocaleString("es-PR", {
+        timeZone: "America/Puerto_Rico"
+      });
+    }
+
+    function formatShowtime(value) {
+      const raw = String(value || "").trim();
+
+      if (!raw || raw === "—") return "—";
+
+      const months = {
+        Jan: "enero",
+        Feb: "febrero",
+        Mar: "marzo",
+        Apr: "abril",
+        May: "mayo",
+        Jun: "junio",
+        Jul: "julio",
+        Aug: "agosto",
+        Sep: "septiembre",
+        Oct: "octubre",
+        Nov: "noviembre",
+        Dec: "diciembre"
+      };
+
+      const weekdays = {
+        Sun: "domingo",
+        Mon: "lunes",
+        Tue: "martes",
+        Wed: "miércoles",
+        Thu: "jueves",
+        Fri: "viernes",
+        Sat: "sábado"
+      };
+
+      const dateMatch = raw.match(
+        /\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})\b/
+      );
+
+      const isoMatch = raw.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+
+      const allTimes = raw.match(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g);
+      const time24 = allTimes && allTimes.length
+        ? allTimes[allTimes.length - 1]
+        : "";
+
+      let dateText = "";
+
+      if (dateMatch) {
+        dateText =
+          `${weekdays[dateMatch[1]]}, ${Number(dateMatch[3])} de ` +
+          `${months[dateMatch[2]]} de ${dateMatch[4]}`;
+      } else if (isoMatch) {
+        const year = Number(isoMatch[1]);
+        const month = Number(isoMatch[2]);
+        const day = Number(isoMatch[3]);
+
+        const monthNames = [
+          "enero",
+          "febrero",
+          "marzo",
+          "abril",
+          "mayo",
+          "junio",
+          "julio",
+          "agosto",
+          "septiembre",
+          "octubre",
+          "noviembre",
+          "diciembre"
+        ];
+
+        const weekdayNames = [
+          "domingo",
+          "lunes",
+          "martes",
+          "miércoles",
+          "jueves",
+          "viernes",
+          "sábado"
+        ];
+
+        const weekday = new Date(
+          Date.UTC(year, month - 1, day, 12)
+        ).getUTCDay();
+
+        dateText =
+          `${weekdayNames[weekday]}, ${day} de ` +
+          `${monthNames[month - 1]} de ${year}`;
+      }
+
+      let timeText = "";
+
+      if (time24) {
+        const parts = time24.split(":");
+        const hours24 = Number(parts[0]);
+        const minutes = parts[1];
+        const hours12 = hours24 % 12 || 12;
+        const period = hours24 >= 12 ? "p. m." : "a. m.";
+
+        timeText = `${hours12}:${minutes} ${period}`;
+      }
+
+      if (dateText && timeText) return `${dateText} • ${timeText}`;
+      if (dateText) return dateText;
+      if (timeText) return timeText;
+
+      return raw;
+    }
+
+    function getEmployeeDisplayName(session) {
+      return (
+        session?.employee?.name ||
+        session?.employee?.fullName ||
+        session?.name ||
+        session?.fullName ||
+        session?.username ||
+        "Empleado"
+      );
+    }
+
+    function getEmployeeUsername(session) {
+      return (
+        session?.employee?.username ||
+        session?.username ||
+        ""
+      );
+    }
+
+    function getEmployeeId(session) {
+      return (
+        session?.employee?.id ||
+        session?.employeeId ||
+        session?.id ||
+        ""
+      );
+    }
+
+    function getEmployeeToken(session) {
+      return (
+        session?.token ||
+        session?.sessionToken ||
+        session?.employeeToken ||
+        ""
+      );
+    }
+
+    function buildAuthHeaders() {
+      const headers = {};
+
+      if (!employeeSession) return headers;
+
+      const token = getEmployeeToken(employeeSession);
+      const employeeId = getEmployeeId(employeeSession);
+      const username = getEmployeeUsername(employeeSession);
+
+      if (token) {
+        headers["x-employee-token"] = token;
+      }
+
+      if (employeeId) {
+        headers["x-employee-id"] = employeeId;
+      }
+
+      if (username) {
+        headers["x-employee-username"] = username;
+      }
+
+      return headers;
+    }
+
+    async function loadSessionSummary() {
+      if (!employeeSession) {
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}${SESSION_SUMMARY_ENDPOINT}`,
+        {
+          method: "GET",
+          headers: {
+            ...buildAuthHeaders()
+          }
+        }
+      );
+
+      const data = await safeJson(response);
+
+      if (!response.ok) {
+        const error = new Error(
+          extractErrorMessage(data) ||
+          "No se pudo cargar el resumen de sesión."
+        );
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      sessionScans = Number(data?.scans || 0);
+      sessionTickets = Number(data?.ticketsScanned || 0);
+
+      const history = Array.isArray(data?.history)
+        ? data.history
+        : [];
+
+      recentHistory = history.map((item) => {
+        const seatsArray = Array.isArray(item?.seats)
+          ? item.seats
+          : [];
+
+        return {
+          ok: true,
+          title: item?.movie || "Validación",
+          subtitle: formatShowtime(item?.showTime || "—"),
+          seats: seatsArray.join(", ") || "—",
+          seatsCount: Number(item?.seatsCount || seatsArray.length || 0),
+          time: formatDateTime(item?.scannedAt),
+          message: "Entrada validada."
+        };
+      });
+
+      updateSessionSummary({
+        validatedAt: data?.lastScan || null
+      });
+
+      renderHistory();
+    }
+
+    function showPortal() {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("portalSection").classList.remove("hidden");
+
+      const employeeName = getEmployeeDisplayName(employeeSession);
+      document.getElementById("sessionEmployeeName").textContent = employeeName;
+      document.getElementById("summaryEmployeeName").textContent = employeeName;
+    }
+
+    function showLogin() {
+      document.getElementById("portalSection").classList.add("hidden");
+      document.getElementById("authSection").classList.remove("hidden");
+    }
+
+    async function tryLoginOnEndpoint(path, username, password) {
+      const response = await fetch(`${API_URL}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
+
+      const data = await safeJson(response);
+
+      if (!response.ok) {
+        throw new Error(extractErrorMessage(data));
+      }
+
+      return data;
+    }
+
+    async function loginEmployee() {
+      const usernameInput = document.getElementById("employeeUsername");
+      const passwordInput = document.getElementById("employeePassword");
+      const loginButton = document.getElementById("loginButton");
+
+      const username = usernameInput.value.trim().toLowerCase();
+      const password = passwordInput.value;
+
+      if (!username || !password) {
+        setMessage(
+          "loginMessage",
+          "error",
+          "Escribe el usuario y la contraseña."
+        );
+        return;
+      }
+
+      loginButton.disabled = true;
+      loginButton.textContent = "Entrando...";
+      setMessage("loginMessage", "", "");
+
+      let lastError = "No se pudo iniciar sesión.";
+
+      try {
+        let data = null;
+
+        for (const endpoint of LOGIN_ENDPOINTS) {
+          try {
+            data = await tryLoginOnEndpoint(endpoint, username, password);
+            break;
+          } catch (error) {
+            lastError = error.message;
+          }
+        }
+
+        if (!data) {
+          throw new Error(lastError);
+        }
+
+        employeeSession = {
+          ...data,
+          username,
+          employee: data.employee || data.user || data.employeeData || null
+        };
+
+        sessionStorage.setItem(
+          "cineEmployeeSession",
+          JSON.stringify(employeeSession)
+        );
+
+        sessionScans = 0;
+        sessionTickets = 0;
+        recentHistory = [];
+        updateSessionSummary();
+        renderHistory();
+        renderResultPlaceholder();
+        showPortal();
+
+        try {
+          await loadSessionSummary();
+        } catch (summaryError) {
+          console.error(
+            "No se pudo cargar el resumen inicial de la sesión:",
+            summaryError
+          );
+        }
+      } catch (error) {
+        setMessage("loginMessage", "error", error.message);
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = "Entrar al portal";
+      }
+    }
+
+    function clearEmployeeSessionLocally({ clearStoredSession = true } = {}) {
+      employeeSession = null;
+      recentHistory = [];
+      sessionScans = 0;
+      sessionTickets = 0;
+      scanCooldown = false;
+      validationInProgress = false;
+      lastScannedCode = "";
+      lastScanAt = 0;
+
+      if (clearStoredSession) {
+        sessionStorage.removeItem("cineEmployeeSession");
+      }
+
+      document.getElementById("employeeUsername").value = "";
+      document.getElementById("employeePassword").value = "";
+      document.getElementById("manualCode").value = "";
+
+      setMessage("manualMessage", "", "");
+      updateSessionSummary();
+      renderHistory();
+      renderResultPlaceholder();
+      resetScannerPlaceholder();
+      showLogin();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function logoutEmployee() {
+      const authHeaders = buildAuthHeaders();
+
+      await stopScanner();
+
+      try {
+        if (authHeaders["x-employee-token"]) {
+          const response = await fetch(`${API_URL}${LOGOUT_ENDPOINT}`, {
+            method: "POST",
+            headers: authHeaders
+          });
+
+          if (!response.ok && response.status !== 401) {
+            const data = await safeJson(response);
+            console.warn(
+              "El servidor no pudo cerrar la sesión del empleado:",
+              extractErrorMessage(data)
+            );
+          }
+        }
+      } catch (error) {
+        console.warn(
+          "No se pudo notificar el cierre de sesión al servidor:",
+          error
+        );
+      } finally {
+        clearEmployeeSessionLocally();
+        setMessage("loginMessage", "", "");
+      }
+    }
+
+    async function verifySavedEmployeeSession() {
+      const response = await fetch(`${API_URL}${SESSION_ME_ENDPOINT}`, {
+        method: "GET",
+        headers: buildAuthHeaders()
+      });
+
+      const data = await safeJson(response);
+
+      if (!response.ok) {
+        const error = new Error(
+          extractErrorMessage(data) ||
+          "No se pudo verificar la sesión del empleado."
+        );
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    }
+
+    async function restoreEmployeeSession() {
+      const savedSession = sessionStorage.getItem("cineEmployeeSession");
+      if (!savedSession) return;
+
+      try {
+        employeeSession = JSON.parse(savedSession);
+
+        if (!getEmployeeToken(employeeSession)) {
+          const error = new Error("La sesión guardada no contiene un token válido.");
+          error.status = 401;
+          throw error;
+        }
+
+        const verified = await verifySavedEmployeeSession();
+
+        employeeSession = {
+          ...employeeSession,
+          employee: verified.employee || employeeSession.employee
+        };
+
+        sessionStorage.setItem(
+          "cineEmployeeSession",
+          JSON.stringify(employeeSession)
+        );
+
+        updateSessionSummary();
+        renderHistory();
+        renderResultPlaceholder();
+        showPortal();
+        await loadSessionSummary();
+      } catch (error) {
+        console.error(
+          "No se pudo restaurar la sesión del empleado:",
+          error
+        );
+
+        const authInvalid =
+          Number(error?.status) === 401 ||
+          Number(error?.status) === 403;
+
+        clearEmployeeSessionLocally({
+          clearStoredSession: authInvalid
+        });
+
+        setMessage(
+          "loginMessage",
+          "error",
+          authInvalid
+            ? "Tu sesión expiró. Inicia sesión nuevamente."
+            : "No se pudo verificar la sesión guardada. Inicia sesión para continuar."
+        );
+      }
+    }
+
+    async function handleEmployeeAuthenticationError(error) {
+      const status = Number(error?.status || 0);
+
+      if (status !== 401 && status !== 403) {
+        return false;
+      }
+
+      await stopScanner();
+      clearEmployeeSessionLocally();
+      setMessage(
+        "loginMessage",
+        "error",
+        "Tu sesión expiró o ya no es válida. Inicia sesión nuevamente."
+      );
+      return true;
+    }
+
+    function updateSessionSummary(lastResponse = null) {
+      const name = employeeSession ? getEmployeeDisplayName(employeeSession) : "—";
+
+      document.getElementById("summaryEmployeeName").textContent = name;
+      document.getElementById("summaryScans").textContent = sessionScans;
+      document.getElementById("summaryTickets").textContent = sessionTickets;
+      document.getElementById("summaryLastTime").textContent =
+        lastResponse?.validatedAt
+          ? formatDateTime(lastResponse.validatedAt)
+          : recentHistory[0]?.time || "—";
+    }
+
+    function renderResultPlaceholder() {
+      document.getElementById("resultContent").innerHTML = `
+        <p class="muted">
+          Todavía no se ha validado ninguna entrada en esta sesión.
+        </p>
+      `;
+    }
+
+    function renderResult(data, ok = true) {
+      const stateClass = ok ? "success" : "error";
+      const stateText = ok ? "VALIDACIÓN EXITOSA" : "VALIDACIÓN FALLIDA";
+
+      const movie =
+        data?.movie ||
+        data?.movieTitle ||
+        data?.ticket?.movie ||
+        "—";
+
+      const rawShowTime =
+        data?.time ||
+        data?.showTime ||
+        data?.ticket?.time ||
+        "—";
+
+      const showTime = formatShowtime(rawShowTime);
+
+      const customer =
+        data?.customer?.name ||
+        data?.ticket?.customer?.name ||
+        data?.name ||
+        "—";
+
+      const seatsArray =
+        data?.seats ||
+        data?.ticket?.seats ||
+        [];
+
+      const seats = Array.isArray(seatsArray)
+        ? seatsArray.join(", ") || "—"
+        : String(seatsArray || "—");
+
+      const seatsCount =
+        Number(
+          data?.seatsCount ||
+          data?.ticketCount ||
+          (Array.isArray(seatsArray) ? seatsArray.length : 0) ||
+          0
+        ) || 0;
+
+      const validatedAt =
+        data?.validatedAt ||
+        data?.created ||
+        data?.scannedAt ||
+        new Date().toISOString();
+
+      const message =
+        data?.message ||
+        data?.detail ||
+        (ok
+          ? "La entrada fue registrada correctamente."
+          : "No se pudo registrar la entrada.");
+
+      document.getElementById("resultContent").innerHTML = `
+        <div class="result-state ${stateClass}">
+          ${ok ? "✅" : "⚠️"} ${stateText}
+        </div>
+
+        <p style="margin-bottom: 14px; line-height: 1.55;">
+          ${escapeHtml(message)}
+        </p>
+
+        <div class="result-grid">
+          <div class="result-item">
+            <span>Película</span>
+            <strong>${escapeHtml(movie)}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Tanda</span>
+            <strong>${escapeHtml(showTime)}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Cliente</span>
+            <strong>${escapeHtml(customer)}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Asientos</span>
+            <strong>${escapeHtml(seats)}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Taquillas registradas</span>
+            <strong>${seatsCount}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Código manual</span>
+            <strong>${escapeHtml(
+              data?.manualCode ||
+              data?.ticket?.manualCode ||
+              "—"
+            )}</strong>
+          </div>
+
+          <div class="result-item">
+            <span>Fecha y hora</span>
+            <strong>${escapeHtml(formatDateTime(validatedAt))}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    function pushHistory(data, ok = true) {
+      const movie =
+        data?.movie ||
+        data?.movieTitle ||
+        data?.ticket?.movie ||
+        "Validación";
+      const rawShowTime =
+        data?.time ||
+        data?.showTime ||
+        data?.ticket?.time ||
+        "—";
+
+      const showTime = formatShowtime(rawShowTime);
+      const seatsArray =
+        data?.seats ||
+        data?.ticket?.seats ||
+        [];
+      const seatsText = Array.isArray(seatsArray)
+        ? seatsArray.join(", ") || "—"
+        : String(seatsArray || "—");
+      const time = formatDateTime(
+        data?.validatedAt ||
+        data?.created ||
+        data?.scannedAt ||
+        new Date().toISOString()
+      );
+      const seatsCount =
+        Number(
+          data?.seatsCount ||
+          data?.ticketCount ||
+          (Array.isArray(seatsArray) ? seatsArray.length : 0) ||
+          0
+        ) || 0;
+
+      recentHistory.unshift({
+        ok,
+        title: movie,
+        subtitle: showTime,
+        seats: seatsText,
+        seatsCount,
+        time,
+        message:
+          data?.message ||
+          data?.detail ||
+          (ok ? "Entrada validada." : "Entrada rechazada.")
+      });
+
+      recentHistory = recentHistory.slice(0, 8);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById("historyList");
+
+      if (!recentHistory.length) {
+        list.innerHTML = `
+          <div class="history-empty">
+            Aquí aparecerán las últimas validaciones hechas por este empleado.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = recentHistory
+        .map((item) => {
+          return `
+            <article class="history-item">
+              <div class="history-top">
+                <div class="history-title">
+                  ${item.ok ? "✅" : "⚠️"} ${escapeHtml(item.title)}
+                </div>
+                <div class="history-time">${escapeHtml(item.time)}</div>
+              </div>
+
+              <div class="history-meta">
+                <strong>Tanda:</strong> ${escapeHtml(item.subtitle)}<br />
+                <strong>Asientos:</strong> ${escapeHtml(item.seats)}<br />
+                <strong>Taquillas:</strong> ${item.seatsCount}<br />
+                <strong>Detalle:</strong> ${escapeHtml(item.message)}
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    function extractRawCode(value) {
+      const trimmed = String(value || "").trim();
+      if (!trimmed) return "";
+
+      try {
+        const url = new URL(trimmed);
+        return (
+          url.searchParams.get("code") ||
+          url.searchParams.get("ticket") ||
+          url.searchParams.get("id") ||
+          url.searchParams.get("token") ||
+          trimmed
+        );
+      } catch (error) {
+        return trimmed;
+      }
+    }
+
+    async function tryValidateOnEndpoint(path, code) {
+      const headers = {
+        "Content-Type": "application/json",
+        ...buildAuthHeaders()
+      };
+
+      const payload = {
+        qr: code,
+        code,
+        manualCode: /^\d{5}$/.test(code) ? code : "",
+        rawCode: code,
+        employeeId: getEmployeeId(employeeSession),
+        employeeUsername: getEmployeeUsername(employeeSession)
+      };
+
+      const response = await fetch(`${API_URL}${path}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      const data = await safeJson(response);
+
+      if (!response.ok) {
+        const validationError =
+          new Error(extractErrorMessage(data));
+
+        validationError.data = data;
+        validationError.status = response.status;
+
+        throw validationError;
+      }
+
+      return data;
+    }
+
+    async function validateTicket(codeValue, source = "manual") {
+      const rawCode = extractRawCode(codeValue);
+
+      if (!rawCode) {
+        const message = "Escribe o escanea un código válido.";
+        if (source === "manual") {
+          setMessage("manualMessage", "error", message);
+        }
+        throw new Error(message);
+      }
+
+      if (
+        source === "manual" &&
+        /^\d+$/.test(rawCode) &&
+        !/^\d{5}$/.test(rawCode)
+      ) {
+        const message =
+          "El código manual debe tener exactamente 5 dígitos.";
+
+        setMessage(
+          "manualMessage",
+          "error",
+          message
+        );
+
+        throw new Error(message);
+      }
+
+      if (!employeeSession) {
+        throw new Error("La sesión del empleado no está disponible.");
+      }
+
+      let data = null;
+      let lastError =
+        new Error("No se pudo validar la entrada.");
+
+      for (const endpoint of VALIDATE_ENDPOINTS) {
+        try {
+          data = await tryValidateOnEndpoint(endpoint, rawCode);
+          break;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      if (!data) {
+        throw lastError;
+      }
+
+      const seatsArray =
+        data?.seats ||
+        data?.ticket?.seats ||
+        [];
+
+      const seatsCount =
+        Number(
+          data?.seatsCount ||
+          data?.ticketCount ||
+          (Array.isArray(seatsArray) ? seatsArray.length : 0) ||
+          0
+        ) || 0;
+
+      sessionScans += 1;
+      sessionTickets += seatsCount;
+      updateSessionSummary({
+        validatedAt:
+          data?.validatedAt ||
+          data?.created ||
+          data?.scannedAt ||
+          new Date().toISOString()
+      });
+
+      renderResult(data, true);
+      pushHistory(data, true);
+
+      try {
+        await loadSessionSummary();
+      } catch (summaryError) {
+        console.error(
+          "El escaneo se registró, pero no se pudo refrescar el resumen:",
+          summaryError
+        );
+      }
+
+      if (source === "manual") {
+        setMessage(
+          "manualMessage",
+          "success",
+          "Entrada validada correctamente."
+        );
+      }
+
+      return data;
+    }
+
+    function buildValidationFailureData(error) {
+      const responseData =
+        error?.data && typeof error.data === "object"
+          ? error.data
+          : {};
+
+      const checkin = responseData?.checkin || null;
+      const ticket = responseData?.ticket || null;
+
+      let message =
+        responseData?.error ||
+        responseData?.message ||
+        error?.message ||
+        "No se pudo validar la entrada.";
+
+      if (
+        Number(error?.status) === 409 &&
+        /ya fue utilizado/i.test(message)
+      ) {
+        const employeeName =
+          checkin?.employee_name ||
+          checkin?.employeeName ||
+          "";
+
+        const scannedAt =
+          checkin?.scanned_at ||
+          checkin?.scannedAt ||
+          "";
+
+        message = "Este boleto ya fue utilizado.";
+
+        if (employeeName) {
+          message += ` Fue validado por ${employeeName}.`;
+        }
+
+        if (scannedAt) {
+          message +=
+            ` Primera validación: ${formatDateTime(scannedAt)}.`;
+        }
+      }
+
+      return {
+        ...responseData,
+        ticket,
+        message,
+        validatedAt:
+          checkin?.scanned_at ||
+          checkin?.scannedAt ||
+          new Date().toISOString()
+      };
+    }
+
+    async function validateManualCode() {
+      const input = document.getElementById("manualCode");
+      const button = document.getElementById("manualValidateButton");
+      const code = input.value.trim();
+
+      if (!code) {
+        setMessage(
+          "manualMessage",
+          "error",
+          "Escribe o pega el código del QR."
+        );
+        return;
+      }
+
+      if (validationInProgress) {
+        setMessage(
+          "manualMessage",
+          "info",
+          "Ya hay una validación en proceso."
+        );
+        return;
+      }
+
+      validationInProgress = true;
+      button.disabled = true;
+      button.textContent = "Validando...";
+      setMessage("manualMessage", "", "");
+
+      try {
+        await validateTicket(code, "manual");
+        input.value = "";
+      } catch (error) {
+        if (await handleEmployeeAuthenticationError(error)) {
+          return;
+        }
+
+        const failureData =
+          buildValidationFailureData(error);
+
+        renderResult(failureData, false);
+        pushHistory(failureData, false);
+
+        setMessage(
+          "manualMessage",
+          "error",
+          failureData.message
+        );
+      } finally {
+        validationInProgress = false;
+        button.disabled = false;
+        button.textContent = "Validar entrada";
+      }
+    }
+
+    function resetScannerPlaceholder() {
+      document.getElementById("scannerPlaceholder").classList.remove("hidden");
+    }
+
+    function hideScannerPlaceholder() {
+      document.getElementById("scannerPlaceholder").classList.add("hidden");
+    }
+
+    function playScannerTone(success = true) {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        const audioContext = new AudioContextClass();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = success ? "sine" : "square";
+        oscillator.frequency.setValueAtTime(
+          success ? 880 : 220,
+          audioContext.currentTime
+        );
+
+        gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(
+          0.16,
+          audioContext.currentTime + 0.01
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          audioContext.currentTime + (success ? 0.18 : 0.28)
+        );
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + (success ? 0.2 : 0.3));
+
+        oscillator.addEventListener("ended", () => {
+          audioContext.close().catch(() => {});
+        });
+      } catch (error) {
+        // El sonido es opcional; no debe interrumpir la validación.
+      }
+    }
+
+    function vibrateScanner(success = true) {
+      if (!navigator.vibrate) return;
+      navigator.vibrate(success ? [120] : [180, 80, 180]);
+    }
+
+    async function configureActiveCamera() {
+      try {
+        const video = document.querySelector("#reader video");
+        const stream = video?.srcObject;
+        const track = stream?.getVideoTracks?.()[0];
+
+        if (!track) return;
+
+        const capabilities = track.getCapabilities?.() || {};
+        const advanced = [];
+
+        if (
+          Array.isArray(capabilities.focusMode) &&
+          capabilities.focusMode.includes("continuous")
+        ) {
+          advanced.push({ focusMode: "continuous" });
+        }
+
+        if (
+          capabilities.zoom &&
+          Number.isFinite(capabilities.zoom.min) &&
+          Number.isFinite(capabilities.zoom.max)
+        ) {
+          const desiredZoom = Math.min(
+            capabilities.zoom.max,
+            Math.max(capabilities.zoom.min, 1)
+          );
+          advanced.push({ zoom: desiredZoom });
+        }
+
+        if (advanced.length > 0) {
+          await track.applyConstraints({ advanced });
+        }
+      } catch (error) {
+        console.warn("La cámara no permitió ajustar enfoque o zoom:", error);
+      }
+    }
+
+    async function temporarilyPauseScanner(milliseconds = 1400) {
+      if (!html5QrScanner || !scannerStarted) return;
+
+      try {
+        html5QrScanner.pause(true);
+      } catch (error) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        if (!html5QrScanner || !scannerStarted) return;
+
+        try {
+          html5QrScanner.resume();
+        } catch (error) {
+          console.warn("No se pudo reanudar el escáner:", error);
+        }
+      }, milliseconds);
+    }
+
+    async function handleDetectedQr(decodedText) {
+      const normalizedCode = String(decodedText || "").trim();
+      const now = Date.now();
+
+      if (
+        !normalizedCode ||
+        scanCooldown ||
+        validationInProgress
+      ) {
+        return;
+      }
+
+      if (
+        normalizedCode === lastScannedCode &&
+        now - lastScanAt < 4000
+      ) {
+        return;
+      }
+
+      scanCooldown = true;
+      validationInProgress = true;
+      lastScannedCode = normalizedCode;
+      lastScanAt = now;
+
+      try {
+        const result =
+          await validateTicket(
+            normalizedCode,
+            "camera"
+          );
+
+        playScannerTone(true);
+        vibrateScanner(true);
+        temporarilyPauseScanner(1700);
+
+        document
+          .getElementById("resultContent")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+
+        return result;
+      } catch (error) {
+        if (await handleEmployeeAuthenticationError(error)) {
+          return;
+        }
+
+        playScannerTone(false);
+        vibrateScanner(false);
+        temporarilyPauseScanner(1200);
+
+        const failureData =
+          buildValidationFailureData(error);
+
+        renderResult(failureData, false);
+        pushHistory(failureData, false);
+
+        document
+          .getElementById("resultContent")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+      } finally {
+        validationInProgress = false;
+        window.setTimeout(() => {
+          scanCooldown = false;
+        }, 1500);
+      }
+    }
+
+    function stopJsQrFallback() {
+      if (qrFallbackTimer) {
+        window.clearInterval(qrFallbackTimer);
+        qrFallbackTimer = null;
+      }
+    }
+
+    function startJsQrFallback() {
+      stopJsQrFallback();
+
+      if (typeof window.jsQR !== "function") {
+        console.warn("jsQR no está disponible como detector alterno.");
+        return;
+      }
+
+      if (!qrFallbackCanvas) {
+        qrFallbackCanvas = document.createElement("canvas");
+        qrFallbackContext = qrFallbackCanvas.getContext(
+          "2d",
+          {
+            willReadFrequently: true
+          }
+        );
+      }
+
+      qrFallbackTimer = window.setInterval(async () => {
+        if (
+          !scannerStarted ||
+          scanCooldown
+        ) {
+          return;
+        }
+
+        const video =
+          document.querySelector("#reader video");
+
+        if (
+          !video ||
+          video.readyState < 2 ||
+          !video.videoWidth ||
+          !video.videoHeight
+        ) {
+          return;
+        }
+
+        const maxWidth = 720;
+        const scale = Math.min(
+          1,
+          maxWidth / video.videoWidth
+        );
+
+        const width =
+          Math.max(
+            320,
+            Math.floor(video.videoWidth * scale)
+          );
+
+        const height =
+          Math.max(
+            240,
+            Math.floor(video.videoHeight * scale)
+          );
+
+        qrFallbackCanvas.width = width;
+        qrFallbackCanvas.height = height;
+
+        qrFallbackContext.drawImage(
+          video,
+          0,
+          0,
+          width,
+          height
+        );
+
+        const imageData =
+          qrFallbackContext.getImageData(
+            0,
+            0,
+            width,
+            height
+          );
+
+        const result =
+          window.jsQR(
+            imageData.data,
+            width,
+            height,
+            {
+              inversionAttempts:
+                "attemptBoth"
+            }
+          );
+
+        if (result?.data) {
+          await handleDetectedQr(result.data);
+        }
+      }, 220);
+    }
+
+    async function ensureCameraPermission() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Este navegador no permite usar la cámara desde esta página."
+        );
+      }
+
+      let permissionStream = null;
+
+      try {
+        permissionStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" }
+          },
+          audio: false
+        });
+
+        return true;
+      } catch (error) {
+        const name = String(error?.name || "");
+
+        if (
+          name === "NotAllowedError" ||
+          name === "PermissionDeniedError"
+        ) {
+          throw new Error(
+            "Safari bloqueó la cámara. En iPhone abre la configuración de esta página y cambia Cámara a Permitir."
+          );
+        }
+
+        if (
+          name === "NotFoundError" ||
+          name === "DevicesNotFoundError"
+        ) {
+          throw new Error(
+            "No se encontró una cámara disponible en este dispositivo."
+          );
+        }
+
+        if (
+          name === "NotReadableError" ||
+          name === "TrackStartError"
+        ) {
+          throw new Error(
+            "La cámara está siendo usada por otra aplicación. Cierra otras apps que usen la cámara e inténtalo otra vez."
+          );
+        }
+
+        throw error;
+      } finally {
+        if (permissionStream) {
+          permissionStream
+            .getTracks()
+            .forEach((track) => track.stop());
+        }
+      }
+    }
+
+    async function getPreferredCameraId() {
+      try {
+        const cameras =
+          await Html5Qrcode.getCameras();
+
+        if (!Array.isArray(cameras) || cameras.length === 0) {
+          return null;
+        }
+
+        const backCamera =
+          cameras.find((camera) =>
+            /back|rear|environment|trasera/i.test(
+              String(camera?.label || "")
+            )
+          ) ||
+          cameras[cameras.length - 1];
+
+        return backCamera?.id || null;
+      } catch (error) {
+        console.warn(
+          "No se pudo identificar la cámara trasera:",
+          error
+        );
+        return null;
+      }
+    }
+
+    async function startScanner() {
+      if (!window.Html5Qrcode) {
+        alert("No se pudo cargar el escáner QR.");
+        return;
+      }
+
+      const button =
+        document.getElementById("startScannerButton");
+
+      button.disabled = true;
+      button.textContent = "Activando cámara...";
+
+      try {
+        await ensureCameraPermission();
+
+        if (!html5QrScanner) {
+          html5QrScanner = new Html5Qrcode(
+            "reader",
+            {
+              verbose: false
+            }
+          );
+        }
+
+        if (scannerStarted) {
+          hideScannerPlaceholder();
+          return;
+        }
+
+        const preferredCameraId =
+          await getPreferredCameraId();
+
+        const cameraConfig =
+          preferredCameraId
+            ? preferredCameraId
+            : {
+                facingMode: {
+                  ideal: "environment"
+                }
+              };
+
+        const scannerConfig = {
+          fps: 15,
+          disableFlip: false,
+          formatsToSupport:
+            window.Html5QrcodeSupportedFormats
+              ? [Html5QrcodeSupportedFormats.QR_CODE]
+              : undefined,
+          qrbox: (
+            viewfinderWidth,
+            viewfinderHeight
+          ) => {
+            const minSide = Math.min(
+              viewfinderWidth,
+              viewfinderHeight
+            );
+
+            const size = Math.max(
+              180,
+              Math.min(
+                Math.floor(minSide * 0.72),
+                340
+              )
+            );
+
+            return {
+              width: size,
+              height: size
+            };
+          }
+        };
+
+        await html5QrScanner.start(
+          cameraConfig,
+          scannerConfig,
+          async (decodedText) => {
+            await handleDetectedQr(decodedText);
+          },
+          () => {}
+        );
+
+        scannerStarted = true;
+        hideScannerPlaceholder();
+        startJsQrFallback();
+
+        window.setTimeout(() => {
+          void configureActiveCamera();
+        }, 350);
+
+        window.setTimeout(() => {
+          const video =
+            document.querySelector("#reader video");
+
+          if (video) {
+            video.setAttribute(
+              "playsinline",
+              "true"
+            );
+
+            video.setAttribute(
+              "webkit-playsinline",
+              "true"
+            );
+
+            video.muted = true;
+          }
+        }, 250);
+
+      } catch (error) {
+        resetScannerPlaceholder();
+
+        const message =
+          error?.message ||
+          "No se pudo acceder a la cámara.";
+
+        alert(message);
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          "Solicitar permiso y activar cámara";
+      }
+    }
+
+    async function stopScanner() {
+      stopJsQrFallback();
+
+      if (!html5QrScanner || !scannerStarted) return;
+
+      try {
+        await html5QrScanner.stop();
+        await html5QrScanner.clear();
+      } catch (error) {
+      } finally {
+        scannerStarted = false;
+        html5QrScanner = null;
+        document.getElementById("reader").innerHTML = "";
+        resetScannerPlaceholder();
+      }
+    }
+
+    async function restartCamera() {
+      await stopScanner();
+      await startScanner();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    document
+      .getElementById("employeeUsername")
+      .addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          loginEmployee();
+        }
+      });
+
+    document
+      .getElementById("employeePassword")
+      .addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          loginEmployee();
+        }
+      });
+
+    document
+      .getElementById("manualCode")
+      .addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          validateManualCode();
+        }
+      });
+
+    renderHistory();
+    updateSessionSummary();
+    restoreEmployeeSession();
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "cine-manuel-nieves-backend",
+  "version": "5.0.0",
+  "description": "Backend para el sistema de taquillas del Cine Teatro Manuel Nieves Quintero",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "node --test tests/payment-qr.test.cjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.3",
+    "resend": "^4.0.1",
+    "@supabase/supabase-js": "^2.57.4",
+    "multer": "^2.0.2"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "private": true
+}
