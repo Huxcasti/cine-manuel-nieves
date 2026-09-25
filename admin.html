@@ -1012,7 +1012,7 @@
 
 
     /* =========================================================
-       AFICHES ADAPTABLES EN PELÍCULAS REGISTRADAS
+        ARCHIVOS ADAPTABLES EN PELÍCULAS REGISTRADAS
        Muestra completa cualquier imagen horizontal, vertical
        o cuadrada sin cortarla ni deformarla.
     ========================================================= */
@@ -2661,7 +2661,7 @@
                 <img
                   id="moviePosterPreview"
                   class="poster-form-preview"
-                  alt="Vista previa del afiche"
+                  alt="Vista previa del archivo"
                 />
 
                 <div>
@@ -2678,7 +2678,7 @@
     for="moviePosterFile"
     class="custom-file-button"
   >
-    📁 Seleccionar afiche
+    📁 Seleccionar archivo
   </label>
 
   <span
@@ -2695,7 +2695,7 @@
                     type="button"
                     onclick="uploadPoster()"
                   >
-                    📷 Subir afiche
+                    📷 Subir archivo
                   </button>
                 </div>
               </div>
@@ -2722,7 +2722,7 @@
     for="movieTrailerFile"
     class="custom-file-button"
   >
-    📁 Seleccionar tráiler
+    📁 Seleccionar archivo
   </label>
 
   <span
@@ -4633,7 +4633,7 @@
               onload="adaptAdminPoster(this)"
               onerror="this.style.display='none'"
             />`
-          : `<span class="muted">Sin afiche</span>`;
+          : `<span class="muted">Sin archivo</span>`;
 
         row.innerHTML = `
           <td>${poster}</td>
@@ -4732,14 +4732,14 @@
       }
 
       if (file.size > 6 * 1024 * 1024) {
-        setMessage("movieMessage", "error", "El afiche no puede superar 6 MB.");
+        setMessage("movieMessage", "error", "El archivo no puede superar 6 MB.");
         return;
       }
 
       const button = document.getElementById("uploadPosterButton");
       button.disabled = true;
       button.textContent = "Subiendo...";
-      setMessage("movieMessage", "info", "Subiendo afiche...");
+      setMessage("movieMessage", "info", "Subiendo archivo...");
 
       try {
         const formData = new FormData();
@@ -4755,13 +4755,13 @@
         setMessage(
           "movieMessage",
           "success",
-          "Afiche subido correctamente. Ahora guarda la película."
+          "Archivo subido correctamente. Ahora guarda la película."
         );
       } catch (error) {
         setMessage("movieMessage", "error", error.message);
       } finally {
         button.disabled = false;
-        button.textContent = "📷 Subir afiche";
+        button.textContent = "📷 Subir archivo";
       }
     }
 
@@ -4949,7 +4949,7 @@ const durationValue =
       const comingSoon = document.getElementById("movieComingSoon").checked;
 
       if (selectedPosterFile && !posterUrl) {
-        setMessage("movieMessage", "error", "Pulsa “Subir afiche” antes de guardar la película.");
+        setMessage("movieMessage", "error", "Pulsa “Subir archivo” antes de guardar la película.");
         return;
       }
 
