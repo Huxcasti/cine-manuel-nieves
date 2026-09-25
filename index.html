@@ -2264,7 +2264,7 @@ body {
 		          />
 		
 		          <span class="hero-badge">
-		            🎟 BOLETOS DISPONIBLES EN LÍNEA
+		            🎟 COMPRA TUS TAQUILLAS EN LÍNEA
 		          </span>
 		
 		          <h2>Vive el cine en el corazón de Corozal</h2>
@@ -2282,7 +2282,7 @@ body {
 		          <div class="section-heading">
 		            <div>
 		              <h2>Cartelera</h2>
-		              <p>Películas y tandas disponibles próximamente.</p>
+		              <p>Selecciona una película para ver las tandas y horarios disponibles.</p>
 		            </div>
 	
 		          </div>
@@ -2332,8 +2332,7 @@ body {
 		          <section class="card">
 		            <h2>Selecciona tus taquillas</h2>
 		            <p class="subtitle">
-		              Escoge cuántas taquillas necesitas por categoría. Luego selecciona
-		              exactamente la misma cantidad de asientos.
+		             Selecciona la cantidad de taquillas por categoría y luego elige la misma cantidad de asientos en el mapa.
 		            </p>
 		
 		            <div class="ticket-type-selector">
@@ -2383,8 +2382,7 @@ body {
 		            <h2>Selecciona tus asientos</h2>
 
                     <p class="subtitle" style="margin-bottom: 10px;">
-                      Los asientos rojos ya están ocupados. Desliza horizontalmente para ver el mapa completo.
-                    </p>
+Los asientos ocupados no pueden seleccionarse. Desliza horizontalmente para explorar el mapa completo de la sala.                    </p>
 
                     <div class="official-seat-legend">
                       <div class="legend-item"><span class="legend-seat"></span>Disponible</div>
@@ -2441,7 +2439,7 @@ body {
 		          </div>
 		
 		          <div class="summary-row">
-		            <span>Precio</span>
+		            <span>Subtotal</span>
 		            <strong id="summaryPrice">$0.00</strong>
 		          </div>
 		
@@ -2478,7 +2476,7 @@ body {
 		          <h2>Información del cliente</h2>
 		
 		          <p class="subtitle">
-		            Estos datos aparecerán asociados a tu reservación.
+		            Usaremos estos datos para enviarte tu taquilla digital y código QR.
 		          </p>
 		
 		          <div
@@ -2520,13 +2518,13 @@ body {
 		            />
 
 		            <p class="email-confirm-note">
-		              Verifica que ambos correos sean iguales. Tu boleto y código QR se enviarán a esta dirección.
+		              Verifica que ambos correos sean iguales. Tu taquilla digital y código QR se enviarán a esta dirección.
 		            </p>
 		
 		
 		
 		            <div class="payment-section">
-		              <h3>Selecciona tu método de pago</h3>
+		              <h3>Pago seguro</h3>
 		
 		              <div class="payment-methods">
 		                <button
@@ -2544,6 +2542,7 @@ body {
 		                  id="athMovilOption"
 		                  type="button"
 		                  onclick="selectPaymentMethod('ath_movil')"
+							 hidden
 		                >
 		                  <img src="Athmovil.png" alt="ATH Móvil" />
 		                  <span>ATH Móvil</span>
@@ -2551,12 +2550,12 @@ body {
 		              </div>
 		
 		              <p class="payment-message" id="paymentMessage">
-		                Selecciona cómo deseas pagar.
+		                Completa tu compra de forma segura con PayPal.
 		              </p>
 		
 		              <div id="paypalButtonContainer"></div>
 		
-		              <div class="ath-payment-instructions" id="athInstructions">
+		              <div class="ath-payment-instructions" id="athInstructions" hidden>
 		                <strong>Pago con ATH Móvil</strong>
 		                <p id="athInstructionsText" style="margin-top: 7px;">
 		                  Al continuar serás dirigido al enlace oficial de ATH Móvil para completar el pago.
@@ -2586,9 +2585,9 @@ body {
 		      <div class="container">
 		        <div class="processing-card">
 		          <div class="spinner"></div>
-		          <h2>Procesando tu reservación</h2>
+		          <h2>Procesando tu compra</h2>
 		          <p class="subtitle" style="margin-top: 12px;">
-		            No cierres esta página.
+		            Estamos confirmando tu pago y generando tu taquilla digital. No cierres esta página.
 		          </p>
 		        </div>
 		      </div>
@@ -2604,7 +2603,7 @@ body {
 		              src="Logo.PNG"
 		              alt="Cine Teatro Manuel Nieves Quintero"
 		            />
-		            <h2>🎟 Boleto digital</h2>
+		            <h2>🎟 Taquilla digital</h2>
 		            <p>Cine Teatro Manuel Nieves Quintero</p>
 		          </header>
 		
@@ -2618,7 +2617,7 @@ body {
 		              <div id="qrCode"></div>
 		
 		              <strong>
-		                Presenta este QR en la entrada
+		                Presenta este código QR para entrar a la sala
 		              </strong>
 		
 		              <div class="manual-code-box">
@@ -2650,13 +2649,13 @@ body {
 		              <div
 		                class="qr-token"
 		                id="qrToken"
+						  hidden
 		              ></div>
 		            </div>
 		          </div>
 		
 		          <footer class="ticket-footer">
-		            Conserva este boleto. Tanto el QR como el código
-		            manual solamente pueden utilizarse una vez.
+		            Conserva esta taquilla digital. El código QR y el código manual solo pueden utilizarse una vez.
 		          </footer>
 		        </article>
 		
@@ -2666,7 +2665,7 @@ body {
 		            type="button"
 		            onclick="window.print()"
 		          >
-		            Imprimir boleto
+		            Imprimir taquilla
 		          </button>
 		
 		          <button
@@ -2674,7 +2673,7 @@ body {
 		            type="button"
 		            onclick="startNewPurchase()"
 		          >
-		            Comprar otros boletos
+		            Comprar otras taquillas
 		          </button>
 		        </div>
 		      </div>
@@ -2830,7 +2829,7 @@ body {
                 });
                 realNumber += 1;
               }
-              rows.M.push({ id: "M11-WC", label: "M11", number: null, accessible: true });
+              
 
               return rows;
             })();
@@ -5192,7 +5191,9 @@ if (label && selectedDate) {
 		      label.textContent = "ATH Móvil · Próximamente";
 		    }
 		  }
-		
+
+			selectPaymentMethod("paypal");
+			
 		    document.getElementById("customerEmail")?.addEventListener(
 		      "input",
 		      validateEmailConfirmationLive
