@@ -635,6 +635,58 @@
       background: #0c111d;
     }
 
+   .custom-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.custom-file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid rgba(73, 203, 197, 0.48);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.custom-file-button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.custom-file-name {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 12px;
+  border: 1px solid #34435f;
+  border-radius: 10px;
+  background: #111827;
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+   
     .poster-upload-row {
       display: flex;
       align-items: center;
@@ -2613,12 +2665,29 @@
                 />
 
                 <div>
-                  <input
-                    id="moviePosterFile"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onchange="previewSelectedPoster()"
-                  />
+                  <div class="custom-file-picker">
+  <input
+    id="moviePosterFile"
+    class="file-input-hidden"
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    onchange="updateSelectedFileName('moviePosterFile', 'moviePosterFileName'); previewSelectedPoster();"
+  />
+
+  <label
+    for="moviePosterFile"
+    class="custom-file-button"
+  >
+    📁 Seleccionar afiche
+  </label>
+
+  <span
+    class="custom-file-name"
+    id="moviePosterFileName"
+  >
+    Ningún archivo seleccionado
+  </span>
+</div>
 
                   <button
                     id="uploadPosterButton"
@@ -2640,12 +2709,29 @@
 
             <label for="movieTrailerFile">Tráiler de la película</label>
             <div class="poster-uploader">
-              <input
-                id="movieTrailerFile"
-                type="file"
-                accept="video/mp4,video/webm,video/quicktime"
-                onchange="previewSelectedTrailer()"
-              />
+              <div class="custom-file-picker">
+  <input
+    id="movieTrailerFile"
+    class="file-input-hidden"
+    type="file"
+    accept="video/mp4,video/webm,video/quicktime"
+    onchange="updateSelectedFileName('movieTrailerFile', 'movieTrailerFileName'); previewSelectedTrailer();"
+  />
+
+  <label
+    for="movieTrailerFile"
+    class="custom-file-button"
+  >
+    📁 Seleccionar tráiler
+  </label>
+
+  <span
+    class="custom-file-name"
+    id="movieTrailerFileName"
+  >
+    Ningún archivo seleccionado
+  </span>
+</div>
 
               <button
                 id="uploadTrailerButton"
@@ -4609,6 +4695,21 @@
       preview.style.display = "block";
     }
 
+   function updateSelectedFileName(inputId, fileNameId) {
+  const input = document.getElementById(inputId);
+  const fileName = document.getElementById(fileNameId);
+
+  if (!input || !fileName) {
+    return;
+  }
+
+  const file = input.files?.[0];
+
+  fileName.textContent = file
+    ? file.name
+    : "Ningún archivo seleccionado";
+}
+   
     function previewSelectedPoster() {
       const input = document.getElementById("moviePosterFile");
       const file = input.files?.[0];
@@ -4972,10 +5073,14 @@ const durationValue =
       document.getElementById("movieDescription").value = "";
       document.getElementById("moviePosterUrl").value = "";
       document.getElementById("moviePosterFile").value = "";
+      document.getElementById("moviePosterFileName").textContent =
+  "Ningún archivo seleccionado";
       showPosterPreview("");
 
       document.getElementById("movieTrailerUrl").value = "";
       document.getElementById("movieTrailerFile").value = "";
+      document.getElementById("movieTrailerFileName").textContent =
+  "Ningún archivo seleccionado";
       showTrailerPreview("");
 
       setMovieDurationFields("");
