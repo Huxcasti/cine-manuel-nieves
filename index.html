@@ -2270,9 +2270,10 @@ body {
 		          <h2>Vive el cine en el corazón de Corozal</h2>
 		
 		          <p>
-		            Consulta la cartelera, selecciona tu tanda, escoge tus
-		            asientos y recibe un boleto digital con QR y un código
-		            manual de cinco dígitos.
+		            <p>
+  Consulta la cartelera, elige tu tanda, selecciona tus asientos
+  y recibe tu taquilla digital con código QR directamente en tu correo.
+</p>
 		          </p>
 		        </div>
 		      </section>
@@ -2542,7 +2543,7 @@ Los asientos ocupados no pueden seleccionarse. Desliza horizontalmente para expl
 		                  id="athMovilOption"
 		                  type="button"
 		                  onclick="selectPaymentMethod('ath_movil')"
-							 hidden
+						  style="display: none !important;"
 		                >
 		                  <img src="Athmovil.png" alt="ATH Móvil" />
 		                  <span>ATH Móvil</span>
@@ -4221,7 +4222,7 @@ function getCustomerData() {
 		
 		        if (method === "paypal") {
 		          document.getElementById("paymentMessage").textContent =
-		            "Paga de forma segura con PayPal. El boleto se genera únicamente después de que PayPal confirme el pago.";
+		           "Paga de forma segura con PayPal. Tu taquilla digital se genera cuando el pago sea confirmado.";
 		          paypalContainer.classList.add("visible");
 		          athInstructions.classList.remove("visible");
 		          purchaseButton.style.display = "none";
