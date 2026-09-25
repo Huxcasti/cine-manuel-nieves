@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("express")
 const cors = require("cors");
 const crypto = require("crypto");
 const { Pool } = require("pg");
@@ -3882,7 +3882,7 @@ app.delete(
 
 
 const OFFICIAL_SEAT_IDS = (() => {
-  const ids = new Set(["A1-WC", "A10-WC", "M1-WC", "M11-WC"]);
+  const ids = new Set(["A1-WC", "A10-WC", "M1-WC"]);
 
   for (let position = 2; position <= 9; position += 1) ids.add(`A${position}`);
   for (const rowName of ["B","C","D","E","F","G","H","I","J","K"]) {
