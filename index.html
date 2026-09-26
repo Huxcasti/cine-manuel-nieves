@@ -4490,17 +4490,26 @@ function getCustomerData() {
     console.error("Error confirmando captura de PayPal:", error);
   }
 },
-		          onCancel: async () => {
-		            paypalCaptureStarted = false;
-		            const cancelled = await cancelPendingReservation();
+		         onCancel: async () => {
+  paypalCaptureStarted = false;
 
-		            showCustomerMessage(
-		              "error",
-		              cancelled
-		                ? "El pago fue cancelado. La reservación pendiente fue eliminada y los asientos volvieron a estar disponibles."
-		                : "El pago fue cancelado, pero no se pudo confirmar la liberación inmediata de la reservación. Intenta nuevamente en unos minutos."
-		            );
-		          },
+  const cancelled =
+    await cancelPendingReservation();
+
+  if (
+    cancelled &&
+    selectedShowtime
+  ) {
+    await loadOccupiedSeats();
+  }
+
+  showCustomerMessage(
+    "error",
+    cancelled
+      ? "El pago fue cancelado. Los asientos fueron liberados y puedes intentarlo nuevamente."
+      : "El pago fue cancelado, pero no pudimos confirmar la liberación inmediata de los asientos. Actualiza la página antes de intentarlo nuevamente."
+  );
+},
 		
 		          onError: async (error) => {
 		            console.error("PayPal error:", error);
@@ -5165,16 +5174,41 @@ if (label && selectedDate) {
 	  </script>
 		
 		<script>
-		  window.addEventListener("pagehide", () => {
-		    if (
-		      typeof pendingReservation !== "undefined" &&
-		      pendingReservation?.id &&
-		      pendingReservation?.paymentStatus === "pending" &&
-		      !paypalCaptureStarted
-		    ) {
-		      void cancelPendingReservation({ keepalive: true });
-		    }
-		  });
+		 window.addEventListener("pagehide", () => {
+  if (
+    typeof pendingReservation === "undefined" ||
+    !pendingReservation?.id ||
+    pendingReservation?.paymentStatus !== "pending" ||
+    paypalCaptureStarted
+  ) {
+    return;
+  }
+
+  const reservationId = String(
+    pendingReservation.id || ""
+  ).trim();
+
+  const cancellationToken = String(
+    pendingReservation.cancellationToken || ""
+  ).trim();
+
+  if (!reservationId || !cancellationToken) {
+    return;
+  }
+
+  const body = new URLSearchParams();
+  body.set(
+    "cancellationToken",
+    cancellationToken
+  );
+
+  navigator.sendBeacon(
+    `${API_URL}/api/reservations/${encodeURIComponent(
+      reservationId
+    )}/cancel-beacon`,
+    body
+  );
+});
 
 		  const athMovilOption =
 		    document.getElementById("athMovilOption");
