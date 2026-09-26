@@ -139,6 +139,13 @@ app.use(
 
 app.use(express.json({ limit: "100kb" }));
 
+app.use(
+  express.urlencoded({
+    extended: false,
+    limit: "10kb"
+  })
+);
+
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -4439,6 +4446,58 @@ app.delete("/api/reservations/:id/cancel", async (req, res) => {
   }
 });
 
+app.post(
+  "/api/reservations/:id/cancel-beacon",
+  async (req, res) => {
+    try {
+      const reservationId = String(
+        req.params.id || ""
+      ).trim();
+
+      const cancellationToken = String(
+        req.body?.cancellationToken || ""
+      ).trim();
+
+      if (!reservationId || !cancellationToken) {
+        return res.status(400).json({
+          error: "Faltan los datos para cancelar la reservación."
+        });
+      }
+
+      const cancellationTokenHash =
+        hashSessionToken(cancellationToken);
+
+      const result = await pool.query(
+        `
+          DELETE FROM tickets
+          WHERE
+            id = $1
+            AND payment_status = 'pending'
+            AND cancellation_token_hash = $2
+          RETURNING id;
+        `,
+        [
+          reservationId,
+          cancellationTokenHash
+        ]
+      );
+
+      if (result.rowCount > 0) {
+        return res.status(204).end();
+      }
+
+      return res.status(204).end();
+    } catch (error) {
+      console.error(
+        "Error liberando reservación abandonada:",
+        error
+      );
+
+      return res.status(204).end();
+    }
+  }
+);
+
 /*
 ==================================================
 PAYPAL CHECKOUT
@@ -4953,11 +5012,23 @@ app.get(
   requireAdmin,
   async (req, res) => {
     try {
-      const result = await pool.query(`
-        SELECT *
-        FROM tickets
-        ORDER BY created_at DESC;
-      `);
+      const result = await pool.query(
+  `
+    SELECT *
+    FROM tickets
+    WHERE
+      payment_status IN ('paid', 'approved')
+      OR (
+        payment_status = 'pending'
+        AND COALESCE(
+          payment_hold_until,
+          created_at + ($1 * INTERVAL '1 minute')
+        ) > NOW()
+      )
+    ORDER BY created_at DESC;
+  `,
+  [PENDING_RESERVATION_MINUTES]
+);
 
       res.json(result.rows.map(formatTicket));
     } catch (error) {
